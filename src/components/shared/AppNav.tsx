@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 const NAV_ITEMS = [
   { href: "/propriedades", label: "Minhas propriedades" },
   { href: "/maquinas", label: "Minhas máquinas" },
-  { href: "/perfil", label: "Perfil" },
+  { href: "/catalogo", label: "Catálogo" },
 ];
 
 export function AppNav() {
