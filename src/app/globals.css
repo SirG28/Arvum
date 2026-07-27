@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@theme {
+  /* Arvum — verde (crescimento, confiança, agro) */
+  --color-primary-50: #eef6f0;
+  --color-primary-100: #d6eadc;
+  --color-primary-200: #aed5ba;
+  --color-primary-300: #7fbb95;
+  --color-primary-400: #4fa073;
+  --color-primary-500: #2f7d52;
+  --color-primary-600: #24643f;
+  --color-primary-700: #1c4e32;
+  --color-primary-800: #163d28;
+  --color-primary-900: #102c1d;
+
+  /* Arvum — terracota (energia, solo, calor) */
+  --color-accent-50: #fbf1e8;
+  --color-accent-100: #f1dac0;
+  --color-accent-300: #dca871;
+  --color-accent-500: #be6f35;
+  --color-accent-600: #9c5a2a;
+  --color-accent-700: #7a4621;
+
+  /* Arvum — neutros quentes */
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #f7f8f4;
+  --color-neutral-100: #eef0e8;
+  --color-neutral-200: #dcdfd3;
+  --color-neutral-300: #c2c6b6;
+  --color-neutral-400: #999f8b;
+  --color-neutral-500: #74796a;
+  --color-neutral-600: #565b4c;
+  --color-neutral-700: #3d4134;
+  --color-neutral-800: #262922;
+  --color-neutral-900: #181a15;
+
+  --color-danger-500: #b3402c;
+  --color-warning-500: #c98a2e;
+  --color-success-500: #2f7d52;
+  --color-info-500: #2e6fa0;
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Sora", "Inter", system-ui, sans-serif;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+
+  --shadow-elevation-1: 0 1px 2px rgba(24, 26, 21, 0.06);
+  --shadow-elevation-2: 0 4px 12px rgba(24, 26, 21, 0.08);
+
+  --breakpoint-xs: 320px;
+  --breakpoint-sm: 375px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1440px;
+
+  --animate-duration-fast: 120ms;
+  --animate-duration-base: 200ms;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-neutral-900);
+  background-color: var(--color-neutral-50);
+}
