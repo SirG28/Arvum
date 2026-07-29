@@ -22,6 +22,52 @@ function slugify(value: string) {
   return value.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "-");
 }
 
+function wikimediaFilePath(fileName: string) {
+  const encoded = encodeURIComponent(fileName.replace(/ /g, "_"));
+  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}`;
+}
+
+// Fotos reais de máquinas agrícolas (Wikimedia Commons, licenças livres), escolhidas para
+// corresponder ao tipo de equipamento de cada anúncio — evita placeholders genéricos sem relação com o produto.
+const MACHINE_IMAGES: readonly (readonly [string, string])[] = [
+  ["Massey Ferguson 175 red tractor September 2005.jpg", "Massey Ferguson 3060 tractor.jpg"],
+  [
+    "John Deere 4630 Self-Propelled Sprayer (16269461688).jpg",
+    "Agrifac Condor self-propelled sprayer at IndAgra Farm Romexpo 2010 (back view).JPG",
+  ],
+  [
+    "New Holland combine at work near Stoneleigh 1.jpg",
+    "New Holland combine at work near Stoneleigh 2.jpg",
+  ],
+  [
+    "Agroline drill combination product photo from angled and side.jpg",
+    "Claydon Hybrid T, Agritechnica 2023, Hanover (P1160376).jpg",
+  ],
+  ["Disc ploughs in field.jpg", "Tractor y arado.jpg"],
+  ["John Deere disk harrow.jpg", "Man harrowing with tractor and disk harrow.jpg"],
+  [
+    "Amazone Cirrus, Agritechnica 2023, Hanover (P1160361).jpg",
+    "Agroline drill combination product foto black white from behind.jpg",
+  ],
+  [
+    "Ferguson fertiliser spreader on MF 35 at Lincoln 2008.jpg",
+    "JD with Acuspread AS85 multi-purpose spreader.jpg",
+  ],
+  ["Amazone 180 Super Flail Mower 01.jpg", "Teagle EKR-S flail mower - IMG 4608.jpg"],
+  ["Center pivot irrigation in Colorado.JPG", "Pivot center tower.jpg"],
+  ["Grain hopper trailer 01.jpg", "Grain hopper trailer 02.jpg"],
+  [
+    "John Deere 6175R tractor Cuxham Oxfordshire England 01.jpg",
+    "John Deere 6175R tractor Cuxham Oxfordshire England 02.jpg",
+  ],
+  ["Case IH 2388 beim Rapsdrusch.JPG", "Case 2388 5539.jpg"],
+  [
+    "Kirloskar - Silent Diesel Generator Set - Kolkata 2017-12-12 6083.JPG",
+    "Whisperwatt 70 generator.JPG",
+  ],
+  ["Massey Ferguson 6485, Delvano field sprayer.jpg", "Deutz-Fahr 5090.D5 mit Lochmann Spritze.jpg"],
+];
+
 const OWNERS = [
   { name: "João Pereira", email: "joao.owner@arvum.dev", city: "Ribeirão Preto", state: "SP" },
   { name: "Marta Souza", email: "marta.owner@arvum.dev", city: "Londrina", state: "PR" },
@@ -336,19 +382,26 @@ async function main() {
       },
     });
 
-    const existingImages = await prisma.machineImage.count({ where: { machineId: machine.id } });
-    if (existingImages === 0) {
-      await prisma.machineImage.createMany({
-        data: [
-          { machineId: machine.id, url: `https://picsum.photos/seed/${slug}/800/600`, position: 0 },
-          {
-            machineId: machine.id,
-            url: `https://picsum.photos/seed/${slug}-2/800/600`,
-            position: 1,
-          },
-        ],
-      });
-    }
+    const machineImages = MACHINE_IMAGES[index];
+    if (!machineImages) continue;
+    const [primaryImage, secondaryImage] = machineImages;
+    await prisma.machineImage.deleteMany({ where: { machineId: machine.id } });
+    await prisma.machineImage.createMany({
+      data: [
+        {
+          machineId: machine.id,
+          url: wikimediaFilePath(primaryImage),
+          altText: spec.title,
+          position: 0,
+        },
+        {
+          machineId: machine.id,
+          url: wikimediaFilePath(secondaryImage),
+          altText: spec.title,
+          position: 1,
+        },
+      ],
+    });
   }
 
   console.log("Seed concluído.");
