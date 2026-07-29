@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { Logo } from "./Logo";
 import { AppNav } from "./AppNav";
+import { MobileNavDrawer } from "./MobileNavDrawer";
 
 export function AppHeader() {
   const { data: session } = useSession();
@@ -14,16 +15,17 @@ export function AppHeader() {
   const isProfileActive = pathname?.startsWith("/perfil");
 
   return (
-    <header className="border-b border-neutral-200 bg-white">
-      <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center justify-between gap-4">
+    <header className="relative border-b border-neutral-200 bg-white">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
+        <div className="flex items-center gap-4">
           <Link href="/">
             <Logo size={26} />
           </Link>
           <AppNav />
         </div>
+        <MobileNavDrawer />
         {session?.user && (
-          <div className="flex items-center gap-3">
+          <div className="hidden items-center gap-3 sm:flex">
             <Link
               href="/perfil"
               aria-label="Meu perfil"

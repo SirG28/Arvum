@@ -4,17 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 
-const NAV_ITEMS = [
+export const NAV_ITEMS = [
   { href: "/propriedades", label: "Minhas propriedades" },
   { href: "/maquinas", label: "Minhas máquinas" },
   { href: "/catalogo", label: "Catálogo" },
+  { href: "/favoritos", label: "Favoritos" },
 ];
 
+// Escondido em telas pequenas — mobile usa o menu hambúrguer (MobileNavDrawer) para não estourar
+// a largura do header (4 links + logo + perfil + sair não cabem em ~375px).
 export function AppNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Navegação principal" className="flex gap-1">
+    <nav aria-label="Navegação principal" className="hidden gap-1 sm:flex">
       {NAV_ITEMS.map((item) => {
         const isActive = pathname?.startsWith(item.href);
         return (

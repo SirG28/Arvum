@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
+import { getCurrentUser } from "@/lib/session";
 import { getPublicMachineBySlug } from "@/features/machines/services/machine.service";
+import { listFavoriteMachineIds } from "@/features/favorites/services/favorite.service";
 import { MachineGallery } from "@/features/machines/components/MachineGallery";
+import { FavoriteButton } from "@/features/favorites/components/FavoriteButton";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -32,15 +35,24 @@ export default async function MachineDetailPage({ params }: MachineDetailPagePro
   const machine = await getPublicMachineBySlug(slug);
   if (!machine) notFound();
 
+  const user = await getCurrentUser();
+  const isFavorited = user ? (await listFavoriteMachineIds(user.id)).has(machine.id) : false;
+
   return (
     <div className="flex flex-col gap-6 lg:flex-row">
       <div className="flex-1">
         <MachineGallery images={machine.images} title={machine.title} />
 
         <div className="mt-6">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-semibold text-neutral-900">{machine.title}</h1>
             {machine.requiresOperator && <Badge tone="info">Requer operador</Badge>}
+            <FavoriteButton
+              machineId={machine.id}
+              initialFavorited={isFavorited}
+              isAuthenticated={Boolean(user)}
+              className="ml-auto"
+            />
           </div>
           <p className="text-sm text-neutral-500">
             {machine.category.name}

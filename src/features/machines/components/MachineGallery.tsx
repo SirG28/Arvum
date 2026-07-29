@@ -21,7 +21,7 @@ export function MachineGallery({ images, title }: { images: MachineImage[]; titl
         className="aspect-video w-full rounded-lg border border-neutral-200 object-cover"
       />
       {rest.length > 0 && (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {rest.map((image) => (
             // eslint-disable-next-line @next/next/no-img-element -- URL arbitrária informada pelo proprietário
             <img

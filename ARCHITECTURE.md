@@ -9,24 +9,26 @@ Route Handlers, evitando manter dois serviços separados para um projeto de 2 pe
 src/
   app/                     # rotas (App Router) — casca fina, sem regra de negócio
     (auth)/login, (auth)/cadastro
-    (app)/propriedades, (app)/perfil, (app)/maquinas
+    (app)/propriedades, (app)/perfil, (app)/maquinas, (app)/favoritos
     catalogo/, catalogo/[slug]/          # público, fora do (app)
     api/auth/[...nextauth]/route.ts
     api/v1/properties/route.ts, [id]/route.ts
     api/v1/categories/route.ts
     api/v1/machines/route.ts, [id]/route.ts, [id]/status,
       [id]/images(+[imageId]), [id]/availability(+[blockId])
+    api/v1/favorites/route.ts, [machineId]/route.ts
   auth.ts                  # configuração raiz do Auth.js
   middleware.ts            # proteção de rota
   components/
-    ui/                    # design system (Button, Input, Textarea, Select, Label, FormField, Card, Alert, Badge, Spinner, EmptyState)
-    shared/                # Providers, AppHeader, AppNav, PublicHeader, Footer, Logo
+    ui/                    # design system (Button, Input, Textarea, Select, Checkbox, Label, FormField, Card, Alert, Badge, Spinner, EmptyState)
+    shared/                # Providers, AppHeader, AppNav, MobileNavDrawer, PublicHeader, Footer, Logo
   features/
     authentication/        # schemas, actions, lib/password.ts, components
     users/
     properties/            # schemas, services, hooks, components
     categories/             # services (leitura), types
     machines/               # schemas, lib (slug, status), services, hooks, components
+    favorites/               # services, hooks, components (FavoriteButton, FavoriteMachineCard)
   lib/                     # prisma, env, api-response, session, cn
   schemas/                 # primitivas zod reutilizáveis
   types/                   # module augmentation (next-auth)
@@ -54,6 +56,7 @@ completo, `search`, `bookings`, `logistics`, `payments`, `reviews`, `notificatio
 | Schema Prisma completo já na Etapa 1 | 12 entidades modeladas, só User/Property/Category com features construídas | Modelar entidade por fase | O modelo relacional já está 100% especificado no `Context.md`; adiar geraria `ALTER TABLE` arriscados em FKs cruzadas (Booking→Machine→Property→User). Funcionalidade (rotas/UI) continua estritamente faseada — só o schema vem pronto. |
 | `Property` sem soft delete           | Exclusão física bloqueada por regra de dependência (máquina vinculada)     | Adicionar `deletedAt`     | Fiel à lista de campos exata da especificação (`Context.md` §17).                                                                                                                                                                        |
 | Sem separação front/back             | Route Handlers do Next cobrem a API                                        | NestJS/Express separado   | Simplicidade para um time de 2 pessoas; API real fica em `/api/v1/*` com mesmo formato de erro que uma API separada teria.                                                                                                               |
+| Navegação mobile do header autenticado | Menu hambúrguer (`MobileNavDrawer`)                                      | Barra de abas fixa no rodapé | `AppNav` (4 links) + logo + avatar + "Sair" não cabem em ~375px sem colapsar (overflow horizontal confirmado). Hambúrguer escolhido em vez da barra de abas sugerida no `Context.md` §11.2 por decisão explícita, mantendo a mesma lista de links do desktop (`NAV_ITEMS`, exportado por `AppNav.tsx`) sem duplicar regra de navegação entre versões. |
 
 ## Valores monetários e datas
 
@@ -79,7 +82,9 @@ para regras de negócio.
 1. ✅ **Fundação** — arquitetura, design system, banco, autenticação, propriedades, categorias.
 2. ✅ **Oferta** — cadastro de máquinas, imagens (por URL), disponibilidade (bloqueios manuais),
    gerenciamento de anúncios (status), catálogo público mínimo (listagem + detalhe).
-3. **Descoberta** — busca avançada, filtros completos, favoritos, localização/distância real.
+3. **Descoberta** — em andamento. ✅ Filtros completos no catálogo (preço, marca, cultura,
+   finalidade, necessidade de operador, período). ✅ Favoritos. Pendente: localização/distância
+   real.
 4. **Transação** — reservas, cálculo de valores, logística, pagamento simulado, histórico de status.
 5. **Confiança** — avaliações, notificações, mensagens, moderação.
 6. **Administração e qualidade** — painel admin, indicadores, testes, acessibilidade, segurança, documentação, deploy.

@@ -49,7 +49,33 @@ cadastrado."]`), nunca uma mensagem genérica.
 - **Imagens**: cadastradas por URL (campo texto) — não há upload de arquivo nem provedor de storage
   configurado neste projeto; `FileUploader` fica para quando isso existir.
 - **Catálogo público**: só máquinas com status `ativo` e não removidas aparecem em `/catalogo`;
-  filtro por categoria e busca textual por nome, sem localização/distância (Fase 3 completa).
+  filtro por categoria, busca textual por nome, faixa de preço (diária), marca, cultura recomendada,
+  finalidade (texto livre), necessidade de operador e período desejado. Localização/distância real
+  ainda não existe (Fase 3 completa).
+- **Filtro por período no catálogo**: exclui máquinas com bloqueio manual (`MANUAL_BLOCK`)
+  sobreposto ao período informado — mesma regra de sobreposição usada ao cadastrar um bloqueio
+  (`machine-availability.service.ts`). Reservas (`Booking`) ainda não existem (Fase 4), então não há
+  confirmação adicional a considerar por enquanto.
+- **Filtros inválidos são tolerados, não bloqueiam a busca**: uma combinação impossível (preço
+  mínimo maior que o máximo, ou apenas uma das duas datas do período) é descartada com um aviso na
+  tela — os demais filtros continuam valendo, em vez de invalidar a busca inteira
+  (`catalog-filters.schema.ts`).
+- **Marca e cultura são selecionáveis a partir dos anúncios ativos** (`listCatalogFilterOptions`),
+  nunca uma lista fixa — evita oferecer um filtro que sempre retorna vazio.
+
+### Favoritos
+
+- Restrito a usuários autenticados; anônimo vê o coração como link para o login (preserva a
+  página atual em `callbackUrl`), nunca uma ação que falha silenciosamente.
+- Duplicidade é impedida em dois níveis: `@@unique([userId, machineId])` no banco e checagem
+  explícita no serviço (`ALREADY_FAVORITED` → `409`), nunca dependendo só da constraint do banco
+  para dar uma mensagem clara.
+- Favoritar uma máquina removida (`deletedAt` preenchido) é bloqueado (`404
+  MACHINE_NOT_FOUND`); máquina pausada/arquivada depois de favoritada continua listada em
+  `/favoritos`, mas sem link para a página de detalhe (que devolveria 404) — mostra o status em
+  vez disso.
+- `/favoritos` é uma rota protegida pelo `middleware.ts`, mesmo padrão de `/propriedades`,
+  `/maquinas` e `/perfil`.
 
 ## Planejado — próximas fases
 

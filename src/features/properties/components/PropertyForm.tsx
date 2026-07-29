@@ -73,7 +73,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
         <Input placeholder="Estrada, rodovia ou logradouro" {...register("addressLine")} />
       </FormField>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField label="Número" error={errors.number?.message}>
           <Input {...register("number")} />
         </FormField>
@@ -82,7 +82,7 @@ export function PropertyForm({ property }: PropertyFormProps) {
         </FormField>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <FormField label="Cidade" required error={errors.city?.message}>
           <Input {...register("city")} />
         </FormField>

@@ -9,7 +9,8 @@ export default auth((req) => {
   const isProtected =
     req.nextUrl.pathname.startsWith("/propriedades") ||
     req.nextUrl.pathname.startsWith("/maquinas") ||
-    req.nextUrl.pathname.startsWith("/perfil");
+    req.nextUrl.pathname.startsWith("/perfil") ||
+    req.nextUrl.pathname.startsWith("/favoritos");
 
   if (isProtected && !isLoggedIn) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
@@ -19,5 +20,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/propriedades/:path*", "/maquinas/:path*", "/perfil/:path*"],
+  matcher: ["/propriedades/:path*", "/maquinas/:path*", "/perfil/:path*", "/favoritos/:path*"],
 };

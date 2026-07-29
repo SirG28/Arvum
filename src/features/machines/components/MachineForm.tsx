@@ -105,7 +105,7 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
         <Input placeholder="Ex.: Trator Massey Ferguson 275" {...register("title")} />
       </FormField>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField label="Propriedade" required error={errors.propertyId?.message}>
           <Select {...register("propertyId")}>
             <option value="">Selecione</option>
@@ -128,7 +128,7 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
         </FormField>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <FormField label="Marca" helpText="Opcional" error={errors.brand?.message}>
           <Input {...register("brand")} />
         </FormField>
@@ -147,7 +147,7 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
         />
       </FormField>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField label="Finalidade" helpText="Opcional" error={errors.purpose?.message}>
           <Input placeholder="Ex.: preparo de solo" {...register("purpose")} />
         </FormField>
@@ -171,7 +171,7 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
         </Select>
       </FormField>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <FormField label="Peso (kg)" helpText="Opcional" error={errors.weight?.message}>
           <Input type="number" step="0.01" {...register("weight")} />
         </FormField>
@@ -218,7 +218,7 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
         </FormField>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <FormField label="Duração mínima (dias)" error={errors.minimumRentalDays?.message}>
           <Input type="number" {...register("minimumRentalDays")} />
         </FormField>

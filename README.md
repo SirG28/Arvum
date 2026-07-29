@@ -15,24 +15,27 @@ Integrantes:
 
 A especificação completa do produto está em [`Context.md`](./Context.md).
 
-## Status atual — Fase 2 (Oferta)
+## Status atual — Fase 3 (Descoberta, em andamento)
 
 Roadmap completo em [`ARCHITECTURE.md`](./ARCHITECTURE.md#roadmap). Implementado:
 
 - Scaffold Next.js (App Router) + TypeScript + Tailwind CSS v4.
 - Banco de dados: schema Prisma completo (12 entidades do domínio) + seed de demonstração.
 - Autenticação: cadastro, login, logout, sessão JWT, proteção de rotas.
-- Design system: componentes de UI reutilizáveis (Button, Input, Textarea, Select, Card, Alert,
-  Badge, FormField, Spinner, EmptyState).
+- Design system: componentes de UI reutilizáveis (Button, Input, Textarea, Select, Checkbox, Card,
+  Alert, Badge, FormField, Spinner, EmptyState).
 - CRUD completo de propriedades (criar, listar, editar, remover) com validação no servidor.
 - Cadastro e gestão de máquinas: dados do anúncio, imagens (por URL), disponibilidade (bloqueios
   manuais) e status do anúncio (rascunho, publicado, pausado, arquivado).
-- Catálogo público (`/catalogo`) com filtro por categoria e busca por nome, e página de detalhe de
-  cada máquina.
+- Catálogo público (`/catalogo`) com busca por nome, filtro por categoria, faixa de preço, marca,
+  cultura recomendada, finalidade, necessidade de operador e período desejado (exclui máquinas com
+  bloqueio manual sobreposto), e página de detalhe de cada máquina.
+- Favoritos: salvar/remover máquinas (coração no catálogo e no detalhe) e consultar em
+  `/favoritos`, restrito a usuários autenticados.
 
-Ainda não implementado (fases seguintes): busca avançada/favoritos, reservas, logística, pagamento,
-avaliações, notificações, painel administrativo — ver roadmap e as decisões de escopo em
-[`BUSINESS_RULES.md`](./BUSINESS_RULES.md).
+Ainda não implementado (fases seguintes): localização/distância real, reservas, logística,
+pagamento, avaliações, notificações, painel administrativo — ver roadmap e as decisões de escopo
+em [`BUSINESS_RULES.md`](./BUSINESS_RULES.md).
 
 ## Stack
 

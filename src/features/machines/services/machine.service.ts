@@ -130,15 +130,48 @@ export async function softDeleteMachine(
 interface CatalogFilters {
   categorySlug?: string;
   search?: string;
+  priceMinInCents?: number;
+  priceMaxInCents?: number;
+  brand?: string;
+  crop?: string;
+  purpose?: string;
+  requiresOperator?: boolean;
+  // Período desejado pelo locatário: exclui máquinas com bloqueio manual sobreposto. Reservas
+  // (Fase 4) ainda não existem, então não há confirmação a considerar aqui além dos bloqueios.
+  availableFrom?: Date;
+  availableTo?: Date;
 }
 
 export async function listActiveMachines(filters: CatalogFilters = {}) {
+  const hasPeriod = filters.availableFrom && filters.availableTo;
+
   return prisma.machine.findMany({
     where: {
       status: "ACTIVE",
       deletedAt: null,
       ...(filters.categorySlug ? { category: { slug: filters.categorySlug } } : {}),
       ...(filters.search ? { title: { contains: filters.search, mode: "insensitive" } } : {}),
+      ...(filters.priceMinInCents !== undefined
+        ? { dailyPriceInCents: { gte: filters.priceMinInCents } }
+        : {}),
+      ...(filters.priceMaxInCents !== undefined
+        ? { dailyPriceInCents: { lte: filters.priceMaxInCents } }
+        : {}),
+      ...(filters.brand ? { brand: { equals: filters.brand, mode: "insensitive" } } : {}),
+      ...(filters.crop ? { recommendedCrops: { has: filters.crop } } : {}),
+      ...(filters.purpose ? { purpose: { contains: filters.purpose, mode: "insensitive" } } : {}),
+      ...(filters.requiresOperator ? { requiresOperator: true } : {}),
+      ...(hasPeriod
+        ? {
+            availability: {
+              none: {
+                type: "MANUAL_BLOCK",
+                startDate: { lt: filters.availableTo },
+                endDate: { gt: filters.availableFrom },
+              },
+            },
+          }
+        : {}),
     },
     include: {
       category: true,
@@ -147,6 +180,27 @@ export async function listActiveMachines(filters: CatalogFilters = {}) {
     },
     orderBy: { createdAt: "desc" },
   });
+}
+
+// Opções para os seletores de filtro (marca, cultura) — só valores realmente presentes entre
+// anúncios ativos, para não oferecer filtros que sempre retornam vazio.
+export async function listCatalogFilterOptions() {
+  const machines = await prisma.machine.findMany({
+    where: { status: "ACTIVE", deletedAt: null },
+    select: { brand: true, recommendedCrops: true },
+  });
+
+  const brands = new Set<string>();
+  const crops = new Set<string>();
+  for (const machine of machines) {
+    if (machine.brand) brands.add(machine.brand);
+    for (const crop of machine.recommendedCrops) crops.add(crop);
+  }
+
+  return {
+    brands: [...brands].sort((a, b) => a.localeCompare(b, "pt-BR")),
+    crops: [...crops].sort((a, b) => a.localeCompare(b, "pt-BR")),
+  };
 }
 
 export async function getPublicMachineBySlug(slug: string) {
