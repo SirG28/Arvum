@@ -15,7 +15,7 @@ src/
     api/v1/properties/route.ts, [id]/route.ts
     api/v1/categories/route.ts
     api/v1/machines/route.ts, [id]/route.ts, [id]/status,
-      [id]/images(+[imageId]), [id]/availability(+[blockId])
+      [id]/images(+[imageId]), [id]/availability(+[blockId]), [id]/bookings
     api/v1/favorites/route.ts, [machineId]/route.ts
   auth.ts                  # configuração raiz do Auth.js
   middleware.ts            # proteção de rota
@@ -29,6 +29,7 @@ src/
     categories/             # services (leitura), types
     machines/               # schemas, lib (slug, status), services, hooks, components
     favorites/               # services, hooks, components (FavoriteButton, FavoriteMachineCard)
+    bookings/                 # schemas, lib (pricing), services, hooks, components (BookingRequestForm)
   lib/                     # prisma, env, api-response, session, cn
     geo/                   # distância (Haversine) e geocodificação simulada
   schemas/                 # primitivas zod reutilizáveis
@@ -88,7 +89,10 @@ para regras de negócio.
 3. ✅ **Descoberta** — filtros completos no catálogo (preço, marca, cultura, finalidade,
    necessidade de operador, período), favoritos, e localização/distância estimada (geocodificação
    simulada + Haversine).
-4. **Transação** — reservas, cálculo de valores, logística, pagamento simulado, histórico de status.
+4. **Transação** — em andamento. ✅ Solicitação de reserva mínima (validação de disponibilidade,
+   valor da locação, aprovação automática/manual). Pendente: cálculo logístico, composição de
+   preço completa, aprovação do proprietário, pagamento simulado, acompanhamento de status,
+   cancelamento.
 5. **Confiança** — avaliações, notificações, mensagens, moderação.
 6. **Administração e qualidade** — painel admin, indicadores, testes, acessibilidade, segurança, documentação, deploy.
 
@@ -102,12 +106,13 @@ O schema (`Booking`, `BookingStatusHistory`, `LogisticsQuote`, `Payment`) já ex
 (vazio). Nenhuma rota, serviço ou tela desses módulos existe ainda. Quebrando em etapas funcionais
 incrementais (`Context.md` §27/§33 — uma etapa completa e testável por vez, começando pela menor):
 
-1. **Solicitação de reserva (mínimo)** — a partir da página de detalhe da máquina, o locatário
+1. ✅ **Solicitação de reserva (mínimo)** — a partir da página de detalhe da máquina, o locatário
    escolhe propriedade de destino e período; o servidor valida (data final > inicial, sem datas
    passadas, duração mín/máx do anúncio, sem sobreposição com `Booking` já confirmado/pendente ou
-   `MachineAvailability` manual) e cria o `Booking` (`DRAFT` → `AWAITING_APPROVAL`, ou direto
-   `APPROVED` se `instantBooking`), com `BookingStatusHistory` desde a criação. Valores financeiros
-   e logística ainda como placeholder — sem cálculo real nesta etapa.
+   `MachineAvailability` manual) e cria o `Booking` (`AWAITING_APPROVAL`, ou direto `APPROVED` se
+   `instantBooking`), com `BookingStatusHistory` desde a criação. Valor da locação já calculado
+   (dias × diária + caução); logística e taxa de serviço ainda em zero — cálculo real chega na
+   próxima etapa.
 2. **Cálculo logístico** — serviço desacoplado (`Context.md` §8.11, fórmula configurável
    `taxaBase + distanciaKm × valorPorKm × fatorDoEquipamento`), reaproveitando `src/lib/geo`
    (distância já calculada na Fase 3) para gerar `LogisticsQuote` nas 3 modalidades (retirada,

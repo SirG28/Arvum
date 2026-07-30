@@ -88,19 +88,55 @@ cadastrado."]`), nunca uma mensagem genérica.
 - `/favoritos` é uma rota protegida pelo `middleware.ts`, mesmo padrão de `/propriedades`,
   `/maquinas` e `/perfil`.
 
+### Reservas (Fase 4 — solicitação mínima)
+
+- Toda reserva pertence a um locatário (`renterId`) e uma máquina; a propriedade de destino
+  (`destinationPropertyId`) precisa pertencer ao próprio locatário — mesma checagem
+  `getOwnedProperty` já usada pelo módulo de propriedades, nunca confiando no `id` vindo do
+  cliente.
+- **Um proprietário não pode reservar a própria máquina** (`CANNOT_BOOK_OWN_MACHINE`,
+  verificado no servidor, não só escondendo o botão na interface).
+- Data final deve ser posterior à inicial e nenhuma reserva pode começar no passado — mesma regra
+  de validação dos bloqueios manuais de disponibilidade (`bookingRequestSchema`).
+- A duração do período deve respeitar `minimumRentalDays`/`maximumRentalDays` do anúncio
+  (`RENTAL_PERIOD_TOO_SHORT`/`RENTAL_PERIOD_TOO_LONG`).
+- **Sem sobreposição**: uma solicitação é recusada (`409 MACHINE_UNAVAILABLE`) se o período colidir
+  com um bloqueio manual (`MachineAvailability`) **ou** com outra reserva já em andamento (todo
+  status exceto `CANCELLED`/`COMPLETED` — mesma lista `ACTIVE_BOOKING_STATUSES` que já impedia a
+  remoção da máquina). O catálogo público (`listActiveMachines`) aplica a mesma checagem de
+  reservas ativas ao filtrar por período — uma máquina com reserva confirmada no período buscado
+  não aparece mais como disponível.
+- **Confirmação automática vs. aprovação manual**: decidida pelo anúncio (`machine.instantBooking`),
+  nunca escolhida pelo locatário no momento da reserva. Reserva instantânea nasce em `APPROVED`;
+  as demais nascem em `AWAITING_APPROVAL`. Toda criação registra uma `BookingStatusHistory` com o
+  responsável (`changedById`) e a data — nenhuma transição de status ocorre sem histórico.
+  Aprovação/recusa pelo proprietário ainda não existe (próxima etapa da Fase 4).
+- **Valor da locação já é calculado nesta etapa** (dias corridos × diária do anúncio + caução do
+  anúncio, quando houver — `src/features/bookings/lib/pricing.ts`), seguindo a composição do
+  `Context.md` §8.12 (`total = locação + logística + taxa + caução − descontos`). Logística e taxa
+  de serviço entram como zero até as próximas etapas (cálculo logístico real e composição de preço
+  completa) — nunca apresentadas como estimativa final ao locatário.
+- Criação da reserva e do primeiro registro de histórico ocorre em uma única transação
+  (`prisma.$transaction`), evitando um `Booking` sem histórico se a segunda escrita falhar.
+
 ## Planejado — próximas fases
 
 As regras abaixo já estão especificadas no `Context.md` e serão implementadas quando os módulos
 correspondentes forem construídos:
 
-- **Disponibilidade/Reservas** (Fase 4): data final posterior à inicial; sem datas passadas; sem
-  sobreposição de reservas confirmadas; retrato de preços preservado no momento da confirmação.
+- **Cálculo logístico** (Fase 4): fórmula configurável (`taxaBase + distância × valor/km × fator do
+  equipamento`), reaproveitando a distância já calculada na Fase 3; custo recalculado quando o
+  destino muda; valores sinalizados como estimativa quando não houver integração real.
+- **Aprovação/recusa pelo proprietário** (Fase 4): painel para decidir solicitações pendentes.
+- **Pagamento simulado** (Fase 4): estados pendente/processando/aprovado/recusado, sem dado de
+  cartão armazenado.
 - **Cancelamento** (Fase 4): política centralizada em serviço próprio (nunca percentuais fixos
   espalhados pelo código) — ver `Context.md` §9.4.
+- **Retrato de preços preservado**: alterações futuras no anúncio não podem mudar retroativamente
+  o valor de uma reserva já confirmada (vale desde já, pois os valores são gravados no `Booking` no
+  momento da criação — falta apenas garantir que nenhuma tela recalcule usando o anúncio atual).
 - **Avaliações** (Fase 5): apenas após reserva concluída; uma avaliação por participante e por
   reserva; usuário não pode avaliar a si mesmo.
-- **Logística** (Fase 4): custo recalculado quando o destino muda; valores sinalizados como
-  estimativa quando não houver integração real.
 
 Valores monetários são sempre armazenados em centavos inteiros (`Int`), nunca `Float`, conforme
 refletido no `prisma/schema.prisma` e nos formulários de máquinas (conversão de reais para centavos

@@ -1,12 +1,16 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getPublicMachineBySlug } from "@/features/machines/services/machine.service";
 import { listFavoriteMachineIds } from "@/features/favorites/services/favorite.service";
+import { listPropertiesByOwner } from "@/features/properties/services/property.service";
 import { MachineGallery } from "@/features/machines/components/MachineGallery";
 import { FavoriteButton } from "@/features/favorites/components/FavoriteButton";
+import { BookingRequestForm } from "@/features/bookings/components/BookingRequestForm";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { Alert } from "@/components/ui/Alert";
 
 const CONDITION_LABELS: Record<string, string> = {
   NEW: "Nova",
@@ -40,6 +44,8 @@ export default async function MachineDetailPage({ params, searchParams }: Machin
 
   const user = await getCurrentUser();
   const isFavorited = user ? (await listFavoriteMachineIds(user.id)).has(machine.id) : false;
+  const isOwner = user?.id === machine.owner.id;
+  const renterProperties = user && !isOwner ? await listPropertiesByOwner(user.id) : [];
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row">
@@ -128,13 +134,20 @@ export default async function MachineDetailPage({ params, searchParams }: Machin
           </p>
         ) : null}
         <p className="mt-1 text-xs text-neutral-500">Anunciado por {machine.owner.name}</p>
-        <Button
-          className="mt-4 w-full"
-          disabled
-          title="Reservas chegam na próxima fase da plataforma"
-        >
-          Reservar (em breve)
-        </Button>
+
+        <div className="mt-4">
+          {!user ? (
+            <Link href={`/login?callbackUrl=/catalogo/${machine.slug}`}>
+              <Button className="w-full">Entrar para reservar</Button>
+            </Link>
+          ) : isOwner ? (
+            <Alert tone="info" title="Esta é sua máquina">
+              Você não pode reservar um anúncio próprio.
+            </Alert>
+          ) : (
+            <BookingRequestForm machineId={machine.id} properties={renterProperties} />
+          )}
+        </div>
       </Card>
     </div>
   );

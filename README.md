@@ -15,7 +15,7 @@ Integrantes:
 
 A especificação completa do produto está em [`Context.md`](./Context.md).
 
-## Status atual — Fase 3 (Descoberta) concluída
+## Status atual — Fase 4 (Transação) em andamento
 
 Roadmap completo em [`ARCHITECTURE.md`](./ARCHITECTURE.md#roadmap). Implementado:
 
@@ -36,10 +36,16 @@ Roadmap completo em [`ARCHITECTURE.md`](./ARCHITECTURE.md#roadmap). Implementado
   geocodificação simulado, sem API externa), e o catálogo aceita "onde você vai usar" (cidade/UF)
   para exibir, ordenar e filtrar por raio máximo a distância estimada até cada máquina — persistida
   também na página de detalhe.
+- Solicitação de reserva (mínima): a partir da página de detalhe, o locatário escolhe propriedade
+  de destino, período e modalidade logística; o servidor valida disponibilidade (sem sobrepor
+  bloqueios manuais ou outras reservas ativas), duração mín/máx do anúncio e calcula o valor da
+  locação, criando a reserva já aprovada (anúncios com reserva instantânea) ou aguardando aprovação
+  do proprietário. O catálogo também deixou de listar máquinas com reserva ativa no período
+  buscado.
 
-Ainda não implementado (fases seguintes): reservas, logística, pagamento, avaliações,
-notificações, painel administrativo — ver roadmap e as decisões de escopo em
-[`BUSINESS_RULES.md`](./BUSINESS_RULES.md).
+Ainda não implementado (fases seguintes): cálculo logístico, composição de preço completa,
+aprovação/recusa pelo proprietário, pagamento, cancelamento, avaliações, notificações, painel
+administrativo — ver roadmap e as decisões de escopo em [`BUSINESS_RULES.md`](./BUSINESS_RULES.md).
 
 ## Stack
 

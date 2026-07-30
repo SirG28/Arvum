@@ -7,9 +7,10 @@ import { generateMachineSlug } from "../lib/slug";
 import { canTransitionMachineStatus } from "../lib/machine-status";
 import { toMachinePersistedData, type MachineFormOutput } from "../schemas/machine.schema";
 
-// Reservas nestes status ainda impedem a remoção definitiva da máquina (§9.2).
+// Reservas nestes status ainda impedem a remoção definitiva da máquina (§9.2) e contam como
+// ocupação real do calendário (bookings.service.ts reusa esta lista para checar sobreposição).
 // CANCELLED e COMPLETED são estados finais e não bloqueiam.
-const ACTIVE_BOOKING_STATUSES = [
+export const ACTIVE_BOOKING_STATUSES = [
   "DRAFT",
   "AWAITING_APPROVAL",
   "APPROVED",
@@ -192,6 +193,13 @@ export async function listActiveMachines(filters: CatalogFilters = {}) {
             availability: {
               none: {
                 type: "MANUAL_BLOCK",
+                startDate: { lt: filters.availableTo },
+                endDate: { gt: filters.availableFrom },
+              },
+            },
+            bookings: {
+              none: {
+                status: { in: [...ACTIVE_BOOKING_STATUSES] },
                 startDate: { lt: filters.availableTo },
                 endDate: { gt: filters.availableFrom },
               },
