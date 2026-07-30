@@ -50,8 +50,8 @@ cadastrado."]`), nunca uma mensagem genérica.
   configurado neste projeto; `FileUploader` fica para quando isso existir.
 - **Catálogo público**: só máquinas com status `ativo` e não removidas aparecem em `/catalogo`;
   filtro por categoria, busca textual por nome, faixa de preço (diária), marca, cultura recomendada,
-  finalidade (texto livre), necessidade de operador e período desejado. Localização/distância real
-  ainda não existe (Fase 3 completa).
+  finalidade (texto livre), necessidade de operador, período desejado e localização (cidade/UF onde
+  a máquina será usada), com filtro opcional por raio máximo em km.
 - **Filtro por período no catálogo**: exclui máquinas com bloqueio manual (`MANUAL_BLOCK`)
   sobreposto ao período informado — mesma regra de sobreposição usada ao cadastrar um bloqueio
   (`machine-availability.service.ts`). Reservas (`Booking`) ainda não existem (Fase 4), então não há
@@ -62,6 +62,17 @@ cadastrado."]`), nunca uma mensagem genérica.
   (`catalog-filters.schema.ts`).
 - **Marca e cultura são selecionáveis a partir dos anúncios ativos** (`listCatalogFilterOptions`),
   nunca uma lista fixa — evita oferecer um filtro que sempre retorna vazio.
+- **Localização e distância estimada**: nenhuma propriedade coleta latitude/longitude
+  manualmente — ao criar ou editar (`property.service.ts`), a coordenada é preenchida
+  automaticamente a partir de cidade/UF por um adaptador de geocodificação simulado
+  (`src/lib/geo/geocoding.ts`, sem API externa configurada). No catálogo, o locatário informa "onde
+  vai usar" (cidade/UF); a distância até cada máquina é calculada com a fórmula de Haversine
+  (`src/lib/geo/distance.ts`) sobre as coordenadas já persistidas — nunca por uma API de rotas real.
+  Máquinas cuja propriedade não tem coordenada resolvida (UF desconhecida) ficam sem distância, mas
+  continuam aparecendo na busca. Quando uma localização é informada, os resultados são ordenados por
+  distância crescente; o raio máximo (`raioMax`) é ignorado (com aviso) se nenhuma localização for
+  informada, seguindo o mesmo padrão tolerante dos demais filtros. A distância é sempre rotulada
+  "estimativa" na interface — nunca apresentada como medição real (`Context.md` §32).
 
 ### Favoritos
 

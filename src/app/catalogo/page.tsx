@@ -41,6 +41,11 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
 
   const favoriteIds = user ? await listFavoriteMachineIds(user.id) : new Set<string>();
 
+  const originQuery =
+    filters.originCity && filters.originState
+      ? { origemCidade: filters.originCity, origemUf: filters.originState }
+      : undefined;
+
   // Campos ocultos que preservam os demais filtros ao trocar de categoria pelos links de pílula.
   const hiddenFields: Record<string, string | undefined> = {
     q,
@@ -52,6 +57,9 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     operador: filters.requiresOperator ? "on" : undefined,
     dataInicio: toDateInputValue(filters.availableFrom),
     dataFim: toDateInputValue(filters.availableTo),
+    origemCidade: filters.originCity,
+    origemUf: filters.originState,
+    raioMax: rawParams.raioMax,
   };
 
   return (
@@ -134,6 +142,39 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
               name="finalidade"
               placeholder="Ex.: plantio, colheita"
               defaultValue={rawParams.finalidade}
+              className="mt-1.5"
+            />
+          </div>
+          <div>
+            <Label htmlFor="origemCidade">Onde você vai usar? — cidade</Label>
+            <Input
+              id="origemCidade"
+              name="origemCidade"
+              placeholder="Ex.: Ribeirão Preto"
+              defaultValue={rawParams.origemCidade}
+              className="mt-1.5"
+            />
+          </div>
+          <div>
+            <Label htmlFor="origemUf">Onde você vai usar? — UF</Label>
+            <Input
+              id="origemUf"
+              name="origemUf"
+              maxLength={2}
+              placeholder="SP"
+              defaultValue={rawParams.origemUf}
+              className="mt-1.5"
+            />
+          </div>
+          <div>
+            <Label htmlFor="raioMax">Raio máximo (km)</Label>
+            <Input
+              id="raioMax"
+              name="raioMax"
+              type="number"
+              min={0}
+              step="1"
+              defaultValue={rawParams.raioMax}
               className="mt-1.5"
             />
           </div>
@@ -225,6 +266,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
               machine={machine}
               isFavorited={favoriteIds.has(machine.id)}
               isAuthenticated={Boolean(user)}
+              originQuery={originQuery}
             />
           ))}
         </div>

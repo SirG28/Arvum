@@ -15,7 +15,7 @@ Integrantes:
 
 A especificação completa do produto está em [`Context.md`](./Context.md).
 
-## Status atual — Fase 3 (Descoberta, em andamento)
+## Status atual — Fase 3 (Descoberta) concluída
 
 Roadmap completo em [`ARCHITECTURE.md`](./ARCHITECTURE.md#roadmap). Implementado:
 
@@ -32,10 +32,14 @@ Roadmap completo em [`ARCHITECTURE.md`](./ARCHITECTURE.md#roadmap). Implementado
   bloqueio manual sobreposto), e página de detalhe de cada máquina.
 - Favoritos: salvar/remover máquinas (coração no catálogo e no detalhe) e consultar em
   `/favoritos`, restrito a usuários autenticados.
+- Localização e distância estimada: propriedades ganham coordenadas automaticamente (adaptador de
+  geocodificação simulado, sem API externa), e o catálogo aceita "onde você vai usar" (cidade/UF)
+  para exibir, ordenar e filtrar por raio máximo a distância estimada até cada máquina — persistida
+  também na página de detalhe.
 
-Ainda não implementado (fases seguintes): localização/distância real, reservas, logística,
-pagamento, avaliações, notificações, painel administrativo — ver roadmap e as decisões de escopo
-em [`BUSINESS_RULES.md`](./BUSINESS_RULES.md).
+Ainda não implementado (fases seguintes): reservas, logística, pagamento, avaliações,
+notificações, painel administrativo — ver roadmap e as decisões de escopo em
+[`BUSINESS_RULES.md`](./BUSINESS_RULES.md).
 
 ## Stack
 

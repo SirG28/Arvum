@@ -1,6 +1,8 @@
 import type { Machine, MachineStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getOwnedProperty } from "@/features/properties/services/property.service";
+import { mockGeocodingProvider } from "@/lib/geo/geocoding";
+import { calculateDistanceKm, type GeoPoint } from "@/lib/geo/distance";
 import { generateMachineSlug } from "../lib/slug";
 import { canTransitionMachineStatus } from "../lib/machine-status";
 import { toMachinePersistedData, type MachineFormOutput } from "../schemas/machine.schema";
@@ -140,12 +142,36 @@ interface CatalogFilters {
   // (Fase 4) ainda não existem, então não há confirmação a considerar aqui além dos bloqueios.
   availableFrom?: Date;
   availableTo?: Date;
+  // Localização informada pelo locatário ("onde será utilizada") — usada para calcular a
+  // distância estimada até cada máquina e, opcionalmente, filtrar por um raio máximo.
+  originCity?: string;
+  originState?: string;
+  maxDistanceKm?: number;
+}
+
+// Anexa a distância estimada (km) até `origin`, quando informada e a propriedade da máquina tiver
+// coordenadas. Não recorre a nenhuma API externa — cálculo puro sobre coordenadas já geocodificadas
+// (§8.11 do Context.md pede exatamente essa separação entre cálculo e origem do dado).
+function withDistanceFromOrigin<T extends { property: { latitude: number | null; longitude: number | null } }>(
+  machines: T[],
+  origin: GeoPoint | null,
+): (T & { distanceKm: number | null })[] {
+  return machines.map((machine) => ({
+    ...machine,
+    distanceKm:
+      origin && machine.property.latitude != null && machine.property.longitude != null
+        ? calculateDistanceKm(origin, {
+            latitude: machine.property.latitude,
+            longitude: machine.property.longitude,
+          })
+        : null,
+  }));
 }
 
 export async function listActiveMachines(filters: CatalogFilters = {}) {
   const hasPeriod = filters.availableFrom && filters.availableTo;
 
-  return prisma.machine.findMany({
+  const machines = await prisma.machine.findMany({
     where: {
       status: "ACTIVE",
       deletedAt: null,
@@ -180,6 +206,24 @@ export async function listActiveMachines(filters: CatalogFilters = {}) {
     },
     orderBy: { createdAt: "desc" },
   });
+
+  const origin =
+    filters.originCity && filters.originState
+      ? mockGeocodingProvider.geocode({ city: filters.originCity, state: filters.originState })
+      : null;
+
+  const withDistance = withDistanceFromOrigin(machines, origin);
+
+  const filtered =
+    filters.maxDistanceKm !== undefined
+      ? withDistance.filter((machine) => machine.distanceKm !== null && machine.distanceKm <= filters.maxDistanceKm!)
+      : withDistance;
+
+  if (origin) {
+    filtered.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
+  }
+
+  return filtered;
 }
 
 // Opções para os seletores de filtro (marca, cultura) — só valores realmente presentes entre
@@ -203,7 +247,10 @@ export async function listCatalogFilterOptions() {
   };
 }
 
-export async function getPublicMachineBySlug(slug: string) {
+export async function getPublicMachineBySlug(
+  slug: string,
+  origin?: { city: string; state: string },
+) {
   const machine = await prisma.machine.findUnique({
     where: { slug },
     include: {
@@ -215,5 +262,7 @@ export async function getPublicMachineBySlug(slug: string) {
     },
   });
   if (!machine || machine.status !== "ACTIVE" || machine.deletedAt) return null;
-  return machine;
+
+  const originPoint = origin ? mockGeocodingProvider.geocode(origin) : null;
+  return withDistanceFromOrigin([machine], originPoint)[0];
 }

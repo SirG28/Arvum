@@ -8,6 +8,7 @@ type CatalogMachine = Machine & {
   category: MachineCategory;
   property: Property;
   images: MachineImage[];
+  distanceKm: number | null;
 };
 
 function formatBRL(cents: number) {
@@ -18,12 +19,16 @@ interface CatalogMachineCardProps {
   machine: CatalogMachine;
   isFavorited: boolean;
   isAuthenticated: boolean;
+  // Localização de origem já aplicada na busca — repassada ao link de detalhe para que a
+  // distância estimada continue disponível na página seguinte sem pedir de novo.
+  originQuery?: { origemCidade: string; origemUf: string };
 }
 
 export function CatalogMachineCard({
   machine,
   isFavorited,
   isAuthenticated,
+  originQuery,
 }: CatalogMachineCardProps) {
   const image = machine.images[0];
 
@@ -35,7 +40,10 @@ export function CatalogMachineCard({
         isAuthenticated={isAuthenticated}
         className="absolute top-2 right-2 z-10"
       />
-      <Link href={`/catalogo/${machine.slug}`} className="flex h-full flex-col gap-3">
+      <Link
+        href={{ pathname: `/catalogo/${machine.slug}`, query: originQuery }}
+        className="flex h-full flex-col gap-3"
+      >
         <div className="aspect-video w-full overflow-hidden rounded-md bg-neutral-100">
           {image ? (
             // eslint-disable-next-line @next/next/no-img-element -- URL arbitrária informada pelo proprietário, sem provedor de imagem configurado
@@ -58,6 +66,9 @@ export function CatalogMachineCard({
           <p className="text-sm text-neutral-500">
             {machine.category.name} — {machine.property.city}/{machine.property.state}
           </p>
+          {machine.distanceKm !== null && (
+            <p className="text-sm text-neutral-500">~{machine.distanceKm} km (estimativa)</p>
+          )}
           <p className="text-primary-700 mt-1 text-sm font-medium">
             A partir de {formatBRL(machine.dailyPriceInCents)}/dia
           </p>

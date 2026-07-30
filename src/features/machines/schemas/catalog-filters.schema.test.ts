@@ -68,4 +68,47 @@ describe("parseCatalogFilters", () => {
     expect(filters.availableFrom).toBeUndefined();
     expect(ignored).toEqual([{ field: "periodo", message: expect.any(String) }]);
   });
+
+  it("parses a valid origin location, uppercasing the state", () => {
+    const { filters, ignored } = parseCatalogFilters({
+      origemCidade: "Ribeirão Preto",
+      origemUf: "sp",
+    });
+    expect(filters.originCity).toBe("Ribeirão Preto");
+    expect(filters.originState).toBe("SP");
+    expect(ignored).toEqual([]);
+  });
+
+  it("ignores an origin with only one of city/state informed", () => {
+    const { filters, ignored } = parseCatalogFilters({ origemCidade: "Ribeirão Preto" });
+    expect(filters.originCity).toBeUndefined();
+    expect(filters.originState).toBeUndefined();
+    expect(ignored).toEqual([{ field: "origem", message: expect.any(String) }]);
+  });
+
+  it("ignores an origin with an invalid state code", () => {
+    const { filters, ignored } = parseCatalogFilters({
+      origemCidade: "Ribeirão Preto",
+      origemUf: "São Paulo",
+    });
+    expect(filters.originCity).toBeUndefined();
+    expect(filters.originState).toBeUndefined();
+    expect(ignored).toEqual([{ field: "origem", message: expect.any(String) }]);
+  });
+
+  it("parses a max distance filter alongside a valid origin", () => {
+    const { filters, ignored } = parseCatalogFilters({
+      origemCidade: "Ribeirão Preto",
+      origemUf: "SP",
+      raioMax: "150",
+    });
+    expect(filters.maxDistanceKm).toBe(150);
+    expect(ignored).toEqual([]);
+  });
+
+  it("ignores a max distance filter without an origin", () => {
+    const { filters, ignored } = parseCatalogFilters({ raioMax: "150" });
+    expect(filters.maxDistanceKm).toBeUndefined();
+    expect(ignored).toEqual([{ field: "raioMax", message: expect.any(String) }]);
+  });
 });

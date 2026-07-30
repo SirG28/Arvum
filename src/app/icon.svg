@@ -1,12 +1,5 @@
-<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <g transform="rotate(-20 24 38)">
-    <rect x="21.5" y="24" width="5" height="14" rx="2.5" fill="#2F7D52" />
-  </g>
-  <g>
-    <rect x="21.5" y="18" width="5" height="20" rx="2.5" fill="#24643F" />
-  </g>
-  <g transform="rotate(20 24 38)">
-    <rect x="21.5" y="12" width="5" height="26" rx="2.5" fill="#1C4E32" />
-  </g>
-  <circle cx="24" cy="41" r="3.4" fill="#BE6F35" />
+<svg width="64" height="64" viewBox="11 15 42 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M19,25 L29,30 L26,52 Q25,55 22,55 L19,55 Q16,55 15,52 Z" fill="#1C4E32" />
+  <path d="M45,25 L35,30 L38,52 Q39,55 42,55 L45,55 Q48,55 49,52 Z" fill="#2F7D52" />
+  <circle cx="32" cy="28" r="8.5" fill="#BE6F35" />
 </svg>

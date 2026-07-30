@@ -22,6 +22,7 @@ function formatBRL(cents: number) {
 
 interface MachineDetailPageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ origemCidade?: string; origemUf?: string }>;
 }
 
 export async function generateMetadata({ params }: MachineDetailPageProps) {
@@ -30,9 +31,11 @@ export async function generateMetadata({ params }: MachineDetailPageProps) {
   return { title: machine ? machine.title : "Máquina não encontrada" };
 }
 
-export default async function MachineDetailPage({ params }: MachineDetailPageProps) {
+export default async function MachineDetailPage({ params, searchParams }: MachineDetailPageProps) {
   const { slug } = await params;
-  const machine = await getPublicMachineBySlug(slug);
+  const { origemCidade, origemUf } = await searchParams;
+  const origin = origemCidade && origemUf ? { city: origemCidade, state: origemUf } : undefined;
+  const machine = await getPublicMachineBySlug(slug, origin);
   if (!machine) notFound();
 
   const user = await getCurrentUser();
@@ -72,6 +75,12 @@ export default async function MachineDetailPage({ params }: MachineDetailPagePro
                 {machine.property.city}/{machine.property.state}
               </dd>
             </div>
+            {machine.distanceKm !== null && (
+              <div>
+                <dt className="text-neutral-400">Distância estimada</dt>
+                <dd className="text-neutral-900">~{machine.distanceKm} km</dd>
+              </div>
+            )}
             {machine.purpose && (
               <div>
                 <dt className="text-neutral-400">Finalidade</dt>

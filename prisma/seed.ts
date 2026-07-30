@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { mockGeocodingProvider } from "../src/lib/geo/geocoding";
 
 const prisma = new PrismaClient();
 
@@ -103,6 +104,7 @@ const MACHINES = [
     dailyPriceInCents: 45000,
     requiresOperator: false,
     instantBooking: true,
+    recommendedCrops: ["soja", "milho"],
   },
   {
     ownerIndex: 0,
@@ -117,6 +119,7 @@ const MACHINES = [
     dailyPriceInCents: 120000,
     requiresOperator: true,
     instantBooking: false,
+    recommendedCrops: ["soja", "algodão", "milho"],
   },
   {
     ownerIndex: 1,
@@ -131,6 +134,7 @@ const MACHINES = [
     dailyPriceInCents: 280000,
     requiresOperator: true,
     instantBooking: false,
+    recommendedCrops: ["soja", "milho"],
   },
   {
     ownerIndex: 1,
@@ -145,6 +149,7 @@ const MACHINES = [
     dailyPriceInCents: 60000,
     requiresOperator: false,
     instantBooking: true,
+    recommendedCrops: ["soja", "milho"],
   },
   {
     ownerIndex: 2,
@@ -158,6 +163,7 @@ const MACHINES = [
     dailyPriceInCents: 25000,
     requiresOperator: false,
     instantBooking: true,
+    recommendedCrops: ["soja", "milho", "algodão"],
   },
   {
     ownerIndex: 2,
@@ -171,6 +177,7 @@ const MACHINES = [
     dailyPriceInCents: 22000,
     requiresOperator: false,
     instantBooking: true,
+    recommendedCrops: ["soja", "milho", "cana-de-açúcar"],
   },
   {
     ownerIndex: 3,
@@ -184,6 +191,7 @@ const MACHINES = [
     dailyPriceInCents: 90000,
     requiresOperator: true,
     instantBooking: false,
+    recommendedCrops: ["soja", "milho", "algodão"],
   },
   {
     ownerIndex: 3,
@@ -197,6 +205,7 @@ const MACHINES = [
     dailyPriceInCents: 35000,
     requiresOperator: false,
     instantBooking: true,
+    recommendedCrops: ["soja", "milho", "café"],
   },
   {
     ownerIndex: 0,
@@ -211,6 +220,7 @@ const MACHINES = [
     dailyPriceInCents: 18000,
     requiresOperator: false,
     instantBooking: true,
+    recommendedCrops: ["pastagem"],
   },
   {
     ownerIndex: 1,
@@ -225,6 +235,7 @@ const MACHINES = [
     dailyPriceInCents: 150000,
     requiresOperator: true,
     instantBooking: false,
+    recommendedCrops: ["soja", "milho", "café", "cana-de-açúcar"],
   },
   {
     ownerIndex: 2,
@@ -239,6 +250,7 @@ const MACHINES = [
     dailyPriceInCents: 30000,
     requiresOperator: false,
     instantBooking: true,
+    recommendedCrops: [],
   },
   {
     ownerIndex: 3,
@@ -252,6 +264,7 @@ const MACHINES = [
     dailyPriceInCents: 65000,
     requiresOperator: false,
     instantBooking: true,
+    recommendedCrops: ["soja", "milho", "café"],
   },
   {
     ownerIndex: 0,
@@ -266,6 +279,7 @@ const MACHINES = [
     dailyPriceInCents: 200000,
     requiresOperator: true,
     instantBooking: false,
+    recommendedCrops: ["soja", "milho", "algodão"],
   },
   {
     ownerIndex: 1,
@@ -279,6 +293,7 @@ const MACHINES = [
     dailyPriceInCents: 40000,
     requiresOperator: false,
     instantBooking: true,
+    recommendedCrops: [],
   },
   {
     ownerIndex: 2,
@@ -292,6 +307,7 @@ const MACHINES = [
     dailyPriceInCents: 55000,
     requiresOperator: false,
     instantBooking: true,
+    recommendedCrops: ["soja", "algodão"],
   },
 ] as const;
 
@@ -326,9 +342,10 @@ async function main() {
     });
 
     const propertyId = `seed-property-${user.id}`;
+    const coordinates = mockGeocodingProvider.geocode({ city: owner.city, state: owner.state });
     await prisma.property.upsert({
       where: { id: propertyId },
-      update: {},
+      update: { latitude: coordinates?.latitude, longitude: coordinates?.longitude },
       create: {
         id: propertyId,
         ownerId: user.id,
@@ -338,6 +355,8 @@ async function main() {
         state: owner.state,
         postalCode: "00000-000",
         roadType: "Estrada de terra",
+        latitude: coordinates?.latitude,
+        longitude: coordinates?.longitude,
       },
     });
 
@@ -362,7 +381,7 @@ async function main() {
 
     const machine = await prisma.machine.upsert({
       where: { id: machineId },
-      update: {},
+      update: { recommendedCrops: [...spec.recommendedCrops] },
       create: {
         id: machineId,
         ownerId: owner.userId,
@@ -375,6 +394,7 @@ async function main() {
         manufactureYear: spec.manufactureYear,
         description: spec.description,
         condition: spec.condition,
+        recommendedCrops: [...spec.recommendedCrops],
         requiresOperator: spec.requiresOperator,
         instantBooking: spec.instantBooking,
         dailyPriceInCents: spec.dailyPriceInCents,

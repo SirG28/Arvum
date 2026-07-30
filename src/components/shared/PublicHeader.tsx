@@ -8,7 +8,7 @@ export function PublicHeader() {
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-6">
           <Link href="/">
-            <Logo size={26} />
+            <Logo size={36} />
           </Link>
           <nav aria-label="Navegação principal">
             <Link

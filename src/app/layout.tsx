@@ -34,9 +34,6 @@ export const metadata: Metadata = {
     title: "Arvum — Aluguel inteligente de máquinas agrícolas",
     description,
   },
-  icons: {
-    icon: "/icon.svg",
-  },
   manifest: "/manifest.webmanifest",
 };
 
