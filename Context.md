@@ -373,7 +373,16 @@ Categorias iniciais sugeridas:
 - implementos;
 - equipamentos de irrigação;
 - transporte agrícola;
+- **tecnologia agrícola** (agricultura de precisão) — dosadores de sementes, sensores (umidade,
+  solo, NDVI), piloto automático/GPS agrícola, monitores de plantio e colheita, estações
+  meteorológicas, drones agrícolas;
 - outros.
+
+Tecnologia agrícola é uma categoria própria, e não um acessório de outra máquina: muitos locatários
+buscam apenas o componente tecnológico (ex.: dosador de sementes, sensor), sem precisar alugar o
+trator ou implemento ao qual ele normalmente é acoplado. O cadastro de um item de tecnologia segue as
+mesmas regras de anúncio das demais categorias (§8.3–§8.4); campos pouco aplicáveis a itens pequenos
+(peso, dimensões) permanecem opcionais.
 
 As categorias devem ser administráveis e não ficar rigidamente gravadas no código.
 
@@ -758,6 +767,56 @@ Permitir:
 
 No MVP acadêmico, o painel pode possuir acesso controlado por uma conta administradora de demonstração.
 
+## 8.21 Monetização
+
+A Arvum atua como marketplace puro — não possui máquinas, não emprega operadores e não mantém frota
+própria. Essa escolha reduz a necessidade de investimento em ativos físicos e permite um modelo de
+startup escalável: à medida que novas transações são realizadas, a receita cresce mais rapidamente
+que os custos operacionais, já que os serviços continuam sendo executados pelos parceiros
+cadastrados (modelo semelhante ao de marketplaces como o Airbnb).
+
+A plataforma adota um **modelo de monetização híbrido**, com três formas de entrada:
+
+- **Comissão sobre operações**: percentual estimado entre 8% e 12% sobre cada contratação realizada
+  na plataforma, incluindo locação da máquina e, quando contratados, operador e transporte. A Arvum
+  centraliza o pagamento do locatário, repassa os valores aos parceiros (proprietário, operador,
+  transportadora) e retém a comissão automaticamente. É a principal fonte de receita desde a primeira
+  transação e cresce conforme aumenta o número de transações.
+- **Plano Premium para parceiros**: assinatura mensal estimada entre R$ 99 e R$ 199, destinada a
+  proprietários de máquinas, operadores e transportadoras. Benefícios: destaque nas buscas, selo de
+  parceiro verificado, redução da comissão sobre operações e acesso a relatórios de desempenho. Gera
+  receita recorrente e aumenta a previsibilidade financeira da plataforma.
+- **Anúncios patrocinados**: parceiros podem promover seus anúncios nas primeiras posições da busca,
+  sempre identificados como patrocinados. Amplia a visibilidade dos parceiros e representa receita
+  adicional sem aumento significativo dos custos operacionais.
+
+Além dessas três entradas, o **Arvum Suporte de Operação** é um serviço opcional contratado durante
+a reserva, oferecendo atendimento prioritário e mediação de imprevistos durante a locação. É um
+serviço de suporte operacional — não um seguro — e não contempla cobertura financeira contra danos.
+
+**Inserção na jornada do usuário:**
+
+- Na busca: parceiros Premium aparecem em destaque, com o selo de parceiro verificado; anúncios
+  patrocinados ocupam posições privilegiadas, sempre identificados de forma transparente, preservando
+  a confiança nos resultados orgânicos.
+- Durante a reserva: o locatário escolhe a máquina e, se desejar, adiciona operador, transporte e o
+  Arvum Suporte de Operação; antes da confirmação, é apresentado um resumo completo detalhando todos
+  os serviços e valores.
+- Na confirmação da contratação: após o pagamento, a plataforma realiza automaticamente a divisão dos
+  valores entre proprietário, operador, transportadora e a comissão da Arvum, eliminando processos
+  manuais.
+
+A monetização deve ocorrer apenas quando há geração de valor para o usuário, mantendo uma experiência
+transparente — nunca cobrança sem contrapartida clara ou taxa oculta (ver também §32).
+
+No longo prazo, como a Arvum não precisa adquirir máquinas nem manter equipes proporcionais ao
+volume de locações, seus custos crescem mais lentamente que a receita: o ponto de equilíbrio é
+alcançado quando a receita de comissões supera os custos operacionais (plataforma, processamento de
+pagamentos, hospedagem, segurança da informação, atendimento e marketing de aquisição). Com o
+crescimento da base de usuários, as receitas de assinaturas Premium e anúncios patrocinados passam a
+representar uma parcela cada vez maior do faturamento, elevando a margem sem exigir investimento
+estrutural proporcional.
+
 ---
 
 # 9. REGRAS DE NEGÓCIO
@@ -822,6 +881,20 @@ Centralizar políticas em configurações ou serviço próprio.
 - O custo deve ser recalculado quando o destino mudar.
 - O sistema deve informar que valores podem ser estimativas quando não houver integração real.
 - Restrições de transporte devem ser apresentadas antes da confirmação.
+
+## 9.7 Monetização
+
+- A comissão (8%–12%) é retida automaticamente no momento da divisão do pagamento entre as partes —
+  nunca cobrada como um valor separado apresentado ao locatário.
+- O percentual de comissão pode ser reduzido para parceiros com Plano Premium ativo; a regra de
+  redução deve ficar centralizada em serviço próprio, nunca espalhada pelo fluxo de pagamento.
+- Anúncios patrocinados devem sempre exibir identificação visual de "patrocinado" — nunca podem ser
+  apresentados como resultado orgânico da busca.
+- O Arvum Suporte de Operação é contratado por reserva (não por assinatura) e não é seguro — a
+  interface não pode sugerir cobertura financeira contra danos.
+- A assinatura Premium é mensal e recorrente, e pode ser cancelada pelo parceiro a qualquer momento;
+  o cancelamento não afeta reservas já em andamento nem reduz retroativamente benefícios já
+  utilizados no período pago.
 
 ---
 
@@ -1434,6 +1507,35 @@ Criar entidades equivalentes às seguintes.
 - machineId;
 - createdAt.
 
+## Subscription (Plano Premium — §8.21)
+
+- id;
+- partnerId;
+- plan;
+- status;
+- priceInCents;
+- startedAt;
+- currentPeriodEnd;
+- canceledAt;
+- createdAt;
+- updatedAt.
+
+## SponsoredListing (anúncio patrocinado — §8.21)
+
+- id;
+- machineId;
+- ownerId;
+- status;
+- startAt;
+- endAt;
+- priceInCents;
+- createdAt;
+- updatedAt.
+
+A comissão retida por reserva (§8.21/§9.7) já é representada por `Booking.serviceFeeInCents`
+(§8.12) — as duas entidades acima cobrem apenas as fontes de receita recorrente (assinatura e
+anúncios), que ainda não existem no modelo de dados.
+
 Adicionar restrição única para:
 
 - e-mail;
@@ -1657,7 +1759,9 @@ Incluir:
 - favoritos;
 - reservas em diferentes estados;
 - opções logísticas;
-- períodos indisponíveis.
+- períodos indisponíveis;
+- parceiros com Plano Premium ativo (§8.21);
+- anúncios patrocinados ativos (§8.21).
 
 Utilizar cidades e contextos brasileiros.
 
@@ -1815,6 +1919,14 @@ Esses itens devem aparecer apenas no roadmap ou em interfaces abstratas quando n
 - segurança;
 - documentação;
 - deploy.
+
+## Fase 7 — Monetização avançada (§8.21/§9.7)
+
+- comissão sobre operações (8%–12%, já habilitada via `taxaServico`/`serviceFeeInCents` na Fase 4);
+- Arvum Suporte de Operação (add-on opcional na reserva);
+- Plano Premium para parceiros (assinatura mensal, destaque, selo verificado, redução de comissão,
+  relatórios de desempenho);
+- anúncios patrocinados (posições de destaque na busca, sempre identificados).
 
 ---
 

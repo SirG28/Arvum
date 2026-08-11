@@ -61,6 +61,7 @@ completo, `search`, `bookings`, `logistics`, `payments`, `reviews`, `notificatio
 | Navegação mobile do header autenticado | Menu hambúrguer (`MobileNavDrawer`)                                      | Barra de abas fixa no rodapé | `AppNav` (4 links) + logo + avatar + "Sair" não cabem em ~375px sem colapsar (overflow horizontal confirmado). Hambúrguer escolhido em vez da barra de abas sugerida no `Context.md` §11.2 por decisão explícita, mantendo a mesma lista de links do desktop (`NAV_ITEMS`, exportado por `AppNav.tsx`) sem duplicar regra de navegação entre versões. |
 | Geocodificação e distância            | Adaptador simulado (`mockGeocodingProvider`, tabela estática de capitais/UF + cidades conhecidas) + Haversine puro (`src/lib/geo`) | API de mapas real (Google, Nominatim) | Nenhum provedor de mapas está configurado no MVP (`Context.md` §15). A interface `GeocodingProvider` permite trocar a implementação sem alterar quem consome (`property.service`, `machine.service`) — mesmo padrão de adaptador simulado documentado em `Context.md` §27. |
 | Distância calculada em memória, não via SQL geoespacial | `Array.map`/`sort` em JS sobre coordenadas já carregadas pelo Prisma | `ST_Distance`/PostGIS | Volume de dados do MVP (dezenas de máquinas) não justifica extensão geoespacial no banco; app-level é suficiente e mantém a lógica testável isoladamente (`src/lib/geo/distance.test.ts`). Revisitar se o catálogo crescer para milhares de anúncios. |
+| Monetização                          | Modelo híbrido — comissão (8%–12%) + assinatura Premium + anúncios patrocinados | Apenas comissão, ou apenas assinatura fixa | Comissão garante receita desde a primeira transação (sem exigir mensalidade obrigatória do locatário); assinatura Premium e anúncios passam a representar parcela crescente do faturamento à medida que a base de usuários aumenta, sem depender de uma única fonte (`Context.md` §8.21). |
 
 ## Valores monetários e datas
 
@@ -95,6 +96,12 @@ para regras de negócio.
    cancelamento.
 5. **Confiança** — avaliações, notificações, mensagens, moderação.
 6. **Administração e qualidade** — painel admin, indicadores, testes, acessibilidade, segurança, documentação, deploy.
+7. **Monetização avançada** (`Context.md` §8.21/§9.7) — comissão sobre operações (8%–12%, já
+   habilitada via `serviceFeeInCents` na Fase 4), Arvum Suporte de Operação (add-on na reserva),
+   Plano Premium para parceiros (assinatura recorrente, destaque, selo verificado, redução de
+   comissão, relatórios) e anúncios patrocinados (posições de destaque, sempre identificados).
+   Exige as novas entidades `Subscription` e `SponsoredListing` (`Context.md` §17), inexistentes no
+   schema atual.
 
 Adaptadores simulados (mapas/geolocalização, pagamento, transportadoras) serão introduzidos nas
 fases 2–4 atrás de interfaces de serviço, permitindo substituição futura por provedores reais sem

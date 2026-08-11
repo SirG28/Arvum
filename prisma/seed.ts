@@ -16,11 +16,18 @@ const CATEGORIES = [
   "Implementos",
   "Equipamentos de Irrigação",
   "Transporte Agrícola",
+  "Tecnologia Agrícola",
   "Outros",
 ];
 
 function slugify(value: string) {
-  return value.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "-");
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
 }
 
 function wikimediaFilePath(fileName: string) {
@@ -67,6 +74,17 @@ const MACHINE_IMAGES: readonly (readonly [string, string])[] = [
     "Whisperwatt 70 generator.JPG",
   ],
   ["Massey Ferguson 6485, Delvano field sprayer.jpg", "Deutz-Fahr 5090.D5 mit Lochmann Spritze.jpg"],
+  ["Accord Sämaschine DA-L Oktober 2011.JPG", "A farmer seeding on his field.jpg"],
+  [
+    "NutRE portable soil sensing device in field.jpg",
+    "Applications of integrated IoT and smart sensors for precision farming.jpg",
+  ],
+  ["Raven CRx+ Guidance Kit, Agritechnica 2023, Hanover (P1160328).jpg", "Claas Baseline HD.jpg"],
+  [
+    "31 05 2022 Ato Alusivo à Visita à Bahia Farm Show (52113545335).jpg",
+    "DJI 0017 HJN.jpg",
+  ],
+  ["Fritzmeier Isaria, Fendt 927 Vario.jpg", "GreenSeeker RT200.jpg"],
 ];
 
 const OWNERS = [
@@ -309,6 +327,81 @@ const MACHINES = [
     instantBooking: true,
     recommendedCrops: ["soja", "algodão"],
   },
+  {
+    ownerIndex: 1,
+    categorySlug: "tecnologia-agricola",
+    title: "Dosador de Sementes de Precisão Accord DA-L",
+    brand: "Accord",
+    model: "DA-L",
+    manufactureYear: 2021,
+    description:
+      "Unidade dosadora de sementes de precisão, compatível com plantio direto — controla a distribuição individual de sementes linha a linha, sem necessidade de alugar a plantadeira completa.",
+    condition: "GOOD",
+    dailyPriceInCents: 15000,
+    requiresOperator: false,
+    instantBooking: true,
+    recommendedCrops: ["soja", "milho"],
+  },
+  {
+    ownerIndex: 3,
+    categorySlug: "tecnologia-agricola",
+    title: "Sensor Portátil de Solo e Nutrientes NutRE",
+    brand: "Biota Precision Agriculture",
+    model: "NutRE",
+    manufactureYear: 2023,
+    description:
+      "Sensor portátil para análise de nutrientes e umidade do solo em campo, com leitura em tempo real para apoiar decisões de adubação.",
+    condition: "EXCELLENT",
+    dailyPriceInCents: 12000,
+    requiresOperator: false,
+    instantBooking: true,
+    recommendedCrops: [],
+  },
+  {
+    ownerIndex: 0,
+    categorySlug: "tecnologia-agricola",
+    title: "Kit de Piloto Automático Raven CRx+",
+    brand: "Raven",
+    model: "CRx+",
+    manufactureYear: 2023,
+    description:
+      "Kit de piloto automático e correção de sinal GPS para tratores e colheitadeiras, com precisão de poucos centímetros.",
+    condition: "EXCELLENT",
+    dailyPriceInCents: 20000,
+    requiresOperator: false,
+    instantBooking: true,
+    recommendedCrops: [],
+  },
+  {
+    ownerIndex: 2,
+    categorySlug: "tecnologia-agricola",
+    title: "Dosador de Sementes Pneumático J.Assy Selenium",
+    brand: "J.Assy",
+    model: "Selenium",
+    manufactureYear: 2023,
+    description:
+      "Dosador pneumático de alta precisão para soja, milho, algodão, sorgo e feijão. Não exige ajuste ou desmontagem na troca de kits de cultura e tem janela de visualização para acompanhar o desempenho durante o plantio.",
+    condition: "EXCELLENT",
+    dailyPriceInCents: 18000,
+    requiresOperator: false,
+    instantBooking: true,
+    recommendedCrops: ["soja", "milho", "algodão", "sorgo", "feijão"],
+  },
+  {
+    ownerIndex: 1,
+    categorySlug: "tecnologia-agricola",
+    title: "Sensor de Fluxo J.Assy Visum Adubo",
+    brand: "J.Assy",
+    model: "Visum Adubo",
+    manufactureYear: 2023,
+    description:
+      "Sensor de fluxo de adubo com comunicação 100% sem fio e compatível com ISOBUS — monitora a vazão do insumo e alerta sobre entupimentos e falhas que possam comprometer a germinação.",
+    condition: "EXCELLENT",
+    dailyPriceInCents: 10000,
+    requiresOperator: false,
+    instantBooking: true,
+    recommendedCrops: [],
+  },
 ] as const;
 
 async function main() {
@@ -381,7 +474,7 @@ async function main() {
 
     const machine = await prisma.machine.upsert({
       where: { id: machineId },
-      update: { recommendedCrops: [...spec.recommendedCrops] },
+      update: { slug, recommendedCrops: [...spec.recommendedCrops] },
       create: {
         id: machineId,
         ownerId: owner.userId,

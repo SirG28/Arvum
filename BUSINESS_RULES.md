@@ -137,6 +137,15 @@ correspondentes forem construídos:
   momento da criação — falta apenas garantir que nenhuma tela recalcule usando o anúncio atual).
 - **Avaliações** (Fase 5): apenas após reserva concluída; uma avaliação por participante e por
   reserva; usuário não pode avaliar a si mesmo.
+- **Monetização** (Fase 7 — `Context.md` §8.21/§9.7): modelo híbrido com três entradas — comissão de
+  8%–12% sobre cada operação (retida automaticamente na divisão do pagamento, sem cobrança separada
+  ao locatário), assinatura mensal do Plano Premium para parceiros (R$ 99–199, com desconto na
+  comissão, destaque na busca, selo de verificado e relatórios de desempenho) e anúncios
+  patrocinados (sempre identificados, nunca misturados a resultados orgânicos). A comissão reaproveita
+  o campo já existente `Booking.serviceFeeInCents`; Plano Premium e anúncios patrocinados exigem as
+  novas entidades `Subscription` e `SponsoredListing` (`Context.md` §17). O Arvum Suporte de Operação
+  é um add-on opcional por reserva — suporte operacional, não seguro, sem cobertura financeira contra
+  danos.
 
 Valores monetários são sempre armazenados em centavos inteiros (`Int`), nunca `Float`, conforme
 refletido no `prisma/schema.prisma` e nos formulários de máquinas (conversão de reais para centavos
