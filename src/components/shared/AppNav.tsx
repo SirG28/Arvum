@@ -4,12 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 
-export const NAV_ITEMS = [
-  { href: "/propriedades", label: "Minhas propriedades" },
-  { href: "/maquinas", label: "Minhas máquinas" },
-  { href: "/catalogo", label: "Catálogo" },
-  { href: "/favoritos", label: "Favoritos" },
-];
+// Navegação geral do site — itens específicos do usuário logado (propriedades, máquinas,
+// favoritos, configurações) vivem no menu de perfil (ver ProfileMenu.tsx), não aqui.
+export const NAV_ITEMS = [{ href: "/catalogo", label: "Catálogo" }];
 
 // Escondido em telas pequenas — mobile usa o menu hambúrguer (MobileNavDrawer) para não estourar
 // a largura do header (4 links + logo + perfil + sair não cabem em ~375px).

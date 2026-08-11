@@ -8,18 +8,13 @@ import type { z } from "zod";
 import type { Property } from "@prisma/client";
 import { bookingRequestSchema, type BookingRequestInput } from "../schemas/booking.schema";
 import { useCreateBookingRequest } from "../hooks/useBookings";
+import { LOGISTICS_MODE_LABELS } from "../lib/logistics-labels";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { FormField } from "@/components/ui/FormField";
 import { Alert } from "@/components/ui/Alert";
-
-const LOGISTICS_MODE_LABELS: Record<string, string> = {
-  RENTER_PICKUP: "Eu mesmo retiro a máquina",
-  OWNER_DELIVERY: "Entrega pelo proprietário",
-  PARTNER_TRANSPORT: "Transporte por parceiro",
-};
 
 const STATUS_LABELS: Record<string, string> = {
   AWAITING_APPROVAL: "Aguardando aprovação do proprietário",
@@ -62,10 +57,10 @@ export function BookingRequestForm({ machineId, properties }: BookingRequestForm
     return (
       <Alert tone="success" title="Solicitação enviada">
         {STATUS_LABELS[confirmedStatus] ?? confirmedStatus}. Acompanhe o andamento em{" "}
-        <Link href="/perfil" className="font-medium underline">
+        <Link href="/reservas" className="font-medium underline">
           minhas reservas
-        </Link>{" "}
-        assim que essa área estiver disponível.
+        </Link>
+        .
       </Alert>
     );
   }

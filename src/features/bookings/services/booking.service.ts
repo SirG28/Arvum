@@ -4,6 +4,44 @@ import { ACTIVE_BOOKING_STATUSES } from "@/features/machines/services/machine.se
 import { calculateRentalDays, calculateBookingTotals } from "../lib/pricing";
 import type { BookingRequestInput } from "../schemas/booking.schema";
 
+export function listBookingsByRenter(renterId: string) {
+  return prisma.booking.findMany({
+    where: { renterId },
+    include: {
+      machine: {
+        include: { images: { orderBy: { position: "asc" }, take: 1 } },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+// Mesmo padrão de getOwnedProperty/getOwnedMachine: null tanto para "não existe" quanto para
+// "existe mas não é do locatário" — nunca confiando no id vindo do cliente para decidir o que
+// mostrar.
+export async function getBookingForRenter(renterId: string, bookingId: string) {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: {
+      machine: { include: { images: { orderBy: { position: "asc" }, take: 1 } } },
+      destinationProperty: true,
+      statusHistory: { orderBy: { createdAt: "asc" } },
+    },
+  });
+  if (!booking || booking.renterId !== renterId) return null;
+  return booking;
+}
+
+// Conta reservas que ainda ocupam o calendário (mesma lista usada para bloquear remoção de
+// máquina e checar sobreposição) — proxy para "precisa de atenção do locatário": aguardando
+// aprovação, aprovada mas sem pagamento, em transporte/uso etc. Estados finais (CANCELLED,
+// REJECTED, COMPLETED) não contam.
+export function countOpenBookingsByRenter(renterId: string) {
+  return prisma.booking.count({
+    where: { renterId, status: { in: [...ACTIVE_BOOKING_STATUSES] } },
+  });
+}
+
 export type CreateBookingResult =
   | Awaited<ReturnType<typeof prisma.booking.create>>
   | "MACHINE_NOT_FOUND"

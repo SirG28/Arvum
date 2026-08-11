@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/cn";
 import { NAV_ITEMS } from "./AppNav";
+import { PROFILE_ITEMS } from "./ProfileMenu";
 
 function MenuIcon({ open }: { open: boolean }) {
   if (open) {
@@ -80,24 +81,28 @@ export function MobileNavDrawer() {
           {session?.user && (
             <>
               <div className="my-1 border-t border-neutral-200" aria-hidden="true" />
-              <Link
-                href="/perfil"
-                aria-current={pathname?.startsWith("/perfil") ? "page" : undefined}
-                className={cn(
-                  "rounded-md px-3 py-3 text-sm font-medium transition-colors",
-                  pathname?.startsWith("/perfil")
-                    ? "bg-primary-50 text-primary-700"
-                    : "text-neutral-700 hover:bg-neutral-50",
-                )}
-              >
-                Meu perfil
-              </Link>
+              {PROFILE_ITEMS.map((item) => {
+                const isActive = pathname?.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={isActive ? "page" : undefined}
+                    className={cn(
+                      "rounded-md px-3 py-3 text-sm font-medium transition-colors",
+                      isActive ? "bg-primary-50 text-primary-700" : "text-neutral-700 hover:bg-neutral-50",
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
               <button
                 type="button"
                 onClick={() => signOut({ callbackUrl: "/" })}
                 className="rounded-md px-3 py-3 text-left text-sm font-medium text-danger-500 transition-colors hover:bg-neutral-50"
               >
-                Sair
+                Sair da conta
               </button>
             </>
           )}

@@ -9,7 +9,8 @@ Route Handlers, evitando manter dois serviços separados para um projeto de 2 pe
 src/
   app/                     # rotas (App Router) — casca fina, sem regra de negócio
     (auth)/login, (auth)/cadastro
-    (app)/propriedades, (app)/perfil, (app)/maquinas, (app)/favoritos
+    (app)/propriedades, (app)/perfil, (app)/maquinas, (app)/favoritos,
+      (app)/reservas, (app)/configuracoes
     catalogo/, catalogo/[slug]/          # público, fora do (app)
     api/auth/[...nextauth]/route.ts
     api/v1/properties/route.ts, [id]/route.ts
@@ -17,6 +18,7 @@ src/
     api/v1/machines/route.ts, [id]/route.ts, [id]/status,
       [id]/images(+[imageId]), [id]/availability(+[blockId]), [id]/bookings
     api/v1/favorites/route.ts, [machineId]/route.ts
+    api/v1/bookings/open-count/route.ts
   auth.ts                  # configuração raiz do Auth.js
   middleware.ts            # proteção de rota
   components/
