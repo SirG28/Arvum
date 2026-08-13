@@ -73,10 +73,19 @@ export const machineSchema = z
     ),
     instantBooking: z.boolean().optional().default(false),
     deliveryRadiusKm: optionalPositiveNumber,
+    // Preço de entrega (Context.md §8.10: "o proprietário define... preço por quilômetro; taxa
+    // mínima"). Sem raio de entrega definido, a plataforma nunca oferece "entrega pelo
+    // proprietário" como modalidade — ver refine abaixo.
+    deliveryPricePerKm: optionalPriceInReais,
+    deliveryBaseFee: optionalPriceInReais,
   })
   .refine((data) => !data.maximumRentalDays || data.maximumRentalDays >= data.minimumRentalDays, {
     message: "A duração máxima deve ser maior ou igual à mínima.",
     path: ["maximumRentalDays"],
+  })
+  .refine((data) => data.deliveryRadiusKm || (!data.deliveryPricePerKm && !data.deliveryBaseFee), {
+    message: "Defina o raio de atendimento para configurar o preço de entrega.",
+    path: ["deliveryRadiusKm"],
   });
 
 // O client envia recommendedCrops já transformado em array (saída do resolver do
@@ -122,5 +131,7 @@ export function toMachinePersistedData(input: MachineFormOutput) {
     maximumRentalDays: input.maximumRentalDays,
     instantBooking: input.instantBooking,
     deliveryRadiusKm: input.deliveryRadiusKm,
+    deliveryPricePerKmInCents: input.deliveryPricePerKm ? toCents(input.deliveryPricePerKm) : undefined,
+    deliveryBaseFeeInCents: input.deliveryBaseFee ? toCents(input.deliveryBaseFee) : undefined,
   };
 }

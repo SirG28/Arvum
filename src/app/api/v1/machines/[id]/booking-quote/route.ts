@@ -1,24 +1,16 @@
 import { auth } from "@/auth";
 import { apiSuccess, apiError } from "@/lib/api-response";
 import { bookingRequestSchema } from "@/features/bookings/schemas/booking.schema";
-import { createBookingRequest, type BookingQuoteError } from "@/features/bookings/services/booking.service";
+import { buildBookingQuote } from "@/features/bookings/services/booking.service";
 import { bookingQuoteErrorResponse } from "@/features/bookings/lib/quote-errors";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-const QUOTE_ERROR_CODES = new Set<string>([
-  "MACHINE_NOT_FOUND",
-  "CANNOT_BOOK_OWN_MACHINE",
-  "PROPERTY_NOT_OWNED",
-  "RENTAL_PERIOD_TOO_SHORT",
-  "RENTAL_PERIOD_TOO_LONG",
-  "MACHINE_UNAVAILABLE",
-  "DELIVERY_OUT_OF_RANGE",
-  "DESTINATION_DISTANCE_UNKNOWN",
-]);
-
+// Prévia de valores sem gravar nada — mesma validação/cálculo de createBookingRequest
+// (buildBookingQuote), para o locatário ver locação + logística + total antes de confirmar
+// (Context.md §8.8 passo 6 "sistema calcula custos" ocorre antes da revisão, não só depois).
 export async function POST(request: Request, { params }: RouteParams) {
   const session = await auth();
   if (!session?.user) {
@@ -32,11 +24,15 @@ export async function POST(request: Request, { params }: RouteParams) {
     return apiError("VALIDATION_ERROR", "Dados inválidos.", 422, parsed.error.issues);
   }
 
-  const result = await createBookingRequest(session.user.id, id, parsed.data);
-
-  if (typeof result === "string" && QUOTE_ERROR_CODES.has(result)) {
-    return bookingQuoteErrorResponse(result as BookingQuoteError);
+  const quote = await buildBookingQuote(session.user.id, id, parsed.data);
+  if (typeof quote === "string") {
+    return bookingQuoteErrorResponse(quote);
   }
 
-  return apiSuccess(result, { status: 201 });
+  return apiSuccess({
+    rentalDays: quote.rentalDays,
+    distanceKm: quote.logisticsCost.distanceKm,
+    isLogisticsEstimate: quote.logisticsCost.isEstimate,
+    totals: quote.totals,
+  });
 }

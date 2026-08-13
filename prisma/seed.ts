@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, type MachineCondition } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { mockGeocodingProvider } from "../src/lib/geo/geocoding";
 
@@ -108,7 +108,27 @@ const RENTERS = [
 
 const DEMO_PASSWORD = "Demo@123";
 
-const MACHINES = [
+interface MachineSpec {
+  ownerIndex: number;
+  categorySlug: string;
+  title: string;
+  brand: string;
+  model: string;
+  manufactureYear: number;
+  description: string;
+  condition: MachineCondition;
+  dailyPriceInCents: number;
+  requiresOperator: boolean;
+  instantBooking: boolean;
+  recommendedCrops: string[];
+  // Entrega pelo proprietário (Context.md §8.10) — só algumas máquinas oferecem, para variar o
+  // dado de demonstração; sem raio, a modalidade fica indisponível para essa máquina.
+  deliveryRadiusKm?: number;
+  deliveryPricePerKmInCents?: number;
+  deliveryBaseFeeInCents?: number;
+}
+
+const MACHINES: MachineSpec[] = [
   {
     ownerIndex: 0,
     categorySlug: "tratores",
@@ -123,6 +143,9 @@ const MACHINES = [
     requiresOperator: false,
     instantBooking: true,
     recommendedCrops: ["soja", "milho"],
+    deliveryRadiusKm: 80,
+    deliveryPricePerKmInCents: 220,
+    deliveryBaseFeeInCents: 2500,
   },
   {
     ownerIndex: 0,
@@ -138,6 +161,7 @@ const MACHINES = [
     requiresOperator: true,
     instantBooking: false,
     recommendedCrops: ["soja", "algodão", "milho"],
+    deliveryRadiusKm: 50,
   },
   {
     ownerIndex: 1,
@@ -153,6 +177,9 @@ const MACHINES = [
     requiresOperator: true,
     instantBooking: false,
     recommendedCrops: ["soja", "milho"],
+    deliveryRadiusKm: 150,
+    deliveryPricePerKmInCents: 450,
+    deliveryBaseFeeInCents: 8000,
   },
   {
     ownerIndex: 1,
@@ -196,6 +223,9 @@ const MACHINES = [
     requiresOperator: false,
     instantBooking: true,
     recommendedCrops: ["soja", "milho", "cana-de-açúcar"],
+    deliveryRadiusKm: 40,
+    deliveryPricePerKmInCents: 180,
+    deliveryBaseFeeInCents: 2000,
   },
   {
     ownerIndex: 3,
@@ -312,6 +342,7 @@ const MACHINES = [
     requiresOperator: false,
     instantBooking: true,
     recommendedCrops: [],
+    deliveryRadiusKm: 60,
   },
   {
     ownerIndex: 2,
@@ -402,7 +433,7 @@ const MACHINES = [
     instantBooking: true,
     recommendedCrops: [],
   },
-] as const;
+];
 
 async function main() {
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
@@ -474,7 +505,13 @@ async function main() {
 
     const machine = await prisma.machine.upsert({
       where: { id: machineId },
-      update: { slug, recommendedCrops: [...spec.recommendedCrops] },
+      update: {
+        slug,
+        recommendedCrops: [...spec.recommendedCrops],
+        deliveryRadiusKm: spec.deliveryRadiusKm,
+        deliveryPricePerKmInCents: spec.deliveryPricePerKmInCents,
+        deliveryBaseFeeInCents: spec.deliveryBaseFeeInCents,
+      },
       create: {
         id: machineId,
         ownerId: owner.userId,
@@ -491,6 +528,9 @@ async function main() {
         requiresOperator: spec.requiresOperator,
         instantBooking: spec.instantBooking,
         dailyPriceInCents: spec.dailyPriceInCents,
+        deliveryRadiusKm: spec.deliveryRadiusKm,
+        deliveryPricePerKmInCents: spec.deliveryPricePerKmInCents,
+        deliveryBaseFeeInCents: spec.deliveryBaseFeeInCents,
         status: "ACTIVE",
       },
     });

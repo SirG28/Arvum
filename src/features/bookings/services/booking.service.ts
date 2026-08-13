@@ -1,7 +1,11 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getOwnedProperty } from "@/features/properties/services/property.service";
 import { ACTIVE_BOOKING_STATUSES } from "@/features/machines/services/machine.service";
+import { calculateDistanceKm } from "@/lib/geo/distance";
+import { calculateLogisticsCost, type LogisticsCostResult } from "@/features/logistics/lib/pricing";
 import { calculateRentalDays, calculateBookingTotals } from "../lib/pricing";
+import { isBookingCancellableByRenter } from "../lib/cancellation";
 import type { BookingRequestInput } from "../schemas/booking.schema";
 
 export function listBookingsByRenter(renterId: string) {
@@ -42,21 +46,40 @@ export function countOpenBookingsByRenter(renterId: string) {
   });
 }
 
-export type CreateBookingResult =
-  | Awaited<ReturnType<typeof prisma.booking.create>>
+export type BookingQuoteError =
   | "MACHINE_NOT_FOUND"
   | "CANNOT_BOOK_OWN_MACHINE"
   | "PROPERTY_NOT_OWNED"
   | "RENTAL_PERIOD_TOO_SHORT"
   | "RENTAL_PERIOD_TOO_LONG"
-  | "MACHINE_UNAVAILABLE";
+  | "MACHINE_UNAVAILABLE"
+  | "DELIVERY_OUT_OF_RANGE"
+  | "DESTINATION_DISTANCE_UNKNOWN";
 
-export async function createBookingRequest(
+type MachineWithProperty = Prisma.MachineGetPayload<{ include: { property: true } }>;
+
+export interface BookingQuote {
+  machine: MachineWithProperty;
+  destinationProperty: Prisma.PropertyGetPayload<Record<string, never>>;
+  rentalDays: number;
+  logisticsCost: LogisticsCostResult;
+  totals: ReturnType<typeof calculateBookingTotals>;
+  initialStatus: "APPROVED" | "AWAITING_APPROVAL";
+}
+
+// Toda a validação de negócio e o cálculo de valores (Context.md §8.8 passos 4–6: verificar
+// disponibilidade, selecionar logística, calcular custos) vivem aqui — reaproveitado tanto pela
+// prévia de preço (sem gravar nada) quanto pela criação real da reserva, para nunca haver dois
+// lugares calculando o mesmo total de formas diferentes.
+export async function buildBookingQuote(
   renterId: string,
   machineId: string,
   input: BookingRequestInput,
-): Promise<CreateBookingResult> {
-  const machine = await prisma.machine.findUnique({ where: { id: machineId } });
+): Promise<BookingQuote | BookingQuoteError> {
+  const machine = await prisma.machine.findUnique({
+    where: { id: machineId },
+    include: { property: true },
+  });
   if (!machine || machine.status !== "ACTIVE" || machine.deletedAt) return "MACHINE_NOT_FOUND";
   if (machine.ownerId === renterId) return "CANNOT_BOOK_OWN_MACHINE";
 
@@ -91,15 +114,50 @@ export async function createBookingRequest(
   ]);
   if (overlappingBlock || overlappingBooking) return "MACHINE_UNAVAILABLE";
 
+  // Distância entre a propriedade da máquina e a propriedade de destino, mesma fórmula de
+  // Haversine já usada pelo catálogo (src/lib/geo/distance.ts) — null quando alguma das duas
+  // coordenadas não foi geocodificada.
+  const distanceKm =
+    machine.property.latitude != null &&
+    machine.property.longitude != null &&
+    destinationProperty.latitude != null &&
+    destinationProperty.longitude != null
+      ? calculateDistanceKm(
+          { latitude: machine.property.latitude, longitude: machine.property.longitude },
+          { latitude: destinationProperty.latitude, longitude: destinationProperty.longitude },
+        )
+      : null;
+
+  const logisticsCost = calculateLogisticsCost({ mode: input.logisticsMode, distanceKm, machine });
+  if (typeof logisticsCost === "string") return logisticsCost;
+
   const totals = calculateBookingTotals({
     rentalDays,
     dailyPriceInCents: machine.dailyPriceInCents,
     depositInCents: machine.depositInCents,
+    logisticsValueInCents: logisticsCost.totalInCents,
   });
 
   // Reserva instantânea pula a aprovação manual do proprietário (Context.md §8.8) — a decisão é
   // do anúncio (`machine.instantBooking`), nunca escolhida pelo locatário na hora de reservar.
   const initialStatus = machine.instantBooking ? "APPROVED" : "AWAITING_APPROVAL";
+
+  return { machine, destinationProperty, rentalDays, logisticsCost, totals, initialStatus };
+}
+
+export type CreateBookingResult =
+  | Awaited<ReturnType<typeof prisma.booking.create>>
+  | BookingQuoteError;
+
+export async function createBookingRequest(
+  renterId: string,
+  machineId: string,
+  input: BookingRequestInput,
+): Promise<CreateBookingResult> {
+  const quote = await buildBookingQuote(renterId, machineId, input);
+  if (typeof quote === "string") return quote;
+
+  const { machine, totals, logisticsCost, initialStatus } = quote;
 
   return prisma.$transaction(async (tx) => {
     const booking = await tx.booking.create({
@@ -111,6 +169,7 @@ export async function createBookingRequest(
         endDate: input.endDate,
         status: initialStatus,
         logisticsMode: input.logisticsMode,
+        distanceKm: logisticsCost.distanceKm,
         notes: input.notes,
         ...totals,
       },
@@ -126,6 +185,52 @@ export async function createBookingRequest(
       },
     });
 
+    // Retrato do cálculo logístico no momento da reserva (Context.md §8.11/§17) — já nasce
+    // ACCEPTED porque, nesta etapa, não existe um fluxo separado de escolha entre cotações.
+    await tx.logisticsQuote.create({
+      data: {
+        bookingId: booking.id,
+        originPropertyId: machine.propertyId,
+        destinationPropertyId: input.destinationPropertyId,
+        mode: input.logisticsMode,
+        distanceKm: logisticsCost.distanceKm,
+        baseFeeInCents: logisticsCost.baseFeeInCents,
+        pricePerKmInCents: logisticsCost.pricePerKmInCents,
+        equipmentFactor: logisticsCost.equipmentFactor,
+        totalInCents: logisticsCost.totalInCents,
+        status: "ACCEPTED",
+      },
+    });
+
     return booking;
   });
+}
+
+export type CancelBookingResult = "CANCELLED" | "NOT_FOUND" | "NOT_CANCELLABLE";
+
+export async function cancelBookingByRenter(
+  renterId: string,
+  bookingId: string,
+): Promise<CancelBookingResult> {
+  const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+  if (!booking || booking.renterId !== renterId) return "NOT_FOUND";
+  if (!isBookingCancellableByRenter(booking.status)) return "NOT_CANCELLABLE";
+
+  await prisma.$transaction(async (tx) => {
+    await tx.booking.update({
+      where: { id: bookingId },
+      data: { status: "CANCELLED", cancellationReason: "Cancelada pelo locatário." },
+    });
+    await tx.bookingStatusHistory.create({
+      data: {
+        bookingId,
+        previousStatus: booking.status,
+        nextStatus: "CANCELLED",
+        changedById: renterId,
+        notes: "Cancelada pelo locatário.",
+      },
+    });
+  });
+
+  return "CANCELLED";
 }

@@ -10,3 +10,6 @@ export { Alert } from "./Alert";
 export { Spinner } from "./Spinner";
 export { EmptyState } from "./EmptyState";
 export { Badge } from "./Badge";
+export { Toast } from "./Toast";
+export { Modal } from "./Modal";
+export { ConfirmationDialog } from "./ConfirmationDialog";

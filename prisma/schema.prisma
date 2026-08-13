@@ -193,6 +193,8 @@ model Machine {
   maximumRentalDays   Int?
   instantBooking      Boolean          @default(false)
   deliveryRadiusKm    Float?
+  deliveryPricePerKmInCents Int?
+  deliveryBaseFeeInCents    Int?
   status              MachineStatus    @default(DRAFT)
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt

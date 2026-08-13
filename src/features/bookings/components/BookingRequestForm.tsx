@@ -1,25 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
 import type { Property } from "@prisma/client";
 import { bookingRequestSchema, type BookingRequestInput } from "../schemas/booking.schema";
-import { useCreateBookingRequest } from "../hooks/useBookings";
+import { useCreateBookingRequest, useBookingQuote } from "../hooks/useBookings";
 import { LOGISTICS_MODE_LABELS } from "../lib/logistics-labels";
+import { PriceBreakdown } from "./PriceBreakdown";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { FormField } from "@/components/ui/FormField";
 import { Alert } from "@/components/ui/Alert";
+import { Spinner } from "@/components/ui/Spinner";
 
 const STATUS_LABELS: Record<string, string> = {
   AWAITING_APPROVAL: "Aguardando aprovação do proprietário",
   APPROVED: "Aprovada — reserva instantânea",
 };
+
+const QUOTE_DEBOUNCE_MS = 500;
 
 interface BookingRequestFormProps {
   machineId: string;
@@ -30,15 +34,46 @@ export function BookingRequestForm({ machineId, properties }: BookingRequestForm
   const [error, setError] = useState<string | null>(null);
   const [confirmedStatus, setConfirmedStatus] = useState<string | null>(null);
   const mutation = useCreateBookingRequest(machineId);
+  const quote = useBookingQuote(machineId);
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<z.input<typeof bookingRequestSchema>>({
     resolver: zodResolver(bookingRequestSchema),
     defaultValues: { destinationPropertyId: properties[0]?.id },
   });
+
+  const destinationPropertyId = watch("destinationPropertyId");
+  const startDate = watch("startDate");
+  const endDate = watch("endDate");
+  const logisticsMode = watch("logisticsMode");
+
+  // Prévia automática de valores conforme o locatário preenche o formulário (Context.md §33:
+  // tudo que o usuário precisa saber deve ficar claro antes de solicitar) — debounced para não
+  // disparar uma chamada a cada tecla digitada, e só quando os 4 campos necessários ao cálculo
+  // (destino, período, modalidade) já são válidos o bastante para tentar.
+  useEffect(() => {
+    if (!destinationPropertyId || !startDate || !endDate || !logisticsMode) {
+      quote.reset();
+      return;
+    }
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+      quote.reset();
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      quote.mutate({ destinationPropertyId, startDate, endDate, logisticsMode });
+    }, QUOTE_DEBOUNCE_MS);
+
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [destinationPropertyId, startDate, endDate, logisticsMode]);
 
   // O zodResolver já entrega startDate/endDate como Date (pós-validação) apesar do tipo estático
   // do formulário ser o shape bruto — mesmo padrão de MachineAvailabilityManager.tsx.
@@ -114,10 +149,35 @@ export function BookingRequestForm({ machineId, properties }: BookingRequestForm
         <Textarea rows={3} placeholder="Alguma informação para o proprietário?" {...register("notes")} />
       </FormField>
 
-      <p className="text-xs text-neutral-500">
-        O custo de logística e o valor total serão calculados nas próximas etapas da plataforma —
-        por enquanto, esta solicitação registra apenas o período e a modalidade escolhidos.
-      </p>
+      {quote.isPending && (
+        <div className="flex items-center gap-2 rounded-md border border-neutral-200 px-4 py-3 text-sm text-neutral-500">
+          <Spinner size="sm" />
+          Calculando valores...
+        </div>
+      )}
+
+      {quote.isError && (
+        <Alert tone="warning" title="Não foi possível calcular os valores">
+          {quote.error instanceof Error ? quote.error.message : "Erro inesperado."}
+        </Alert>
+      )}
+
+      {quote.isSuccess && (
+        <div className="rounded-md border border-neutral-200 p-4">
+          <h3 className="text-sm font-semibold text-neutral-900">Valores estimados</h3>
+          <PriceBreakdown
+            className="mt-3"
+            rentalValueInCents={quote.data.totals.rentalValueInCents}
+            logisticsValueInCents={quote.data.totals.logisticsValueInCents}
+            serviceFeeInCents={quote.data.totals.serviceFeeInCents}
+            depositInCents={quote.data.totals.depositInCents}
+            discountInCents={quote.data.totals.discountInCents}
+            totalValueInCents={quote.data.totals.totalValueInCents}
+            distanceKm={quote.data.distanceKm}
+            footnote="A taxa de serviço ainda é calculada como zero — chega nas próximas etapas da plataforma. Estes valores podem ser recalculados na confirmação."
+          />
+        </div>
+      )}
 
       <Button type="submit" isLoading={isSubmitting} className="w-full">
         Solicitar reserva

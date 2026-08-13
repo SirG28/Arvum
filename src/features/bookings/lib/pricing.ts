@@ -15,7 +15,7 @@ interface BookingTotalsInput {
   discountInCents?: number;
 }
 
-interface BookingTotals {
+export interface BookingTotals {
   rentalValueInCents: number;
   logisticsValueInCents: number;
   serviceFeeInCents: number;

@@ -40,6 +40,7 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<MachineFormInput>({
     resolver: zodResolver(machineSchema),
@@ -70,9 +71,18 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
           maximumRentalDays: machine.maximumRentalDays ?? undefined,
           instantBooking: machine.instantBooking,
           deliveryRadiusKm: machine.deliveryRadiusKm ?? undefined,
+          deliveryPricePerKm: machine.deliveryPricePerKmInCents
+            ? machine.deliveryPricePerKmInCents / 100
+            : undefined,
+          deliveryBaseFee: machine.deliveryBaseFeeInCents
+            ? machine.deliveryBaseFeeInCents / 100
+            : undefined,
         }
       : { minimumRentalDays: 1 },
   });
+
+  const deliveryRadiusKm = watch("deliveryRadiusKm");
+  const offersDelivery = Boolean(deliveryRadiusKm);
 
   const createMutation = useCreateMachine();
   const updateMutation = useUpdateMachine(machine?.id ?? "");
@@ -231,12 +241,31 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
         </FormField>
         <FormField
           label="Raio de atendimento (km)"
-          helpText="Opcional"
+          helpText="Opcional — preencha para oferecer entrega pelo proprietário"
           error={errors.deliveryRadiusKm?.message}
         >
           <Input type="number" step="0.1" {...register("deliveryRadiusKm")} />
         </FormField>
       </div>
+
+      {offersDelivery && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField
+            label="Taxa mínima de entrega (R$)"
+            helpText="Opcional — sem informar, usamos um valor padrão da plataforma"
+            error={errors.deliveryBaseFee?.message}
+          >
+            <Input type="number" step="0.01" {...register("deliveryBaseFee")} />
+          </FormField>
+          <FormField
+            label="Preço por km de entrega (R$)"
+            helpText="Opcional — sem informar, usamos um valor padrão da plataforma"
+            error={errors.deliveryPricePerKm?.message}
+          >
+            <Input type="number" step="0.01" {...register("deliveryPricePerKm")} />
+          </FormField>
+        </div>
+      )}
 
       <label className="flex items-center gap-2 text-sm text-neutral-700">
         <input

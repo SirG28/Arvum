@@ -113,20 +113,55 @@ cadastrado."]`), nunca uma mensagem genérica.
   Aprovação/recusa pelo proprietário ainda não existe (próxima etapa da Fase 4).
 - **Valor da locação já é calculado nesta etapa** (dias corridos × diária do anúncio + caução do
   anúncio, quando houver — `src/features/bookings/lib/pricing.ts`), seguindo a composição do
-  `Context.md` §8.12 (`total = locação + logística + taxa + caução − descontos`). Logística e taxa
-  de serviço entram como zero até as próximas etapas (cálculo logístico real e composição de preço
-  completa) — nunca apresentadas como estimativa final ao locatário.
+  `Context.md` §8.12 (`total = locação + logística + taxa + caução − descontos`). A taxa de
+  serviço (comissão da Arvum, `Context.md` §8.21/§9.7) entra como zero até a Fase 7 — nunca
+  apresentada como estimativa final ao locatário.
 - Criação da reserva e do primeiro registro de histórico ocorre em uma única transação
   (`prisma.$transaction`), evitando um `Booking` sem histórico se a segunda escrita falhar.
+- **Prévia de valores antes de solicitar**: o mesmo cálculo de disponibilidade/logística/total
+  (`buildBookingQuote`) roda sem gravar nada assim que destino, período e modalidade estão
+  preenchidos, para o locatário ver locação + logística + total (e qualquer impedimento, ex.:
+  fora do raio de entrega) antes de confirmar — nunca só depois de enviar a solicitação.
+- **Cancelamento pelo locatário**: permitido enquanto a reserva está em `DRAFT`,
+  `AWAITING_APPROVAL`, `APPROVED` ou `AWAITING_PAYMENT` — todos os estados "antes do pagamento"
+  do `Context.md` §9.4, sem cobrança. Como o módulo de pagamento ainda não existe, toda reserva
+  hoje se enquadra nesse caso; a política de estorno após pagamento confirmado fica para quando o
+  `Payment` existir. O cancelamento é sempre uma transição de status (`CANCELLED`) com
+  `BookingStatusHistory`, nunca uma remoção física do registro (`Context.md` §8.4/§9.3).
+
+### Cálculo logístico (Fase 4)
+
+- Fórmula centralizada em `src/features/logistics/lib/pricing.ts` (`Context.md` §8.11):
+  `custoLogistico = taxaBase + (distanciaKm × valorPorKm × fatorDoEquipamento)` — nunca espalhada
+  pelos componentes de interface.
+- **Retirada pelo locatário** (`RENTER_PICKUP`) nunca tem custo logístico — o locatário organiza o
+  próprio transporte (`Context.md` §8.10).
+- **Entrega pelo proprietário** (`OWNER_DELIVERY`) usa o preço que o proprietário configurou no
+  anúncio (`Machine.deliveryPricePerKmInCents`/`deliveryBaseFeeInCents`, opcionais); sem
+  configuração própria, cai no padrão da plataforma (`src/features/logistics/config.ts`). É
+  **recusada** (`409 DELIVERY_OUT_OF_RANGE`) quando a distância até a propriedade de destino
+  excede `Machine.deliveryRadiusKm`, ou quando o anúncio não define raio de entrega — nunca
+  aceita silenciosamente fora do alcance combinado.
+- **Transporte por parceiro** (`PARTNER_TRANSPORT`) sempre usa a configuração simulada da
+  plataforma — não há parceiro logístico real integrado (`Context.md` §8.10), então não existe
+  quem definiria um preço por máquina.
+- **Fator do equipamento**: calculado a partir de peso, maior dimensão e necessidade de operador
+  (`src/features/logistics/lib/equipment-factor.ts`) — nunca da categoria, que é administrável
+  pelo painel e não deve virar regra hardcoded no código (`Context.md` §8.3).
+- A distância usada é a mesma fórmula de Haversine do catálogo (`src/lib/geo/distance.ts`), entre
+  a propriedade da máquina e a propriedade de destino da reserva. Sem coordenada geocodificada de
+  algum dos dois lados, a reserva é recusada (`422 DESTINATION_DISTANCE_UNKNOWN`) em vez de
+  calcular um custo com distância zero.
+- Todo valor calculado é rotulado como **estimativa** na interface (`Context.md` §9.6/§32): a
+  distância vem de coordenadas geocodificadas de forma simulada, nunca de uma rota real.
+- Um `LogisticsQuote` é criado na mesma transação do `Booking`, já em `ACCEPTED` — não existe,
+  nesta etapa, um fluxo separado de escolha entre cotações concorrentes.
 
 ## Planejado — próximas fases
 
 As regras abaixo já estão especificadas no `Context.md` e serão implementadas quando os módulos
 correspondentes forem construídos:
 
-- **Cálculo logístico** (Fase 4): fórmula configurável (`taxaBase + distância × valor/km × fator do
-  equipamento`), reaproveitando a distância já calculada na Fase 3; custo recalculado quando o
-  destino muda; valores sinalizados como estimativa quando não houver integração real.
 - **Aprovação/recusa pelo proprietário** (Fase 4): painel para decidir solicitações pendentes.
 - **Pagamento simulado** (Fase 4): estados pendente/processando/aprovado/recusado, sem dado de
   cartão armazenado.

@@ -42,10 +42,22 @@ Roadmap completo em [`ARCHITECTURE.md`](./ARCHITECTURE.md#roadmap). Implementado
   locação, criando a reserva já aprovada (anúncios com reserva instantânea) ou aguardando aprovação
   do proprietário. O catálogo também deixou de listar máquinas com reserva ativa no período
   buscado.
+- Cálculo logístico: custo real calculado para as 3 modalidades (retirada pelo locatário, entrega
+  pelo proprietário, transporte por parceiro simulado), usando a distância entre a propriedade da
+  máquina e a de destino. O proprietário pode configurar preço de entrega por km e taxa mínima no
+  anúncio; sem configuração própria, ou para transporte por parceiro, vale o padrão da plataforma.
+  Entrega fora do raio de atendimento é recusada. Todo valor é rotulado como estimativa.
+- Prévia de valores antes de solicitar: assim que destino, período e modalidade estão
+  preenchidos, o formulário de reserva mostra locação + logística + total (ou o motivo de não
+  poder calcular, ex.: fora do raio de entrega) antes do botão "Solicitar reserva".
+- Feedback de sucesso reforçado com notificação (toast), além da confirmação já exibida na tela.
+- Cancelamento de reserva pelo locatário (com pop-up de confirmação), disponível enquanto a
+  reserva ainda não foi paga.
 
-Ainda não implementado (fases seguintes): cálculo logístico, composição de preço completa,
-aprovação/recusa pelo proprietário, pagamento, cancelamento, avaliações, notificações, painel
-administrativo — ver roadmap e as decisões de escopo em [`BUSINESS_RULES.md`](./BUSINESS_RULES.md).
+Ainda não implementado (fases seguintes): composição de preço completa (tela de revisão), taxa de
+serviço (comissão), aprovação/recusa pelo proprietário, pagamento, cancelamento, avaliações,
+notificações, painel administrativo — ver roadmap e as decisões de escopo em
+[`BUSINESS_RULES.md`](./BUSINESS_RULES.md).
 
 ## Stack
 

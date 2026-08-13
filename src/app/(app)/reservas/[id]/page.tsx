@@ -6,15 +6,14 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_BADGE_TONE } from "@/features/bookings/lib/status-labels";
 import { LOGISTICS_MODE_LABELS } from "@/features/bookings/lib/logistics-labels";
+import { isBookingCancellableByRenter } from "@/features/bookings/lib/cancellation";
+import { PriceBreakdown } from "@/features/bookings/components/PriceBreakdown";
+import { CancelBookingButton } from "@/features/bookings/components/CancelBookingButton";
 
 export const metadata = { title: "Detalhe da reserva" };
 
 interface BookingDetailPageProps {
   params: Promise<{ id: string }>;
-}
-
-function formatBRL(cents: number) {
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 function formatDate(date: Date) {
@@ -94,40 +93,17 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
 
       <Card>
         <h2 className="text-sm font-semibold text-neutral-900">Valores</h2>
-        <dl className="mt-3 flex flex-col gap-2 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-neutral-500">Locação</dt>
-            <dd className="text-neutral-900">{formatBRL(booking.rentalValueInCents)}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-neutral-500">Logística</dt>
-            <dd className="text-neutral-900">{formatBRL(booking.logisticsValueInCents)}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-neutral-500">Taxa de serviço</dt>
-            <dd className="text-neutral-900">{formatBRL(booking.serviceFeeInCents)}</dd>
-          </div>
-          {booking.depositInCents > 0 && (
-            <div className="flex justify-between">
-              <dt className="text-neutral-500">Caução</dt>
-              <dd className="text-neutral-900">{formatBRL(booking.depositInCents)}</dd>
-            </div>
-          )}
-          {booking.discountInCents > 0 && (
-            <div className="flex justify-between">
-              <dt className="text-neutral-500">Desconto</dt>
-              <dd className="text-neutral-900">-{formatBRL(booking.discountInCents)}</dd>
-            </div>
-          )}
-          <div className="flex justify-between border-t border-neutral-200 pt-2 font-medium">
-            <dt className="text-neutral-900">Total</dt>
-            <dd className="text-primary-700">{formatBRL(booking.totalValueInCents)}</dd>
-          </div>
-        </dl>
-        <p className="mt-3 text-xs text-neutral-500">
-          Logística e taxa de serviço ainda são calculadas como zero — chegam nas próximas etapas
-          da plataforma.
-        </p>
+        <PriceBreakdown
+          className="mt-3"
+          rentalValueInCents={booking.rentalValueInCents}
+          logisticsValueInCents={booking.logisticsValueInCents}
+          serviceFeeInCents={booking.serviceFeeInCents}
+          depositInCents={booking.depositInCents}
+          discountInCents={booking.discountInCents}
+          totalValueInCents={booking.totalValueInCents}
+          distanceKm={booking.distanceKm}
+          footnote="A taxa de serviço ainda é calculada como zero — chega nas próximas etapas da plataforma (comissão da Arvum)."
+        />
       </Card>
 
       <Card>
@@ -148,6 +124,8 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
       >
         Ver anúncio da máquina
       </Link>
+
+      {isBookingCancellableByRenter(booking.status) && <CancelBookingButton bookingId={booking.id} />}
     </div>
   );
 }

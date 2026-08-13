@@ -22,8 +22,8 @@ src/
   auth.ts                  # configuração raiz do Auth.js
   middleware.ts            # proteção de rota
   components/
-    ui/                    # design system (Button, Input, Textarea, Select, Checkbox, Label, FormField, Card, Alert, Badge, Spinner, EmptyState)
-    shared/                # Providers, AppHeader, AppNav, MobileNavDrawer, PublicHeader, Footer, Logo
+    ui/                    # design system (Button, Input, Textarea, Select, Checkbox, Label, FormField, Card, Alert, Badge, Spinner, EmptyState, Toast, Modal, ConfirmationDialog)
+    shared/                # Providers, ToastProvider, AppHeader, AppNav, MobileNavDrawer, PublicHeader, Footer, Logo
   features/
     authentication/        # schemas, actions, lib/password.ts, components
     users/
@@ -32,6 +32,7 @@ src/
     machines/               # schemas, lib (slug, status), services, hooks, components
     favorites/               # services, hooks, components (FavoriteButton, FavoriteMachineCard)
     bookings/                 # schemas, lib (pricing), services, hooks, components (BookingRequestForm)
+    logistics/                # config (preços padrão), lib (cálculo logístico, fator do equipamento)
   lib/                     # prisma, env, api-response, session, cn
     geo/                   # distância (Haversine) e geocodificação simulada
   schemas/                 # primitivas zod reutilizáveis
@@ -64,6 +65,8 @@ completo, `search`, `bookings`, `logistics`, `payments`, `reviews`, `notificatio
 | Geocodificação e distância            | Adaptador simulado (`mockGeocodingProvider`, tabela estática de capitais/UF + cidades conhecidas) + Haversine puro (`src/lib/geo`) | API de mapas real (Google, Nominatim) | Nenhum provedor de mapas está configurado no MVP (`Context.md` §15). A interface `GeocodingProvider` permite trocar a implementação sem alterar quem consome (`property.service`, `machine.service`) — mesmo padrão de adaptador simulado documentado em `Context.md` §27. |
 | Distância calculada em memória, não via SQL geoespacial | `Array.map`/`sort` em JS sobre coordenadas já carregadas pelo Prisma | `ST_Distance`/PostGIS | Volume de dados do MVP (dezenas de máquinas) não justifica extensão geoespacial no banco; app-level é suficiente e mantém a lógica testável isoladamente (`src/lib/geo/distance.test.ts`). Revisitar se o catálogo crescer para milhares de anúncios. |
 | Monetização                          | Modelo híbrido — comissão (8%–12%) + assinatura Premium + anúncios patrocinados | Apenas comissão, ou apenas assinatura fixa | Comissão garante receita desde a primeira transação (sem exigir mensalidade obrigatória do locatário); assinatura Premium e anúncios passam a representar parcela crescente do faturamento à medida que a base de usuários aumenta, sem depender de uma única fonte (`Context.md` §8.21). |
+| Preço de entrega por máquina, mas transporte por parceiro é config. global | `Machine.deliveryPricePerKmInCents`/`deliveryBaseFeeInCents` (opcionais, definidos pelo proprietário); `PARTNER_TRANSPORT` usa `src/features/logistics/config.ts` | Preço de entrega também global | `Context.md` §8.10 diz explicitamente que o proprietário define preço por km e taxa mínima de entrega — fiel à especificação. Já "transporte por parceiro" não tem parceiro real integrado, então não há quem definir um preço por máquina; fica em configuração de plataforma, substituível depois por uma tabela de transportadoras (`Context.md` §8.11). |
+| Fator do equipamento não usa a categoria | `calculateEquipmentFactor` (`src/features/logistics/lib/equipment-factor.ts`) usa peso, maior dimensão e `requiresOperator` | Fator por categoria (ex.: mapa fixo `categoria → fator`) | `Context.md` §8.3 exige que categorias sejam administráveis pelo painel, não fixas no código; basear o fator logístico em um mapa `slug → número` engessaria a regra a categorias que podem mudar. Peso/dimensões/operador são campos numéricos sempre presentes no anúncio. |
 
 ## Valores monetários e datas
 
@@ -92,9 +95,9 @@ para regras de negócio.
 3. ✅ **Descoberta** — filtros completos no catálogo (preço, marca, cultura, finalidade,
    necessidade de operador, período), favoritos, e localização/distância estimada (geocodificação
    simulada + Haversine).
-4. **Transação** — em andamento. ✅ Solicitação de reserva mínima (validação de disponibilidade,
-   valor da locação, aprovação automática/manual). Pendente: cálculo logístico, composição de
-   preço completa, aprovação do proprietário, pagamento simulado, acompanhamento de status,
+4. **Transação** — em andamento. ✅ Solicitação de reserva mínima. ✅ Cálculo logístico (retirada,
+   entrega pelo proprietário, transporte por parceiro simulado). Pendente: composição de preço
+   completa, aprovação do proprietário, pagamento simulado, acompanhamento de status,
    cancelamento.
 5. **Confiança** — avaliações, notificações, mensagens, moderação.
 6. **Administração e qualidade** — painel admin, indicadores, testes, acessibilidade, segurança, documentação, deploy.
@@ -122,10 +125,15 @@ incrementais (`Context.md` §27/§33 — uma etapa completa e testável por vez,
    `instantBooking`), com `BookingStatusHistory` desde a criação. Valor da locação já calculado
    (dias × diária + caução); logística e taxa de serviço ainda em zero — cálculo real chega na
    próxima etapa.
-2. **Cálculo logístico** — serviço desacoplado (`Context.md` §8.11, fórmula configurável
-   `taxaBase + distanciaKm × valorPorKm × fatorDoEquipamento`), reaproveitando `src/lib/geo`
-   (distância já calculada na Fase 3) para gerar `LogisticsQuote` nas 3 modalidades (retirada,
-   entrega pelo proprietário, transporte por parceiro simulado).
+2. ✅ **Cálculo logístico** — serviço desacoplado (`src/features/logistics`, fórmula do
+   `Context.md` §8.11: `taxaBase + distanciaKm × valorPorKm × fatorDoEquipamento`), reaproveitando
+   `src/lib/geo` (distância entre a propriedade da máquina e a de destino) para gerar um
+   `LogisticsQuote` por reserva nas 3 modalidades. Retirada pelo locatário nunca tem custo; entrega
+   pelo proprietário usa o preço que ele configurou no anúncio (ou o padrão da plataforma, se não
+   configurou) e é recusada (`DELIVERY_OUT_OF_RANGE`) fora do raio de atendimento; transporte por
+   parceiro usa sempre a configuração simulada da plataforma (sem parceiro real integrado). Todo
+   valor calculado é rotulado como estimativa (`Context.md` §9.6/§32), pois a distância vem de
+   Haversine sobre coordenadas geocodificadas de forma simulada, nunca uma rota real.
 3. **Composição de preço** — tela de revisão antes de confirmar (`PriceBreakdown`): valor do
    período + logística + taxa de serviço + caução − descontos = total, com retrato dos preços
    congelado na confirmação (alterações futuras no anúncio não afetam reserva já confirmada).
