@@ -96,9 +96,9 @@ para regras de negócio.
    necessidade de operador, período), favoritos, e localização/distância estimada (geocodificação
    simulada + Haversine).
 4. **Transação** — em andamento. ✅ Solicitação de reserva mínima. ✅ Cálculo logístico (retirada,
-   entrega pelo proprietário, transporte por parceiro simulado). Pendente: composição de preço
-   completa, aprovação do proprietário, pagamento simulado, acompanhamento de status,
-   cancelamento.
+   entrega pelo proprietário, transporte por parceiro simulado). ✅ Composição de preço (prévia e
+   retrato congelado). ✅ Aprovação/recusa do proprietário. ✅ Pagamento simulado. Pendente:
+   acompanhamento de status (linha do tempo completa até a conclusão), cancelamento após pagamento.
 5. **Confiança** — avaliações, notificações, mensagens, moderação.
 6. **Administração e qualidade** — painel admin, indicadores, testes, acessibilidade, segurança, documentação, deploy.
 7. **Monetização avançada** (`Context.md` §8.21/§9.7) — comissão sobre operações (8%–12%, já
@@ -134,14 +134,22 @@ incrementais (`Context.md` §27/§33 — uma etapa completa e testável por vez,
    parceiro usa sempre a configuração simulada da plataforma (sem parceiro real integrado). Todo
    valor calculado é rotulado como estimativa (`Context.md` §9.6/§32), pois a distância vem de
    Haversine sobre coordenadas geocodificadas de forma simulada, nunca uma rota real.
-3. **Composição de preço** — tela de revisão antes de confirmar (`PriceBreakdown`): valor do
+3. ✅ **Composição de preço** — tela de revisão antes de confirmar (`PriceBreakdown`): valor do
    período + logística + taxa de serviço + caução − descontos = total, com retrato dos preços
    congelado na confirmação (alterações futuras no anúncio não afetam reserva já confirmada).
-4. **Aprovação do proprietário** — painel mínimo para aceitar/recusar solicitações pendentes
-   (`AWAITING_APPROVAL → APPROVED/REJECTED`), com motivo opcional e notificação futura.
-5. **Pagamento simulado** — `Payment` associado ao `Booking`, estados `pendente/processando/
-   aprovado/recusado`; confirmação avança `AWAITING_PAYMENT → PAYMENT_CONFIRMED`. Sem gateway real,
-   sem dado de cartão armazenado.
+4. ✅ **Aprovação do proprietário** — painel em `/reservas/recebidas` (lista) e
+   `/reservas/recebidas/[id]` (detalhe) para aceitar/recusar solicitações pendentes
+   (`AWAITING_APPROVAL → APPROVED/REJECTED`), com motivo opcional registrado no
+   `BookingStatusHistory`; só o proprietário da máquina decide, verificado no servidor
+   (`getBookingForOwner`/`decideBookingRequest`). Notificação (Fase 5) fica para depois — hoje o
+   locatário só vê a decisão ao abrir `/reservas/[id]`.
+5. ✅ **Pagamento simulado** — botão "Confirmar pagamento" em `/reservas/[id]` quando a reserva está
+   `APPROVED`; cria um `Payment` (`src/features/payments`) sempre `APPROVED` (gateway simulado
+   determinístico, mesmo padrão dos demais adaptadores simulados do projeto — nunca falha) e avança
+   `APPROVED → AWAITING_PAYMENT → PAYMENT_CONFIRMED` na mesma transação, com histórico das duas
+   transições. Só o locatário da própria reserva paga, verificado no servidor
+   (`confirmSimulatedPayment`). Nenhum dado de cartão é coletado ou armazenado — só a forma de
+   pagamento escolhida (cartão/Pix, ambos simulados).
 6. **Acompanhamento de status** — painel do locatário e do proprietário exibindo a reserva atual e
    a linha do tempo (`BookingStatusHistory`); transições seguintes (`TRANSPORT_SCHEDULED →
    IN_TRANSIT → DELIVERED → IN_USE → AWAITING_RETURN → RETURNED → COMPLETED`) restritas por regra

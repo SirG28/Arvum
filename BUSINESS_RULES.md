@@ -110,7 +110,14 @@ cadastrado."]`), nunca uma mensagem genérica.
   nunca escolhida pelo locatário no momento da reserva. Reserva instantânea nasce em `APPROVED`;
   as demais nascem em `AWAITING_APPROVAL`. Toda criação registra uma `BookingStatusHistory` com o
   responsável (`changedById`) e a data — nenhuma transição de status ocorre sem histórico.
-  Aprovação/recusa pelo proprietário ainda não existe (próxima etapa da Fase 4).
+- **Aprovação/recusa pelo proprietário**: única transição possível a partir de
+  `AWAITING_APPROVAL` (`decideBookingRequest`) — `APPROVED` ou `REJECTED`, com motivo opcional que
+  fica registrado no `BookingStatusHistory` (nunca um campo separado no `Booking`). Só o
+  proprietário da máquina decide, verificado no servidor (`getBookingForOwner` compara
+  `machine.ownerId` com a sessão, nunca confiando em dado vindo do cliente); uma solicitação já
+  decidida ou fora de `AWAITING_APPROVAL` é recusada (`409 BOOKING_NOT_PENDING`) — não existe
+  "reaprovar" ou reverter uma decisão. Reserva instantânea nunca passa por essa transição, pois já
+  nasce em `APPROVED`.
 - **Valor da locação já é calculado nesta etapa** (dias corridos × diária do anúncio + caução do
   anúncio, quando houver — `src/features/bookings/lib/pricing.ts`), seguindo a composição do
   `Context.md` §8.12 (`total = locação + logística + taxa + caução − descontos`). A taxa de
@@ -128,6 +135,24 @@ cadastrado."]`), nunca uma mensagem genérica.
   hoje se enquadra nesse caso; a política de estorno após pagamento confirmado fica para quando o
   `Payment` existir. O cancelamento é sempre uma transição de status (`CANCELLED`) com
   `BookingStatusHistory`, nunca uma remoção física do registro (`Context.md` §8.4/§9.3).
+
+### Pagamento simulado (Fase 4)
+
+- Gateway simulado (`confirmSimulatedPayment`, `src/features/payments`): sem integração real, sem
+  dado de cartão coletado ou armazenado — só a forma de pagamento escolhida
+  (`CREDIT_CARD`/`PIX`, ambos rótulos "(simulado)" na interface). Resultado sempre `APPROVED`,
+  mesmo padrão determinístico dos demais adaptadores simulados do projeto (geocodificação,
+  transporte por parceiro) — nunca falha nesta etapa.
+- **Só é possível pagar uma reserva `APPROVED`**: outra tentativa retorna `409
+  BOOKING_NOT_APPROVED` — não é possível pagar antes da aprovação do proprietário nem pagar duas
+  vezes a mesma reserva (a segunda tentativa encontra a reserva já em `AWAITING_PAYMENT` ou
+  `PAYMENT_CONFIRMED`, não mais `APPROVED`).
+- **Só o próprio locatário paga a sua reserva**, verificado no servidor (`renterId` comparado com
+  a sessão), nunca confiando em dado vindo do cliente.
+- A confirmação avança `APPROVED → AWAITING_PAYMENT → PAYMENT_CONFIRMED` na mesma transação, com
+  `BookingStatusHistory` registrando as duas transições — como o "processamento" é instantâneo
+  nesta simulação, não há espera real entre elas, mas o histórico preserva a sequência completa
+  descrita no `Context.md` §8.9.
 
 ### Cálculo logístico (Fase 4)
 
@@ -162,9 +187,6 @@ cadastrado."]`), nunca uma mensagem genérica.
 As regras abaixo já estão especificadas no `Context.md` e serão implementadas quando os módulos
 correspondentes forem construídos:
 
-- **Aprovação/recusa pelo proprietário** (Fase 4): painel para decidir solicitações pendentes.
-- **Pagamento simulado** (Fase 4): estados pendente/processando/aprovado/recusado, sem dado de
-  cartão armazenado.
 - **Cancelamento** (Fase 4): política centralizada em serviço próprio (nunca percentuais fixos
   espalhados pelo código) — ver `Context.md` §9.4.
 - **Retrato de preços preservado**: alterações futuras no anúncio não podem mudar retroativamente

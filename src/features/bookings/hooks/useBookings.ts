@@ -69,6 +69,26 @@ export function useCancelBooking(bookingId: string) {
   });
 }
 
+export function useDecideBooking(bookingId: string) {
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
+  return useMutation({
+    mutationFn: async (input: { decision: "APPROVED" | "REJECTED"; reason?: string }) => {
+      const response = await fetch(`/api/v1/bookings/${bookingId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      const { data } = (await parseErrorOrThrow(response)) as { data: { status: string } };
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["bookings", "open-count"] });
+      showToast("success", data.status === "APPROVED" ? "Solicitação aprovada." : "Solicitação recusada.");
+    },
+  });
+}
+
 // Só a contagem (não a lista completa) — usada pelo indicador de "Minhas reservas" no header,
 // que precisa ficar disponível em toda página logada. A lista completa é sempre renderizada no
 // servidor por /reservas, sem passar por aqui.

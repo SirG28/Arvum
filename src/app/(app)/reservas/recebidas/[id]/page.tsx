@@ -1,20 +1,18 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { getBookingForRenter } from "@/features/bookings/services/booking.service";
+import { getBookingForOwner } from "@/features/bookings/services/booking.service";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_BADGE_TONE } from "@/features/bookings/lib/status-labels";
 import { LOGISTICS_MODE_LABELS } from "@/features/bookings/lib/logistics-labels";
-import { isBookingCancellableByRenter } from "@/features/bookings/lib/cancellation";
+import { isBookingPendingApproval } from "@/features/bookings/lib/approval";
 import { PriceBreakdown } from "@/features/bookings/components/PriceBreakdown";
-import { CancelBookingButton } from "@/features/bookings/components/CancelBookingButton";
-import { PaymentForm } from "@/features/payments/components/PaymentForm";
-import { PAYMENT_METHOD_LABELS } from "@/features/payments/lib/payment-method-labels";
+import { BookingDecisionActions } from "@/features/bookings/components/BookingDecisionActions";
 
-export const metadata = { title: "Detalhe da reserva" };
+export const metadata = { title: "Detalhe da solicitação" };
 
-interface BookingDetailPageProps {
+interface ReceivedBookingDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
@@ -26,12 +24,12 @@ function formatDateTime(date: Date) {
   return date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
-export default async function BookingDetailPage({ params }: BookingDetailPageProps) {
+export default async function ReceivedBookingDetailPage({ params }: ReceivedBookingDetailPageProps) {
   const { id } = await params;
   const user = await getCurrentUser();
-  if (!user) redirect(`/login?callbackUrl=/reservas/${id}`);
+  if (!user) redirect(`/login?callbackUrl=/reservas/recebidas/${id}`);
 
-  const booking = await getBookingForRenter(user.id, id);
+  const booking = await getBookingForOwner(user.id, id);
   if (!booking) notFound();
 
   const image = booking.machine.images[0];
@@ -39,8 +37,8 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/reservas" className="text-sm font-medium text-neutral-500 hover:text-neutral-700">
-          ← Minhas reservas
+        <Link href="/reservas/recebidas" className="text-sm font-medium text-neutral-500 hover:text-neutral-700">
+          ← Solicitações recebidas
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <h1 className="text-lg font-semibold text-neutral-900">{booking.machine.title}</h1>
@@ -67,6 +65,12 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
         </div>
 
         <dl className="grid flex-1 grid-cols-2 gap-4 text-sm">
+          <div className="col-span-2">
+            <dt className="text-neutral-400">Solicitado por</dt>
+            <dd className="text-neutral-900">
+              {booking.renter.name} — {booking.renter.email}
+            </dd>
+          </div>
           <div>
             <dt className="text-neutral-400">Período</dt>
             <dd className="text-neutral-900">
@@ -86,7 +90,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
           </div>
           {booking.notes && (
             <div className="col-span-2">
-              <dt className="text-neutral-400">Observações</dt>
+              <dt className="text-neutral-400">Observações do locatário</dt>
               <dd className="text-neutral-900">{booking.notes}</dd>
             </div>
           )}
@@ -120,46 +124,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
         </ol>
       </Card>
 
-      {booking.status === "APPROVED" && (
-        <Card>
-          <h2 className="text-sm font-semibold text-neutral-900">Pagamento</h2>
-          <p className="mt-1 text-sm text-neutral-500">
-            Sua solicitação foi aprovada pelo proprietário. Confirme o pagamento para seguir com a
-            reserva.
-          </p>
-          <PaymentForm className="mt-3" bookingId={booking.id} totalValueInCents={booking.totalValueInCents} />
-        </Card>
-      )}
-
-      {booking.payments[0] && (
-        <Card>
-          <h2 className="text-sm font-semibold text-neutral-900">Pagamento confirmado</h2>
-          <dl className="mt-3 grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <dt className="text-neutral-400">Forma de pagamento</dt>
-              <dd className="text-neutral-900">
-                {PAYMENT_METHOD_LABELS[booking.payments[0].paymentMethod as "CREDIT_CARD" | "PIX"] ??
-                  booking.payments[0].paymentMethod}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-neutral-400">Pago em</dt>
-              <dd className="text-neutral-900">
-                {booking.payments[0].paidAt ? formatDateTime(booking.payments[0].paidAt) : "—"}
-              </dd>
-            </div>
-          </dl>
-        </Card>
-      )}
-
-      <Link
-        href={`/catalogo/${booking.machine.slug}`}
-        className="text-sm font-medium text-neutral-700 underline hover:text-neutral-900"
-      >
-        Ver anúncio da máquina
-      </Link>
-
-      {isBookingCancellableByRenter(booking.status) && <CancelBookingButton bookingId={booking.id} />}
+      {isBookingPendingApproval(booking.status) && <BookingDecisionActions bookingId={booking.id} />}
     </div>
   );
 }

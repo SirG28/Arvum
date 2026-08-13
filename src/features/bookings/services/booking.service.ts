@@ -30,6 +30,7 @@ export async function getBookingForRenter(renterId: string, bookingId: string) {
       machine: { include: { images: { orderBy: { position: "asc" }, take: 1 } } },
       destinationProperty: true,
       statusHistory: { orderBy: { createdAt: "asc" } },
+      payments: { orderBy: { createdAt: "desc" } },
     },
   });
   if (!booking || booking.renterId !== renterId) return null;
@@ -204,6 +205,71 @@ export async function createBookingRequest(
 
     return booking;
   });
+}
+
+// Espelha listBookingsByRenter, mas filtrando pela máquina em vez do locatário — a mesma reserva
+// aparece nas duas listas (uma para cada lado da relação), nunca uma tabela própria de "pedidos".
+export function listBookingsForOwner(ownerId: string) {
+  return prisma.booking.findMany({
+    where: { machine: { ownerId } },
+    include: {
+      machine: { include: { images: { orderBy: { position: "asc" }, take: 1 } } },
+      renter: { select: { id: true, name: true, email: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+// Mesmo padrão de getBookingForRenter: null tanto para "não existe" quanto para "existe mas a
+// máquina não é do proprietário logado" — nunca confiando no id vindo do cliente.
+export async function getBookingForOwner(ownerId: string, bookingId: string) {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: {
+      machine: { include: { images: { orderBy: { position: "asc" }, take: 1 } } },
+      destinationProperty: true,
+      renter: { select: { id: true, name: true, email: true } },
+      statusHistory: { orderBy: { createdAt: "asc" } },
+    },
+  });
+  if (!booking || booking.machine.ownerId !== ownerId) return null;
+  return booking;
+}
+
+export type BookingDecisionResult = "APPROVED" | "REJECTED" | "NOT_FOUND" | "NOT_PENDING";
+
+// Única transição possível pelo proprietário nesta etapa da Fase 4 (Context.md §8.8/§8.9):
+// AWAITING_APPROVAL → APPROVED/REJECTED, sempre com histórico. Reserva instantânea nunca passa
+// por aqui (nasce direto em APPROVED), então não há "reaprovar" uma reserva já decidida.
+export async function decideBookingRequest(
+  ownerId: string,
+  bookingId: string,
+  decision: "APPROVED" | "REJECTED",
+  reason?: string,
+): Promise<BookingDecisionResult> {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { machine: true },
+  });
+  if (!booking || booking.machine.ownerId !== ownerId) return "NOT_FOUND";
+  if (booking.status !== "AWAITING_APPROVAL") return "NOT_PENDING";
+
+  await prisma.$transaction(async (tx) => {
+    await tx.booking.update({ where: { id: bookingId }, data: { status: decision } });
+    await tx.bookingStatusHistory.create({
+      data: {
+        bookingId,
+        previousStatus: booking.status,
+        nextStatus: decision,
+        changedById: ownerId,
+        notes:
+          reason?.trim() ||
+          (decision === "APPROVED" ? "Aprovada pelo proprietário." : "Recusada pelo proprietário."),
+      },
+    });
+  });
+
+  return decision;
 }
 
 export type CancelBookingResult = "CANCELLED" | "NOT_FOUND" | "NOT_CANCELLABLE";

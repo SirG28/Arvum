@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bookingRequestSchema } from "./booking.schema";
+import { bookingRequestSchema, bookingDecisionSchema } from "./booking.schema";
 
 function daysFromNow(days: number) {
   const date = new Date();
@@ -67,6 +67,34 @@ describe("bookingRequestSchema", () => {
       logisticsMode: "TELEPORT",
       startDate: daysFromNow(1),
       endDate: daysFromNow(3),
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("bookingDecisionSchema", () => {
+  it("aceita aprovação sem motivo", () => {
+    const result = bookingDecisionSchema.safeParse({ decision: "APPROVED" });
+    expect(result.success).toBe(true);
+  });
+
+  it("aceita recusa com motivo opcional", () => {
+    const result = bookingDecisionSchema.safeParse({
+      decision: "REJECTED",
+      reason: "Máquina em manutenção nesse período.",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejeita decisão inválida", () => {
+    const result = bookingDecisionSchema.safeParse({ decision: "MAYBE" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejeita motivo muito longo", () => {
+    const result = bookingDecisionSchema.safeParse({
+      decision: "REJECTED",
+      reason: "a".repeat(501),
     });
     expect(result.success).toBe(false);
   });

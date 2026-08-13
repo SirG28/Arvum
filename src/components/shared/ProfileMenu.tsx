@@ -48,6 +48,17 @@ export const PROFILE_ITEMS = [
     icon: <path d="M12 19s-7-4.35-7-9.5A4.25 4.25 0 0 1 12 6.5 4.25 4.25 0 0 1 19 9.5C19 14.65 12 19 12 19Z" />,
   },
   {
+    href: "/reservas/recebidas",
+    label: "Solicitações recebidas",
+    icon: (
+      <>
+        <rect x="4" y="6" width="16" height="14" rx="2" />
+        <path d="M8 6V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1" />
+        <path d="m8.5 13 2.3 2.3L15.5 11" />
+      </>
+    ),
+  },
+  {
     href: "/configuracoes",
     label: "Configurações",
     icon: (

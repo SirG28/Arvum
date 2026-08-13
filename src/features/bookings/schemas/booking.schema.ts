@@ -28,3 +28,13 @@ export const bookingRequestSchema = z
   });
 
 export type BookingRequestInput = z.infer<typeof bookingRequestSchema>;
+
+export const bookingDecisionSchema = z.object({
+  decision: z.enum(["APPROVED", "REJECTED"], {
+    required_error: "Selecione aprovar ou recusar.",
+    invalid_type_error: "Selecione aprovar ou recusar.",
+  }),
+  reason: z.string().trim().max(500, "Motivo muito longo.").optional(),
+});
+
+export type BookingDecisionInput = z.infer<typeof bookingDecisionSchema>;
