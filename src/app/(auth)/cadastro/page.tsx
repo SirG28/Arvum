@@ -6,7 +6,7 @@ export const metadata = { title: "Criar conta" };
 
 export default function SignupPage() {
   return (
-    <Card>
+    <Card className="p-6 sm:p-8">
       <h1 className="text-lg font-semibold text-neutral-900">Criar sua conta</h1>
       <p className="mt-1 text-sm text-neutral-500">
         Uma mesma conta pode alugar e disponibilizar máquinas.

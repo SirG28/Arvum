@@ -5,6 +5,7 @@ import Link from "next/link";
 import { signupAction, type SignupActionState } from "../actions/signup.action";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { FormField } from "@/components/ui/FormField";
 import { Alert } from "@/components/ui/Alert";
 
@@ -54,7 +55,7 @@ export function SignupForm() {
         helpText="Mínimo de 8 caracteres, com letra maiúscula e número."
         error={state.errors?.password?.[0]}
       >
-        <Input type="password" name="password" autoComplete="new-password" />
+        <PasswordInput name="password" autoComplete="new-password" />
       </FormField>
 
       <label className="flex items-start gap-2 text-sm text-neutral-700">
