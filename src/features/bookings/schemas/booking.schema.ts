@@ -38,3 +38,22 @@ export const bookingDecisionSchema = z.object({
 });
 
 export type BookingDecisionInput = z.infer<typeof bookingDecisionSchema>;
+
+export const fulfillmentActionSchema = z.object({
+  action: z.enum(
+    [
+      "SCHEDULE_TRANSPORT",
+      "START_TRANSIT",
+      "CONFIRM_DELIVERY",
+      "CONFIRM_PICKUP",
+      "START_RETURN",
+      "CONFIRM_RETURN",
+    ],
+    {
+      required_error: "Ação inválida.",
+      invalid_type_error: "Ação inválida.",
+    },
+  ),
+});
+
+export type FulfillmentActionInput = z.infer<typeof fulfillmentActionSchema>;

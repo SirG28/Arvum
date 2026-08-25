@@ -7,8 +7,12 @@ import { Badge } from "@/components/ui/Badge";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_BADGE_TONE } from "@/features/bookings/lib/status-labels";
 import { LOGISTICS_MODE_LABELS } from "@/features/bookings/lib/logistics-labels";
 import { isBookingPendingApproval } from "@/features/bookings/lib/approval";
+import { isBookingCancellableByOwner, resolveCancellationRefund } from "@/features/bookings/lib/cancellation";
+import { getNextFulfillmentAction } from "@/features/bookings/lib/fulfillment";
 import { PriceBreakdown } from "@/features/bookings/components/PriceBreakdown";
 import { BookingDecisionActions } from "@/features/bookings/components/BookingDecisionActions";
+import { CancelBookingButton } from "@/features/bookings/components/CancelBookingButton";
+import { FulfillmentActionButton } from "@/features/bookings/components/FulfillmentActionButton";
 
 export const metadata = { title: "Detalhe da solicitação" };
 
@@ -125,6 +129,28 @@ export default async function ReceivedBookingDetailPage({ params }: ReceivedBook
       </Card>
 
       {isBookingPendingApproval(booking.status) && <BookingDecisionActions bookingId={booking.id} />}
+
+      {(() => {
+        const nextAction = getNextFulfillmentAction(booking.status, booking.logisticsMode);
+        if (!nextAction || nextAction.actor !== "OWNER") return null;
+        return (
+          <Card>
+            <h2 className="text-sm font-semibold text-neutral-900">Próxima etapa</h2>
+            <p className="mt-1 text-sm text-neutral-500">{nextAction.description}</p>
+            <div className="mt-3">
+              <FulfillmentActionButton bookingId={booking.id} action={nextAction} />
+            </div>
+          </Card>
+        );
+      })()}
+
+      {isBookingCancellableByOwner(booking.status) && (
+        <CancelBookingButton
+          bookingId={booking.id}
+          role="OWNER"
+          refundOutcome={resolveCancellationRefund(booking.status, booking.startDate, "OWNER")}
+        />
+      )}
     </div>
   );
 }

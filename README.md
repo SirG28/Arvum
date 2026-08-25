@@ -15,7 +15,7 @@ Integrantes:
 
 A especificação completa do produto está em [`Context.md`](./Context.md).
 
-## Status atual — Fase 4 (Transação) em andamento
+## Status atual — Fase 4 (Transação) concluída
 
 Roadmap completo em [`ARCHITECTURE.md`](./ARCHITECTURE.md#roadmap). Implementado:
 
@@ -51,13 +51,24 @@ Roadmap completo em [`ARCHITECTURE.md`](./ARCHITECTURE.md#roadmap). Implementado
   preenchidos, o formulário de reserva mostra locação + logística + total (ou o motivo de não
   poder calcular, ex.: fora do raio de entrega) antes do botão "Solicitar reserva".
 - Feedback de sucesso reforçado com notificação (toast), além da confirmação já exibida na tela.
-- Cancelamento de reserva pelo locatário (com pop-up de confirmação), disponível enquanto a
-  reserva ainda não foi paga.
+- Aprovação/recusa da solicitação pelo proprietário (`/reservas/recebidas`), com motivo opcional
+  registrado no andamento da reserva.
+- Pagamento simulado: o locatário confirma o pagamento (cartão ou Pix, ambos simulados) assim que
+  a reserva é aprovada; nenhum dado de cartão é coletado.
+- Acompanhamento de status até a conclusão: depois do pagamento confirmado, cada lado da reserva
+  vê um botão de "próxima etapa" (agendar transporte, iniciar transporte, confirmar entrega/
+  retirada, sinalizar devolução, confirmar devolução), sempre restrito a quem é responsável por
+  aquela ação no anúncio (proprietário ou locatário) — nunca uma alteração livre de status.
+  Retirada pelo locatário pula o rastreio de transporte; entrega pelo proprietário e transporte
+  por parceiro passam por agendamento e trânsito antes da entrega.
+- Cancelamento pelo locatário ou pelo proprietário, com política de estorno centralizada: sem
+  cobrança antes do pagamento, estorno integral se o proprietário cancelar, e estorno integral ou
+  não (conforme antecedência até o início do período) se o locatário cancelar depois do pagamento
+  confirmado — sempre explicado antes de confirmar o cancelamento.
 
-Ainda não implementado (fases seguintes): composição de preço completa (tela de revisão), taxa de
-serviço (comissão), aprovação/recusa pelo proprietário, pagamento, cancelamento, avaliações,
-notificações, painel administrativo — ver roadmap e as decisões de escopo em
-[`BUSINESS_RULES.md`](./BUSINESS_RULES.md).
+Ainda não implementado (fases seguintes): taxa de serviço (comissão), avaliações, notificações,
+mensagens, painel administrativo, monetização avançada (assinatura Premium, anúncios
+patrocinados) — ver roadmap e as decisões de escopo em [`BUSINESS_RULES.md`](./BUSINESS_RULES.md).
 
 ## Stack
 

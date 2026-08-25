@@ -6,9 +6,11 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_BADGE_TONE } from "@/features/bookings/lib/status-labels";
 import { LOGISTICS_MODE_LABELS } from "@/features/bookings/lib/logistics-labels";
-import { isBookingCancellableByRenter } from "@/features/bookings/lib/cancellation";
+import { isBookingCancellableByRenter, resolveCancellationRefund } from "@/features/bookings/lib/cancellation";
+import { getNextFulfillmentAction } from "@/features/bookings/lib/fulfillment";
 import { PriceBreakdown } from "@/features/bookings/components/PriceBreakdown";
 import { CancelBookingButton } from "@/features/bookings/components/CancelBookingButton";
+import { FulfillmentActionButton } from "@/features/bookings/components/FulfillmentActionButton";
 import { PaymentForm } from "@/features/payments/components/PaymentForm";
 import { PAYMENT_METHOD_LABELS } from "@/features/payments/lib/payment-method-labels";
 
@@ -131,6 +133,20 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
         </Card>
       )}
 
+      {(() => {
+        const nextAction = getNextFulfillmentAction(booking.status, booking.logisticsMode);
+        if (!nextAction || nextAction.actor !== "RENTER") return null;
+        return (
+          <Card>
+            <h2 className="text-sm font-semibold text-neutral-900">Próxima etapa</h2>
+            <p className="mt-1 text-sm text-neutral-500">{nextAction.description}</p>
+            <div className="mt-3">
+              <FulfillmentActionButton bookingId={booking.id} action={nextAction} />
+            </div>
+          </Card>
+        );
+      })()}
+
       {booking.payments[0] && (
         <Card>
           <h2 className="text-sm font-semibold text-neutral-900">Pagamento confirmado</h2>
@@ -159,7 +175,13 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
         Ver anúncio da máquina
       </Link>
 
-      {isBookingCancellableByRenter(booking.status) && <CancelBookingButton bookingId={booking.id} />}
+      {isBookingCancellableByRenter(booking.status) && (
+        <CancelBookingButton
+          bookingId={booking.id}
+          role="RENTER"
+          refundOutcome={resolveCancellationRefund(booking.status, booking.startDate, "RENTER")}
+        />
+      )}
     </div>
   );
 }

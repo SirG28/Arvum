@@ -16,9 +16,10 @@ src/
     api/v1/properties/route.ts, [id]/route.ts
     api/v1/categories/route.ts
     api/v1/machines/route.ts, [id]/route.ts, [id]/status,
-      [id]/images(+[imageId]), [id]/availability(+[blockId]), [id]/bookings
+      [id]/images(+[imageId]), [id]/availability(+[blockId]), [id]/bookings, [id]/booking-quote
     api/v1/favorites/route.ts, [machineId]/route.ts
-    api/v1/bookings/open-count/route.ts
+    api/v1/bookings/open-count/route.ts, [id]/route.ts, [id]/status/route.ts,
+      [id]/payment/route.ts, [id]/fulfillment/route.ts
   auth.ts                  # configuração raiz do Auth.js
   middleware.ts            # proteção de rota
   components/
@@ -31,8 +32,11 @@ src/
     categories/             # services (leitura), types
     machines/               # schemas, lib (slug, status), services, hooks, components
     favorites/               # services, hooks, components (FavoriteButton, FavoriteMachineCard)
-    bookings/                 # schemas, lib (pricing), services, hooks, components (BookingRequestForm)
+    bookings/                 # schemas, lib (pricing, cancellation, fulfillment, status-labels),
+                               #   services, hooks, components (BookingRequestForm,
+                               #   BookingDecisionActions, CancelBookingButton, FulfillmentActionButton)
     logistics/                # config (preços padrão), lib (cálculo logístico, fator do equipamento)
+    payments/                 # schemas, lib (labels), services, hooks, components (PaymentForm)
   lib/                     # prisma, env, api-response, session, cn
     geo/                   # distância (Haversine) e geocodificação simulada
   schemas/                 # primitivas zod reutilizáveis
@@ -95,10 +99,11 @@ para regras de negócio.
 3. ✅ **Descoberta** — filtros completos no catálogo (preço, marca, cultura, finalidade,
    necessidade de operador, período), favoritos, e localização/distância estimada (geocodificação
    simulada + Haversine).
-4. **Transação** — em andamento. ✅ Solicitação de reserva mínima. ✅ Cálculo logístico (retirada,
-   entrega pelo proprietário, transporte por parceiro simulado). ✅ Composição de preço (prévia e
-   retrato congelado). ✅ Aprovação/recusa do proprietário. ✅ Pagamento simulado. Pendente:
-   acompanhamento de status (linha do tempo completa até a conclusão), cancelamento após pagamento.
+4. ✅ **Transação** — concluída. Solicitação de reserva mínima, cálculo logístico (retirada,
+   entrega pelo proprietário, transporte por parceiro simulado), composição de preço (prévia e
+   retrato congelado), aprovação/recusa do proprietário, pagamento simulado, acompanhamento de
+   status até a conclusão (transporte, entrega/retirada, uso, devolução) e cancelamento — pelo
+   locatário ou pelo proprietário, com política de estorno centralizada.
 5. **Confiança** — avaliações, notificações, mensagens, moderação.
 6. **Administração e qualidade** — painel admin, indicadores, testes, acessibilidade, segurança, documentação, deploy.
 7. **Monetização avançada** (`Context.md` §8.21/§9.7) — comissão sobre operações (8%–12%, já
@@ -112,7 +117,7 @@ Adaptadores simulados (mapas/geolocalização, pagamento, transportadoras) serã
 fases 2–4 atrás de interfaces de serviço, permitindo substituição futura por provedores reais sem
 reescrever regras de negócio.
 
-## Próxima etapa — Fase 4 (Transação)
+## Fase 4 (Transação) — detalhamento
 
 O schema (`Booking`, `BookingStatusHistory`, `LogisticsQuote`, `Payment`) já existe desde a Etapa 1
 (vazio). Nenhuma rota, serviço ou tela desses módulos existe ainda. Quebrando em etapas funcionais
@@ -150,14 +155,34 @@ incrementais (`Context.md` §27/§33 — uma etapa completa e testável por vez,
    transições. Só o locatário da própria reserva paga, verificado no servidor
    (`confirmSimulatedPayment`). Nenhum dado de cartão é coletado ou armazenado — só a forma de
    pagamento escolhida (cartão/Pix, ambos simulados).
-6. **Acompanhamento de status** — painel do locatário e do proprietário exibindo a reserva atual e
-   a linha do tempo (`BookingStatusHistory`); transições seguintes (`TRANSPORT_SCHEDULED →
-   IN_TRANSIT → DELIVERED → IN_USE → AWAITING_RETURN → RETURNED → COMPLETED`) restritas por regra
-   e responsável, nunca alteração arbitrária de estado.
-7. **Cancelamento** — política centralizada em serviço próprio (`Context.md` §9.4), nunca
-   percentuais fixos espalhados pelo código; aplica estorno/cobrança conforme o estágio da reserva.
+6. ✅ **Acompanhamento de status** — um único botão de "próxima etapa" em `/reservas/[id]`
+   (locatário) e `/reservas/recebidas/[id]` (proprietário), decidido por
+   `getNextFulfillmentAction` (`src/features/bookings/lib/fulfillment.ts`): única fonte de verdade
+   sobre qual é a próxima transição válida e de quem, usada tanto pela tela (qual botão mostrar)
+   quanto pelo servidor (`advanceBookingFulfillment`, que verifica se o usuário logado é de fato o
+   responsável antes de aplicar a transição — nunca confiando em um papel enviado pelo cliente).
+   Retirada pelo locatário (`RENTER_PICKUP`) pula o rastreio de transporte: `PAYMENT_CONFIRMED →
+   DELIVERED → IN_USE` (locatário confirma a retirada) `→ AWAITING_RETURN` (locatário sinaliza)
+   `→ RETURNED → COMPLETED` (proprietário confirma a devolução). Entrega pelo proprietário e
+   transporte por parceiro passam antes por `TRANSPORT_SCHEDULED → IN_TRANSIT` (proprietário).
+   Duas transições avançam dois estados na mesma ação (mesma transação, dois registros de
+   histórico): confirmar entrega/retirada já implica "em uso", e confirmar devolução já encerra a
+   reserva — no MVP não há como a plataforma detectar sozinha uma etapa intermediária entre esses
+   pares de estados.
+7. ✅ **Cancelamento** — `cancelBooking` (`src/features/bookings/services/booking.service.ts`)
+   serve tanto o locatário quanto o proprietário; o papel é descoberto a partir da própria reserva,
+   nunca recebido do cliente. Política centralizada em `src/features/bookings/lib/cancellation.ts`
+   (`Context.md` §9.4), nunca percentuais soltos no serviço: sem cobrança antes do pagamento
+   confirmado (nada foi cobrado ainda); estorno integral quando quem cancela é o proprietário;
+   estorno integral ou nenhum, conforme a antecedência até o início do período
+   (`CANCELLATION_POLICY.minDaysBeforeStartForFullRefund`, hoje 3 dias), quando é o locatário
+   cancelando depois do pagamento confirmado. Cancelamento self-service termina em
+   `PAYMENT_CONFIRMED` — a partir de `TRANSPORT_SCHEDULED` (transporte já organizado) não é mais
+   oferecido, situação que o `Context.md` §9.4 trata como excepcional (disputa, fora do escopo do
+   MVP). O estorno é simulado: o `Payment` aprovado da reserva muda para `REFUNDED` na mesma
+   transação que cancela o `Booking`.
 
-Cada etapa acima deve ser entregue como um fluxo completo e testável (schema já existe → falta
-serviço + validação no servidor + rota + tela mínima + testes), sem pular para a etapa seguinte
-antes da anterior estar funcional. Avaliações (Fase 5) dependem de `Booking.status = COMPLETED`
-existir de fato, então ficam de fora até o fim desta lista.
+Cada etapa acima foi entregue como um fluxo completo e testável (schema já existia → serviço +
+validação no servidor + rota + tela mínima + testes). Com a Fase 4 completa, a Fase 5 (Confiança —
+avaliações, notificações, mensagens) é a próxima: avaliações dependem de `Booking.status =
+COMPLETED` existir de fato, o que agora acontece via o fluxo de acompanhamento acima.

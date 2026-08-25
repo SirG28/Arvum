@@ -5,7 +5,12 @@ import { ACTIVE_BOOKING_STATUSES } from "@/features/machines/services/machine.se
 import { calculateDistanceKm } from "@/lib/geo/distance";
 import { calculateLogisticsCost, type LogisticsCostResult } from "@/features/logistics/lib/pricing";
 import { calculateRentalDays, calculateBookingTotals } from "../lib/pricing";
-import { isBookingCancellableByRenter } from "../lib/cancellation";
+import {
+  isBookingCancellableByRenter,
+  isBookingCancellableByOwner,
+  resolveCancellationRefund,
+} from "../lib/cancellation";
+import { getNextFulfillmentAction, FULFILLMENT_STEPS, type FulfillmentAction } from "../lib/fulfillment";
 import type { BookingRequestInput } from "../schemas/booking.schema";
 
 export function listBookingsByRenter(renterId: string) {
@@ -272,31 +277,119 @@ export async function decideBookingRequest(
   return decision;
 }
 
-export type CancelBookingResult = "CANCELLED" | "NOT_FOUND" | "NOT_CANCELLABLE";
+export type CancelBookingResult =
+  | { status: "CANCELLED"; refund: ReturnType<typeof resolveCancellationRefund> }
+  | "NOT_FOUND"
+  | "NOT_CANCELLABLE";
 
-export async function cancelBookingByRenter(
-  renterId: string,
-  bookingId: string,
-): Promise<CancelBookingResult> {
-  const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
-  if (!booking || booking.renterId !== renterId) return "NOT_FOUND";
-  if (!isBookingCancellableByRenter(booking.status)) return "NOT_CANCELLABLE";
+// Ponto único para cancelar uma reserva, tanto pelo locatário quanto pelo proprietário (Context.md
+// §9.4) — o papel de quem está cancelando é descoberto a partir da própria reserva (nunca recebido
+// do cliente), e cada papel tem sua janela permitida e política de estorno (isBookingCancellableBy*
+// / resolveCancellationRefund, ambas em lib/cancellation.ts, nunca percentuais soltos aqui).
+export async function cancelBooking(userId: string, bookingId: string): Promise<CancelBookingResult> {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { machine: true, payments: true },
+  });
+  if (!booking) return "NOT_FOUND";
+
+  const isOwner = booking.machine.ownerId === userId;
+  const isRenter = booking.renterId === userId;
+  if (!isOwner && !isRenter) return "NOT_FOUND";
+
+  const cancelledBy = isRenter ? "RENTER" : "OWNER";
+  const cancellable = isRenter
+    ? isBookingCancellableByRenter(booking.status)
+    : isBookingCancellableByOwner(booking.status);
+  if (!cancellable) return "NOT_CANCELLABLE";
+
+  const refund = resolveCancellationRefund(booking.status, booking.startDate, cancelledBy);
+  const cancellationReason =
+    cancelledBy === "RENTER" ? "Cancelada pelo locatário." : "Cancelada pelo proprietário.";
 
   await prisma.$transaction(async (tx) => {
     await tx.booking.update({
       where: { id: bookingId },
-      data: { status: "CANCELLED", cancellationReason: "Cancelada pelo locatário." },
+      data: { status: "CANCELLED", cancellationReason },
     });
     await tx.bookingStatusHistory.create({
       data: {
         bookingId,
         previousStatus: booking.status,
         nextStatus: "CANCELLED",
-        changedById: renterId,
-        notes: "Cancelada pelo locatário.",
+        changedById: userId,
+        notes:
+          refund === "FULL"
+            ? `${cancellationReason} Pagamento estornado integralmente (simulado).`
+            : cancellationReason,
       },
     });
+
+    if (refund === "FULL") {
+      const approvedPayment = booking.payments.find((payment) => payment.status === "APPROVED");
+      if (approvedPayment) {
+        await tx.payment.update({
+          where: { id: approvedPayment.id },
+          data: { status: "REFUNDED" },
+        });
+      }
+    }
   });
 
-  return "CANCELLED";
+  return { status: "CANCELLED", refund };
+}
+
+export type AdvanceFulfillmentResult =
+  | { status: string }
+  | "NOT_FOUND"
+  | "INVALID_TRANSITION"
+  | "FORBIDDEN";
+
+// Ponto único para as transições pós-pagamento (Context.md §8.9): agendamento/transporte/entrega,
+// uso e devolução. getNextFulfillmentAction (lib/fulfillment.ts) é a única fonte de verdade sobre
+// qual é a próxima ação válida e de quem — aqui só verificamos que o usuário logado é de fato esse
+// responsável (proprietário da máquina ou locatário da reserva) antes de aplicar a transição.
+export async function advanceBookingFulfillment(
+  userId: string,
+  bookingId: string,
+  action: FulfillmentAction,
+): Promise<AdvanceFulfillmentResult> {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { machine: true },
+  });
+  if (!booking) return "NOT_FOUND";
+
+  const isOwner = booking.machine.ownerId === userId;
+  const isRenter = booking.renterId === userId;
+  if (!isOwner && !isRenter) return "NOT_FOUND";
+
+  const expected = getNextFulfillmentAction(booking.status, booking.logisticsMode);
+  if (!expected || expected.action !== action) return "INVALID_TRANSITION";
+
+  const actorMatches = expected.actor === "OWNER" ? isOwner : isRenter;
+  if (!actorMatches) return "FORBIDDEN";
+
+  const steps = FULFILLMENT_STEPS[action];
+  let finalStatus = booking.status;
+
+  await prisma.$transaction(async (tx) => {
+    let previousStatus = booking.status;
+    for (const step of steps) {
+      await tx.booking.update({ where: { id: bookingId }, data: { status: step.nextStatus } });
+      await tx.bookingStatusHistory.create({
+        data: {
+          bookingId,
+          previousStatus,
+          nextStatus: step.nextStatus,
+          changedById: userId,
+          notes: step.notes,
+        },
+      });
+      previousStatus = step.nextStatus;
+      finalStatus = step.nextStatus;
+    }
+  });
+
+  return { status: finalStatus };
 }

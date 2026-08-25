@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { apiSuccess, apiError } from "@/lib/api-response";
-import { cancelBookingByRenter } from "@/features/bookings/services/booking.service";
+import { cancelBooking } from "@/features/bookings/services/booking.service";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -9,6 +9,8 @@ interface RouteParams {
 // "Cancelar" em vez de excluir de fato: o histórico da reserva (BookingStatusHistory) é sempre
 // preservado (Context.md §8.4/§9.3) — o método HTTP DELETE reflete a intenção do usuário
 // ("excluir a reserva"), mas o servidor faz uma transição de status, nunca uma remoção física.
+// Serve tanto o locatário quanto o proprietário da máquina (Context.md §9.4) — cancelBooking
+// descobre o papel a partir da própria reserva, nunca confiando em um campo enviado pelo cliente.
 export async function DELETE(_request: Request, { params }: RouteParams) {
   const session = await auth();
   if (!session?.user) {
@@ -16,7 +18,7 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
   }
 
   const { id } = await params;
-  const result = await cancelBookingByRenter(session.user.id, id);
+  const result = await cancelBooking(session.user.id, id);
 
   if (result === "NOT_FOUND") {
     return apiError("BOOKING_NOT_FOUND", "Reserva não encontrada.", 404);
@@ -29,5 +31,5 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
     );
   }
 
-  return apiSuccess({ status: "CANCELLED" });
+  return apiSuccess(result);
 }

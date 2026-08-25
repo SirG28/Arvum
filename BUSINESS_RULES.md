@@ -129,12 +129,54 @@ cadastrado."]`), nunca uma mensagem genérica.
   (`buildBookingQuote`) roda sem gravar nada assim que destino, período e modalidade estão
   preenchidos, para o locatário ver locação + logística + total (e qualquer impedimento, ex.:
   fora do raio de entrega) antes de confirmar — nunca só depois de enviar a solicitação.
-- **Cancelamento pelo locatário**: permitido enquanto a reserva está em `DRAFT`,
-  `AWAITING_APPROVAL`, `APPROVED` ou `AWAITING_PAYMENT` — todos os estados "antes do pagamento"
-  do `Context.md` §9.4, sem cobrança. Como o módulo de pagamento ainda não existe, toda reserva
-  hoje se enquadra nesse caso; a política de estorno após pagamento confirmado fica para quando o
-  `Payment` existir. O cancelamento é sempre uma transição de status (`CANCELLED`) com
-  `BookingStatusHistory`, nunca uma remoção física do registro (`Context.md` §8.4/§9.3).
+- **Cancelamento pelo locatário ou pelo proprietário** (`cancelBooking`,
+  `src/features/bookings/services/booking.service.ts`): o mesmo serviço atende os dois lados — o
+  papel de quem está cancelando é descoberto a partir da própria reserva (`machine.ownerId` ou
+  `renterId` comparado com a sessão), nunca recebido do cliente. Cada papel tem sua janela
+  permitida (`isBookingCancellableByRenter`/`isBookingCancellableByOwner`,
+  `src/features/bookings/lib/cancellation.ts`):
+  - **Locatário**: `DRAFT`, `AWAITING_APPROVAL`, `APPROVED`, `AWAITING_PAYMENT` (antes do
+    pagamento) ou `PAYMENT_CONFIRMED` (logo após, antes do transporte ser organizado).
+  - **Proprietário**: só depois de já ter aprovado a solicitação — `APPROVED`,
+    `AWAITING_PAYMENT` ou `PAYMENT_CONFIRMED`. Para recusar antes da aprovação, usa a decisão de
+    aprovação/recusa (`decideBookingRequest`), nunca esta função — evita duas ações com
+    significados sobrepostos.
+  - A partir de `TRANSPORT_SCHEDULED` (transporte já organizado), nenhum dos dois lados pode mais
+    cancelar por autoatendimento — o `Context.md` §9.4 trata isso como situação excepcional
+    (disputa), fora do escopo do MVP.
+  - **Estorno** (`resolveCancellationRefund`, `Context.md` §9.4, sem percentuais soltos no
+    serviço): antes de `PAYMENT_CONFIRMED` não há cobrança a estornar
+    (`NOT_APPLICABLE`); cancelamento pelo proprietário é sempre estorno integral quando já houve
+    pagamento; cancelamento pelo locatário depois do pagamento é integral com pelo menos
+    `CANCELLATION_POLICY.minDaysBeforeStartForFullRefund` (3) dias de antecedência até o início do
+    período, e sem estorno abaixo disso. O estorno é simulado: o `Payment` aprovado muda para
+    `REFUNDED` na mesma transação que cancela o `Booking`. A interface explica o resultado exato
+    (sem cobrança / estorno integral / sem estorno) antes de o usuário confirmar.
+  - O cancelamento é sempre uma transição de status (`CANCELLED`) com `BookingStatusHistory`,
+    nunca uma remoção física do registro (`Context.md` §8.4/§9.3).
+
+### Acompanhamento de status (Fase 4)
+
+- Depois do pagamento confirmado, a reserva avança por transições restritas por regra e
+  responsável (`Context.md` §8.9), nunca por alteração arbitrária de estado.
+  `getNextFulfillmentAction` (`src/features/bookings/lib/fulfillment.ts`) é a única fonte de
+  verdade sobre qual é a próxima ação válida e de quem — usada tanto pela interface (qual botão
+  mostrar a cada lado) quanto pelo servidor (`advanceBookingFulfillment`, que confirma que o
+  usuário logado é de fato o responsável, nunca confiando em um papel enviado pelo cliente).
+- **Retirada pelo locatário** (`RENTER_PICKUP`) pula o rastreio de transporte — não existe
+  "agendado"/"em trânsito" quando o próprio locatário busca a máquina:
+  `PAYMENT_CONFIRMED → DELIVERED → IN_USE` (locatário confirma a retirada).
+- **Entrega pelo proprietário e transporte por parceiro** passam por
+  `PAYMENT_CONFIRMED → TRANSPORT_SCHEDULED → IN_TRANSIT → DELIVERED → IN_USE`, todas as
+  transições de responsabilidade do proprietário até a entrega.
+- **Devolução**, igual para as três modalidades: `IN_USE → AWAITING_RETURN` (locatário sinaliza
+  que o uso terminou) `→ RETURNED → COMPLETED` (proprietário confirma que recebeu a máquina de
+  volta, o que já encerra a reserva).
+- Duas ações avançam dois estados de uma vez, na mesma transação e com dois registros de
+  histórico: confirmar entrega/retirada já significa "em uso" no mesmo instante, e confirmar
+  devolução já encerra a reserva — no MVP não há uma etapa intermediária que a plataforma consiga
+  detectar sozinha entre esses pares de estados (`Context.md` §27: escolher a alternativa mais
+  simples e registrar a decisão).
 
 ### Pagamento simulado (Fase 4)
 
@@ -187,8 +229,6 @@ cadastrado."]`), nunca uma mensagem genérica.
 As regras abaixo já estão especificadas no `Context.md` e serão implementadas quando os módulos
 correspondentes forem construídos:
 
-- **Cancelamento** (Fase 4): política centralizada em serviço próprio (nunca percentuais fixos
-  espalhados pelo código) — ver `Context.md` §9.4.
 - **Retrato de preços preservado**: alterações futuras no anúncio não podem mudar retroativamente
   o valor de uma reserva já confirmada (vale desde já, pois os valores são gravados no `Booking` no
   momento da criação — falta apenas garantir que nenhuma tela recalcule usando o anúncio atual).

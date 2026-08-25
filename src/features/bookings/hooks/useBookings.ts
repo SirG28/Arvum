@@ -60,11 +60,41 @@ export function useCancelBooking(bookingId: string) {
   return useMutation({
     mutationFn: async () => {
       const response = await fetch(`/api/v1/bookings/${bookingId}`, { method: "DELETE" });
-      return parseErrorOrThrow(response);
+      const { data } = (await parseErrorOrThrow(response)) as {
+        data: { status: "CANCELLED"; refund: "NOT_APPLICABLE" | "FULL" | "NONE" };
+      };
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["bookings", "open-count"] });
+      showToast(
+        "success",
+        data.refund === "FULL"
+          ? "Reserva cancelada e pagamento estornado integralmente (simulado)."
+          : "Reserva cancelada com sucesso.",
+      );
+    },
+  });
+}
+
+// Ações de acompanhamento pós-pagamento (Context.md §8.9) — mesmo endpoint independente da ação,
+// já que advanceBookingFulfillment decide o que é válido a partir do status atual da reserva.
+export function useAdvanceFulfillment(bookingId: string) {
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
+  return useMutation({
+    mutationFn: async (action: string) => {
+      const response = await fetch(`/api/v1/bookings/${bookingId}/fulfillment`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const { data } = (await parseErrorOrThrow(response)) as { data: { status: string } };
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookings", "open-count"] });
-      showToast("success", "Reserva cancelada com sucesso.");
+      showToast("success", "Andamento da reserva atualizado.");
     },
   });
 }
