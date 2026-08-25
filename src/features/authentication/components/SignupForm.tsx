@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { signupAction, type SignupActionState } from "../actions/signup.action";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -64,7 +65,17 @@ export function SignupForm() {
           defaultChecked={state.values?.acceptedTerms}
           className="mt-1"
         />
-        <span>Li e aceito os termos de uso e a política de privacidade.</span>
+        <span>
+          Li e aceito os{" "}
+          <Link href="/termos-de-uso" target="_blank" className="text-primary-700 underline">
+            termos de uso
+          </Link>{" "}
+          e a{" "}
+          <Link href="/politica-de-privacidade" target="_blank" className="text-primary-700 underline">
+            política de privacidade
+          </Link>
+          .
+        </span>
       </label>
       {state.errors?.acceptedTerms?.[0] && (
         <p role="alert" className="text-xs font-medium text-danger-500">

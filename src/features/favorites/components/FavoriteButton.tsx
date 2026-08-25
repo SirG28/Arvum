@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAddFavorite, useRemoveFavorite } from "../hooks/useFavorites";
+import { HeartIcon } from "@/components/ui/HeartIcon";
 import { cn } from "@/lib/cn";
 
 interface FavoriteButtonProps {
@@ -11,21 +12,6 @@ interface FavoriteButtonProps {
   initialFavorited: boolean;
   isAuthenticated: boolean;
   className?: string;
-}
-
-function HeartIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill={filled ? "currentColor" : "none"}
-      strokeWidth={1.8}
-      stroke="currentColor"
-      className="h-5 w-5"
-      aria-hidden="true"
-    >
-      <path d="M12 20.5s-7.5-4.6-10-9.2C0.3 8 1.6 4.5 5 3.6c2.2-0.6 4.3 0.4 5.7 2.3l1.3 1.7 1.3-1.7c1.4-1.9 3.5-2.9 5.7-2.3 3.4 0.9 4.7 4.4 3 7.7-2.5 4.6-10 9.2-10 9.2Z" />
-    </svg>
-  );
 }
 
 const baseButtonClasses =

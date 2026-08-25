@@ -2,19 +2,22 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { Spinner } from "./Spinner";
 
-type IconButtonVariant = "neutral" | "danger";
+type IconButtonVariant = "primary" | "danger";
 
 // Classes compartilhadas entre o <button> abaixo e usos como link estilizado (ex.: "editar", que
 // navega em vez de disparar uma ação — ver PropertyCard.tsx) — um único lugar define a aparência
-// do ícone compacto.
-export function iconButtonClassName(variant: IconButtonVariant = "neutral", className?: string) {
+// do ícone compacto. Contorno colorido (borda + ícone na cor do propósito — verde para editar,
+// vermelho para remover) sobre fundo claro, não preenchido — o oposto de um botão sólido, mais
+// leve numa linha de lista ou grade de imagens. Mesmos tokens de cor do Button.tsx
+// (primary/danger), nunca um tom novo só para este componente.
+export function iconButtonClassName(variant: IconButtonVariant = "primary", className?: string) {
   return cn(
     "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-white transition-colors",
     "focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none",
     "disabled:cursor-not-allowed disabled:opacity-60",
     variant === "danger"
-      ? "border-danger-500/30 text-danger-500 hover:bg-danger-500/10 focus-visible:ring-danger-500"
-      : "border-neutral-200 text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 focus-visible:ring-neutral-500",
+      ? "border-danger-500 text-danger-500 hover:bg-danger-500/10 focus-visible:ring-danger-500"
+      : "border-primary-500 text-primary-500 hover:bg-primary-500/10 focus-visible:ring-primary-500",
     className,
   );
 }
@@ -35,7 +38,7 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export function IconButton({
   icon,
   label,
-  variant = "neutral",
+  variant = "primary",
   isLoading = false,
   disabled,
   className,

@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/session";
 import { getBookingForRenter } from "@/features/bookings/services/booking.service";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { BackLink } from "@/components/ui/BackLink";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_BADGE_TONE } from "@/features/bookings/lib/status-labels";
 import { LOGISTICS_MODE_LABELS } from "@/features/bookings/lib/logistics-labels";
 import { isBookingCancellableByRenter, resolveCancellationRefund } from "@/features/bookings/lib/cancellation";
@@ -43,9 +44,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/reservas" className="text-sm font-medium text-neutral-500 hover:text-neutral-700">
-          ← Minhas reservas
-        </Link>
+        <BackLink href="/reservas" label="Minhas reservas" />
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <h1 className="text-lg font-semibold text-neutral-900">{booking.machine.title}</h1>
           <Badge tone={BOOKING_STATUS_BADGE_TONE[booking.status]}>

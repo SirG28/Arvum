@@ -29,10 +29,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    // trigger "update" acontece quando o cliente chama useSession().update(...) — usado depois de
+    // editar o perfil (ProfileForm) para o nome no cabeçalho/saudação refletir a mudança sem exigir
+    // logout/login, já que a sessão JWT não é revalidada contra o banco a cada requisição.
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: string }).role;
+      }
+      if (trigger === "update" && typeof session?.name === "string") {
+        token.name = session.name;
+      }
+      if (trigger === "update" && typeof session?.email === "string") {
+        token.email = session.email;
       }
       return token;
     },

@@ -29,9 +29,11 @@ export function useCreateBookingRequest(machineId: string) {
       return data;
     },
     onSuccess: () => {
-      // Nova reserva sempre nasce em status "aberto" (AWAITING_APPROVAL/APPROVED) — o indicador
-      // do header precisa refletir isso sem esperar o usuário recarregar a página.
+      // Nova reserva sempre nasce em status "aberto" (AWAITING_APPROVAL/APPROVED) — os indicadores
+      // do header precisam refletir isso sem esperar o usuário recarregar a página. Quando nasce
+      // AWAITING_APPROVAL, o proprietário também ganha uma nova pendência.
       queryClient.invalidateQueries({ queryKey: ["bookings", "open-count"] });
+      queryClient.invalidateQueries({ queryKey: ["bookings", "owner-pending-count"] });
       showToast("success", "Solicitação de reserva enviada com sucesso!");
     },
   });
@@ -67,6 +69,7 @@ export function useCancelBooking(bookingId: string) {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["bookings", "open-count"] });
+      queryClient.invalidateQueries({ queryKey: ["bookings", "owner-pending-count"] });
       showToast(
         "success",
         data.refund === "FULL"
@@ -114,6 +117,7 @@ export function useDecideBooking(bookingId: string) {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["bookings", "open-count"] });
+      queryClient.invalidateQueries({ queryKey: ["bookings", "owner-pending-count"] });
       showToast("success", data.status === "APPROVED" ? "Solicitação aprovada." : "Solicitação recusada.");
     },
   });
@@ -127,6 +131,20 @@ export function useOpenBookingsCount(enabled: boolean) {
     queryKey: ["bookings", "open-count"],
     queryFn: async () => {
       const response = await fetch("/api/v1/bookings/open-count");
+      const { data } = (await parseErrorOrThrow(response)) as { data: { count: number } };
+      return data.count;
+    },
+    enabled,
+  });
+}
+
+// Equivalente do lado do proprietário: solicitações aguardando decisão — mesmo padrão de
+// useOpenBookingsCount, para o indicador de "Solicitações recebidas" no header.
+export function useOwnerPendingCount(enabled: boolean) {
+  return useQuery({
+    queryKey: ["bookings", "owner-pending-count"],
+    queryFn: async () => {
+      const response = await fetch("/api/v1/bookings/owner-pending-count");
       const { data } = (await parseErrorOrThrow(response)) as { data: { count: number } };
       return data.count;
     },

@@ -38,7 +38,7 @@ export function FavoriteMachineCard({ machine }: { machine: FavoritedMachine }) 
         )}
       </div>
       <div>
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-col items-start gap-1">
           <h3 className="text-sm font-semibold text-neutral-900">{machine.title}</h3>
           {!isAvailable && <Badge tone={STATUS_BADGE_TONE[machine.status]}>{STATUS_LABELS[machine.status]}</Badge>}
         </div>

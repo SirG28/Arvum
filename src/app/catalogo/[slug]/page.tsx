@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Alert } from "@/components/ui/Alert";
+import { BackLink } from "@/components/ui/BackLink";
 
 const CONDITION_LABELS: Record<string, string> = {
   NEW: "Nova",
@@ -54,8 +55,15 @@ export default async function MachineDetailPage({ params, searchParams }: Machin
     machine.owner.id,
   );
 
+  const backHref =
+    origemCidade && origemUf
+      ? `/catalogo?origemCidade=${encodeURIComponent(origemCidade)}&origemUf=${encodeURIComponent(origemUf)}`
+      : "/catalogo";
+
   return (
     <div className="flex flex-col gap-6">
+      <BackLink href={backHref} label="Catálogo" />
+
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="flex-1">
           <MachineGallery images={machine.images} title={machine.title} />

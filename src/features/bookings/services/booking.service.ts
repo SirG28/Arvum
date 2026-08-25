@@ -61,6 +61,15 @@ export function countOpenBookingsByRenter(renterId: string) {
   });
 }
 
+// Equivalente do lado do proprietário: solicitações aguardando decisão (aprovar/recusar), a
+// pendência mais urgente do painel do proprietário — usado tanto pelo indicador no cabeçalho
+// (mesmo padrão de countOpenBookingsByRenter) quanto pela home logada.
+export function countPendingBookingsForOwner(ownerId: string) {
+  return prisma.booking.count({
+    where: { machine: { ownerId }, status: "AWAITING_APPROVAL" },
+  });
+}
+
 export type BookingQuoteError =
   | "MACHINE_NOT_FOUND"
   | "CANNOT_BOOK_OWN_MACHINE"

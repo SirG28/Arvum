@@ -4,12 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDeleteMachine } from "../hooks/useMachines";
 import { Button } from "@/components/ui/Button";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import { Alert } from "@/components/ui/Alert";
 
+// Mesmo padrão de confirmação usado em toda ação destrutiva do app — pop-up (ConfirmationDialog),
+// nunca um estado inline substituindo o botão.
 export function DeleteMachineButton({ machineId }: { machineId: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const [confirming, setConfirming] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const deleteMutation = useDeleteMachine();
 
   async function handleConfirm() {
@@ -20,29 +23,27 @@ export function DeleteMachineButton({ machineId }: { machineId: string }) {
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado.");
-      setConfirming(false);
+      setConfirmOpen(false);
     }
   }
 
-  if (confirming) {
-    return (
-      <div className="flex flex-col items-start gap-2">
-        {error && <Alert tone="error" title={error} />}
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setConfirming(false)}>
-            Cancelar
-          </Button>
-          <Button variant="danger" isLoading={deleteMutation.isPending} onClick={handleConfirm}>
-            Confirmar remoção
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <Button variant="danger" onClick={() => setConfirming(true)}>
-      Remover máquina definitivamente
-    </Button>
+    <div className="flex flex-col items-start gap-2">
+      {error && <Alert tone="error" title={error} />}
+      <Button variant="danger" onClick={() => setConfirmOpen(true)}>
+        Remover máquina definitivamente
+      </Button>
+      <ConfirmationDialog
+        open={confirmOpen}
+        title="Remover esta máquina definitivamente?"
+        description="Essa ação não pode ser desfeita. A remoção só é permitida quando não há reservas ativas vinculadas a esta máquina."
+        confirmLabel="Sim, remover máquina"
+        cancelLabel="Cancelar"
+        tone="danger"
+        isLoading={deleteMutation.isPending}
+        onConfirm={handleConfirm}
+        onCancel={() => setConfirmOpen(false)}
+      />
+    </div>
   );
 }

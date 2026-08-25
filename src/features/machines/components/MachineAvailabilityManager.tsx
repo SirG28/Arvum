@@ -20,6 +20,7 @@ import { TrashIcon } from "@/components/ui/TrashIcon";
 import { Input } from "@/components/ui/Input";
 import { FormField } from "@/components/ui/FormField";
 import { Alert } from "@/components/ui/Alert";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 
 function formatDate(date: Date) {
   return new Date(date).toLocaleDateString("pt-BR");
@@ -36,6 +37,9 @@ export function MachineAvailabilityManager({
 }: MachineAvailabilityManagerProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  // Id do bloqueio com remoção pendente de confirmação — nunca mais de um por vez, então um único
+  // ConfirmationDialog (abaixo) atende qualquer linha da lista.
+  const [pendingRemovalId, setPendingRemovalId] = useState<string | null>(null);
   const addMutation = useAddAvailabilityBlock(machineId);
   const removeMutation = useRemoveAvailabilityBlock(machineId);
 
@@ -62,13 +66,16 @@ export function MachineAvailabilityManager({
     }
   }
 
-  async function handleRemove(blockId: string) {
+  async function handleConfirmRemove() {
+    if (!pendingRemovalId) return;
     setError(null);
     try {
-      await removeMutation.mutateAsync(blockId);
+      await removeMutation.mutateAsync(pendingRemovalId);
+      setPendingRemovalId(null);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado.");
+      setPendingRemovalId(null);
     }
   }
 
@@ -93,13 +100,24 @@ export function MachineAvailabilityManager({
                 icon={<TrashIcon />}
                 label="Remover bloqueio"
                 variant="danger"
-                isLoading={removeMutation.isPending}
-                onClick={() => handleRemove(block.id)}
+                onClick={() => setPendingRemovalId(block.id)}
               />
             </li>
           ))}
         </ul>
       )}
+
+      <ConfirmationDialog
+        open={pendingRemovalId !== null}
+        title="Remover este bloqueio?"
+        description="O período volta a ficar disponível para reservas."
+        confirmLabel="Sim, remover bloqueio"
+        cancelLabel="Cancelar"
+        tone="danger"
+        isLoading={removeMutation.isPending}
+        onConfirm={handleConfirmRemove}
+        onCancel={() => setPendingRemovalId(null)}
+      />
 
       <form
         onSubmit={handleSubmit(onSubmit)}

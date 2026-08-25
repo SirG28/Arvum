@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getBookingForOwner } from "@/features/bookings/services/booking.service";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { BackLink } from "@/components/ui/BackLink";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_BADGE_TONE } from "@/features/bookings/lib/status-labels";
 import { LOGISTICS_MODE_LABELS } from "@/features/bookings/lib/logistics-labels";
 import { isBookingPendingApproval } from "@/features/bookings/lib/approval";
@@ -43,9 +43,7 @@ export default async function ReceivedBookingDetailPage({ params }: ReceivedBook
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div>
-        <Link href="/reservas/recebidas" className="text-sm font-medium text-neutral-500 hover:text-neutral-700">
-          ← Solicitações recebidas
-        </Link>
+        <BackLink href="/reservas/recebidas" label="Solicitações recebidas" />
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <h1 className="text-lg font-semibold text-neutral-900">{booking.machine.title}</h1>
           <Badge tone={BOOKING_STATUS_BADGE_TONE[booking.status]}>

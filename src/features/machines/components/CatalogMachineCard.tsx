@@ -62,7 +62,7 @@ export function CatalogMachineCard({
           )}
         </div>
         <div>
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col items-start gap-1">
             <h3 className="text-sm font-semibold text-neutral-900">{machine.title}</h3>
             {machine.requiresOperator && <Badge tone="info">Com operador</Badge>}
           </div>

@@ -57,6 +57,9 @@ export async function signupAction(
       email: parsed.data.email,
       passwordHash,
       phone: parsed.data.phone,
+      // acceptedTerms já é obrigatório (schema recusa o cadastro sem ele) — o carimbo de quando
+      // aceitou é o registro de aceite exigido pelo Context.md §19.
+      termsAcceptedAt: new Date(),
     },
   });
 

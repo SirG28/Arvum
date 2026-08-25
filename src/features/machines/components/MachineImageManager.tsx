@@ -14,6 +14,7 @@ import { TrashIcon } from "@/components/ui/TrashIcon";
 import { Input } from "@/components/ui/Input";
 import { FormField } from "@/components/ui/FormField";
 import { Alert } from "@/components/ui/Alert";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 
 interface MachineImageManagerProps {
   machineId: string;
@@ -23,6 +24,9 @@ interface MachineImageManagerProps {
 export function MachineImageManager({ machineId, images }: MachineImageManagerProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  // Id da imagem com remoção pendente de confirmação — nunca mais de uma por vez, então um único
+  // ConfirmationDialog (abaixo) atende qualquer miniatura da grade.
+  const [pendingRemovalId, setPendingRemovalId] = useState<string | null>(null);
   const addMutation = useAddMachineImage(machineId);
   const removeMutation = useRemoveMachineImage(machineId);
 
@@ -44,13 +48,16 @@ export function MachineImageManager({ machineId, images }: MachineImageManagerPr
     }
   }
 
-  async function handleRemove(imageId: string) {
+  async function handleConfirmRemove() {
+    if (!pendingRemovalId) return;
     setError(null);
     try {
-      await removeMutation.mutateAsync(imageId);
+      await removeMutation.mutateAsync(pendingRemovalId);
+      setPendingRemovalId(null);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado.");
+      setPendingRemovalId(null);
     }
   }
 
@@ -74,14 +81,25 @@ export function MachineImageManager({ machineId, images }: MachineImageManagerPr
                 icon={<TrashIcon />}
                 label="Remover imagem"
                 variant="danger"
-                isLoading={removeMutation.isPending}
-                onClick={() => handleRemove(image.id)}
+                onClick={() => setPendingRemovalId(image.id)}
                 className="absolute top-2 right-2 shadow-sm"
               />
             </div>
           ))}
         </div>
       )}
+
+      <ConfirmationDialog
+        open={pendingRemovalId !== null}
+        title="Remover esta imagem?"
+        description="Essa ação não pode ser desfeita."
+        confirmLabel="Sim, remover imagem"
+        cancelLabel="Cancelar"
+        tone="danger"
+        isLoading={removeMutation.isPending}
+        onConfirm={handleConfirmRemove}
+        onCancel={() => setPendingRemovalId(null)}
+      />
 
       <form
         onSubmit={handleSubmit(onSubmit)}

@@ -1,30 +1,48 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/cn";
+import { SignOutIcon } from "@/components/ui/SignOutIcon";
+import { MenuIcon } from "@/components/ui/MenuIcon";
 import { NAV_ITEMS } from "./AppNav";
 import { PROFILE_ITEMS } from "./ProfileMenu";
 
-function MenuIcon({ open }: { open: boolean }) {
-  if (open) {
-    return (
-      <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5" aria-hidden="true">
-        <path d="M6 6l12 12M18 6 6 18" strokeLinecap="round" />
-      </svg>
-    );
-  }
+// Mesmo par ícone+rótulo usado no dropdown desktop (ProfileMenu) — só o espaçamento (py-3 em vez
+// de py-2.5) muda, para uma área de toque maior no mobile.
+function DrawerLink({ href, label, icon, active }: { href: string; label: string; icon: ReactNode; active: boolean }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5" aria-hidden="true">
-      <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
-    </svg>
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium transition-colors",
+        active ? "bg-primary-50 text-primary-700" : "text-neutral-700 hover:bg-neutral-50",
+      )}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        strokeWidth={1.6}
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-4 w-4 shrink-0"
+        aria-hidden="true"
+      >
+        {icon}
+      </svg>
+      {label}
+    </Link>
   );
 }
 
 // Menu hambúrguer só para mobile (sm:hidden) — em telas maiores o AppNav horizontal já cobre a
-// navegação, então este componente não renderiza nada além do próprio botão.
+// navegação, então este componente não renderiza nada além do próprio botão. Os mesmos
+// NAV_ITEMS/PROFILE_ITEMS (com os mesmos ícones) do desktop — só a apresentação (lista vertical
+// em vez de barra/dropdown) se adapta à tela menor, nunca o conteúdo do menu.
 export function MobileNavDrawer() {
   const { data: session } = useSession();
   const pathname = usePathname();
@@ -62,46 +80,33 @@ export function MobileNavDrawer() {
           aria-label="Navegação principal"
           className="absolute inset-x-0 top-full z-40 flex flex-col gap-1 border-b border-neutral-200 bg-white p-3 shadow-[var(--shadow-elevation-2)]"
         >
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname?.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={isActive ? "page" : undefined}
-                className={cn(
-                  "rounded-md px-3 py-3 text-sm font-medium transition-colors",
-                  isActive ? "bg-primary-50 text-primary-700" : "text-neutral-700 hover:bg-neutral-50",
-                )}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+          {NAV_ITEMS.map((item) => (
+            <DrawerLink
+              key={item.href}
+              href={item.href}
+              label={item.label}
+              icon={item.icon}
+              active={Boolean(pathname?.startsWith(item.href))}
+            />
+          ))}
           {session?.user && (
             <>
               <div className="my-1 border-t border-neutral-200" aria-hidden="true" />
-              {PROFILE_ITEMS.map((item) => {
-                const isActive = pathname?.startsWith(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    aria-current={isActive ? "page" : undefined}
-                    className={cn(
-                      "rounded-md px-3 py-3 text-sm font-medium transition-colors",
-                      isActive ? "bg-primary-50 text-primary-700" : "text-neutral-700 hover:bg-neutral-50",
-                    )}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
+              {PROFILE_ITEMS.map((item) => (
+                <DrawerLink
+                  key={item.href}
+                  href={item.href}
+                  label={item.label}
+                  icon={item.icon}
+                  active={Boolean(pathname?.startsWith(item.href))}
+                />
+              ))}
               <button
                 type="button"
                 onClick={() => signOut({ callbackUrl: "/" })}
-                className="rounded-md px-3 py-3 text-left text-sm font-medium text-danger-500 transition-colors hover:bg-neutral-50"
+                className="flex items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-medium text-danger-500 transition-colors hover:bg-neutral-50"
               >
+                <SignOutIcon className="h-4 w-4 shrink-0" />
                 Sair da conta
               </button>
             </>

@@ -78,6 +78,22 @@ export interface MachineRatingSummary {
   count: number;
 }
 
+// Reputação da própria pessoa (Meu perfil) — soma avaliações recebidas como locatário e como
+// proprietário num único número, já que a conta não separa os dois papéis (Context.md §8.1). Sem
+// painel de moderação ainda (Fase 6), então também não há como o próprio usuário ocultar uma
+// avaliação — só entram as já publicadas.
+export async function getUserReviewSummary(userId: string) {
+  const reviews = await prisma.review.findMany({
+    where: { targetUserId: userId, status: "PUBLISHED" },
+    select: { rating: true },
+  });
+
+  return {
+    averageRating: calculateAverageRating(reviews.map((review) => review.rating)),
+    count: reviews.length,
+  };
+}
+
 // Nota média de várias máquinas de uma vez (catálogo) — uma única consulta em vez de N, mesmo
 // cuidado de desempenho já aplicado ao restante da busca (Context.md §23). Mesma regra de
 // getMachineReviews: só conta quem avaliou como locatário (target = proprietário da máquina).

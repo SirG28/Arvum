@@ -109,6 +109,23 @@ model User {
   avatarUrl      String?
   role           UserRole      @default(USER)
   status         UserStatus    @default(ACTIVE)
+  // Registro de aceite dos termos (Context.md §19) — preenchido no cadastro, quando
+  // acceptedTerms já é obrigatório; nunca reescrito depois (é um carimbo do momento do aceite).
+  termsAcceptedAt DateTime?
+  // Preferência de notificação por e-mail (Context.md §8.16) — guardada desde já para o futuro
+  // sistema de envio respeitar, mesmo sem nenhum e-mail sendo disparado ainda.
+  notifyByEmail   Boolean   @default(true)
+  // Pedido de exclusão de dados (LGPD, Context.md §19 "mecanismo de solicitação de exclusão") —
+  // registra a intenção; a exclusão em si depende de triagem humana (retenção financeira/legal),
+  // por isso não é uma exclusão automática.
+  dataDeletionRequestedAt DateTime?
+  // Troca de e-mail (Context.md §8.1 "validação básica de e-mail"): sem provedor de envio
+  // configurado, o token de confirmação é devolvido direto na resposta da API e a interface simula
+  // o clique no link (mesmo padrão de adaptador simulado do restante do projeto — Context.md §27).
+  // O e-mail só muda de fato quando pendingEmailToken é confirmado.
+  pendingEmail            String?
+  pendingEmailToken       String?
+  pendingEmailExpiresAt   DateTime?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   deletedAt      DateTime?

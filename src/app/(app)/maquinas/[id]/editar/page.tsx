@@ -4,6 +4,7 @@ import { getOwnedMachine } from "@/features/machines/services/machine.service";
 import { listPropertiesByOwner } from "@/features/properties/services/property.service";
 import { listActiveCategories } from "@/features/categories/services/category.service";
 import { Card } from "@/components/ui/Card";
+import { BackLink } from "@/components/ui/BackLink";
 import { MachineForm } from "@/features/machines/components/MachineForm";
 import { MachineImageManager } from "@/features/machines/components/MachineImageManager";
 import { MachineAvailabilityManager } from "@/features/machines/components/MachineAvailabilityManager";
@@ -31,6 +32,8 @@ export default async function EditMachinePage({ params }: EditMachinePageProps) 
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <BackLink href="/maquinas" label="Minhas máquinas" />
+
       <Card>
         <h1 className="text-lg font-semibold text-neutral-900">Status do anúncio</h1>
         <div className="mt-4">

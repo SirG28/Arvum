@@ -40,7 +40,7 @@ export function OwnerBookingListCard({ booking }: { booking: BookingWithDetails 
       </div>
 
       <div className="flex flex-1 flex-col gap-1">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
           <h3 className="text-sm font-semibold text-neutral-900">{booking.machine.title}</h3>
           <Badge tone={BOOKING_STATUS_BADGE_TONE[booking.status]}>
             {BOOKING_STATUS_LABELS[booking.status]}
