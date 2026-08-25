@@ -10,7 +10,10 @@ export function PublicHeader() {
           <Link href="/">
             <Logo size={36} />
           </Link>
-          <nav aria-label="Navegação principal">
+          {/* Escondido em telas pequenas, mesmo padrão do AppNav (src/components/shared/AppNav.tsx)
+              — "Entrar"/"Criar conta" não cabem em ~375px ao lado do link. O catálogo continua
+              acessível pelo botão "Ver catálogo" da própria home pública. */}
+          <nav aria-label="Navegação principal" className="hidden sm:block">
             <Link
               href="/catalogo"
               className="text-sm font-medium text-neutral-700 hover:text-primary-700"
@@ -19,12 +22,12 @@ export function PublicHeader() {
             </Link>
           </nav>
         </div>
-        <div className="flex gap-3">
-          <Link href="/login">
-            <Button variant="secondary">Entrar</Button>
-          </Link>
+        <div className="flex gap-2 sm:gap-3">
           <Link href="/cadastro">
-            <Button>Criar conta</Button>
+            <Button variant="secondary">Criar conta</Button>
+          </Link>
+          <Link href="/login">
+            <Button>Entrar</Button>
           </Link>
         </div>
       </div>

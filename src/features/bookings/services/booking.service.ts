@@ -32,10 +32,19 @@ export async function getBookingForRenter(renterId: string, bookingId: string) {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: {
-      machine: { include: { images: { orderBy: { position: "asc" }, take: 1 } } },
+      machine: {
+        include: {
+          images: { orderBy: { position: "asc" }, take: 1 },
+          owner: { select: { id: true, name: true } },
+        },
+      },
       destinationProperty: true,
       statusHistory: { orderBy: { createdAt: "asc" } },
       payments: { orderBy: { createdAt: "desc" } },
+      // Só a própria avaliação do locatário para esta reserva (Context.md §9.5: uma avaliação por
+      // participante e por reserva) — usada para decidir entre mostrar o formulário ou o resultado
+      // já enviado.
+      reviews: { where: { authorId: renterId } },
     },
   });
   if (!booking || booking.renterId !== renterId) return null;
@@ -235,6 +244,10 @@ export async function getBookingForOwner(ownerId: string, bookingId: string) {
       destinationProperty: true,
       renter: { select: { id: true, name: true, email: true } },
       statusHistory: { orderBy: { createdAt: "asc" } },
+      // Só a própria avaliação do proprietário para esta reserva (Context.md §9.5: uma avaliação
+      // por participante e por reserva) — usada para decidir entre mostrar o formulário ou o
+      // resultado já enviado.
+      reviews: { where: { authorId: ownerId } },
     },
   });
   if (!booking || booking.machine.ownerId !== ownerId) return null;

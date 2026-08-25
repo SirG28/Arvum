@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { Property } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
+import { PencilIcon } from "@/components/ui/PencilIcon";
+import { iconButtonClassName } from "@/components/ui/IconButton";
 import { DeletePropertyButton } from "./DeletePropertyButton";
 
 export function PropertyCard({ property }: { property: Property }) {
@@ -15,9 +16,14 @@ export function PropertyCard({ property }: { property: Property }) {
         </p>
         <p className="text-xs text-neutral-400">CEP {property.postalCode}</p>
       </div>
-      <div className="flex shrink-0 gap-2">
-        <Link href={`/propriedades/${property.id}/editar`}>
-          <Button variant="secondary">Editar</Button>
+      <div className="flex shrink-0 gap-2 self-end sm:self-auto">
+        <Link
+          href={`/propriedades/${property.id}/editar`}
+          aria-label="Editar propriedade"
+          title="Editar propriedade"
+          className={iconButtonClassName()}
+        >
+          <PencilIcon />
         </Link>
         <DeletePropertyButton propertyId={property.id} />
       </div>

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getOwnedProperty } from "@/features/properties/services/property.service";
 import { mockGeocodingProvider } from "@/lib/geo/geocoding";
 import { calculateDistanceKm, type GeoPoint } from "@/lib/geo/distance";
+import { getAverageRatingsByMachineIds } from "@/features/reviews/services/review.service";
 import { generateMachineSlug } from "../lib/slug";
 import { canTransitionMachineStatus } from "../lib/machine-status";
 import { toMachinePersistedData, type MachineFormOutput } from "../schemas/machine.schema";
@@ -231,7 +232,16 @@ export async function listActiveMachines(filters: CatalogFilters = {}) {
     filtered.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
   }
 
-  return filtered;
+  // Nota média por máquina (Context.md §8.5: resultados devem exibir nota média) — uma única
+  // consulta para toda a página em vez de uma por máquina.
+  const ratings = await getAverageRatingsByMachineIds(
+    filtered.map((machine) => ({ id: machine.id, ownerId: machine.ownerId })),
+  );
+  return filtered.map((machine) => ({
+    ...machine,
+    averageRating: ratings.get(machine.id)?.averageRating ?? null,
+    reviewCount: ratings.get(machine.id)?.count ?? 0,
+  }));
 }
 
 // Opções para os seletores de filtro (marca, cultura) — só valores realmente presentes entre

@@ -13,6 +13,8 @@ import { CancelBookingButton } from "@/features/bookings/components/CancelBookin
 import { FulfillmentActionButton } from "@/features/bookings/components/FulfillmentActionButton";
 import { PaymentForm } from "@/features/payments/components/PaymentForm";
 import { PAYMENT_METHOD_LABELS } from "@/features/payments/lib/payment-method-labels";
+import { ReviewForm } from "@/features/reviews/components/ReviewForm";
+import { Rating } from "@/components/ui/Rating";
 
 export const metadata = { title: "Detalhe da reserva" };
 
@@ -165,6 +167,33 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
               </dd>
             </div>
           </dl>
+        </Card>
+      )}
+
+      {booking.status === "COMPLETED" && (
+        <Card>
+          <h2 className="text-sm font-semibold text-neutral-900">Avaliação</h2>
+          {booking.reviews[0] ? (
+            <div className="mt-3 flex flex-col gap-2">
+              <p className="text-sm text-neutral-500">Você já avaliou esta locação.</p>
+              <Rating value={booking.reviews[0].rating} size="sm" />
+              {booking.reviews[0].comment && (
+                <p className="text-sm text-neutral-700">{booking.reviews[0].comment}</p>
+              )}
+            </div>
+          ) : (
+            <>
+              <p className="mt-1 text-sm text-neutral-500">
+                Conte como foi alugar esta máquina de {booking.machine.owner.name}.
+              </p>
+              <ReviewForm
+                className="mt-3"
+                bookingId={booking.id}
+                role="RENTER"
+                targetName={booking.machine.owner.name}
+              />
+            </>
+          )}
         </Card>
       )}
 

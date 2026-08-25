@@ -13,6 +13,8 @@ import { PriceBreakdown } from "@/features/bookings/components/PriceBreakdown";
 import { BookingDecisionActions } from "@/features/bookings/components/BookingDecisionActions";
 import { CancelBookingButton } from "@/features/bookings/components/CancelBookingButton";
 import { FulfillmentActionButton } from "@/features/bookings/components/FulfillmentActionButton";
+import { ReviewForm } from "@/features/reviews/components/ReviewForm";
+import { Rating } from "@/components/ui/Rating";
 
 export const metadata = { title: "Detalhe da solicitação" };
 
@@ -150,6 +152,33 @@ export default async function ReceivedBookingDetailPage({ params }: ReceivedBook
           role="OWNER"
           refundOutcome={resolveCancellationRefund(booking.status, booking.startDate, "OWNER")}
         />
+      )}
+
+      {booking.status === "COMPLETED" && (
+        <Card>
+          <h2 className="text-sm font-semibold text-neutral-900">Avaliação</h2>
+          {booking.reviews[0] ? (
+            <div className="mt-3 flex flex-col gap-2">
+              <p className="text-sm text-neutral-500">Você já avaliou este locatário.</p>
+              <Rating value={booking.reviews[0].rating} size="sm" />
+              {booking.reviews[0].comment && (
+                <p className="text-sm text-neutral-700">{booking.reviews[0].comment}</p>
+              )}
+            </div>
+          ) : (
+            <>
+              <p className="mt-1 text-sm text-neutral-500">
+                Conte como foi a locação com {booking.renter.name}.
+              </p>
+              <ReviewForm
+                className="mt-3"
+                bookingId={booking.id}
+                role="OWNER"
+                targetName={booking.renter.name}
+              />
+            </>
+          )}
+        </Card>
       )}
     </div>
   );

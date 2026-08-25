@@ -37,6 +37,8 @@ src/
                                #   BookingDecisionActions, CancelBookingButton, FulfillmentActionButton)
     logistics/                # config (preços padrão), lib (cálculo logístico, fator do equipamento)
     payments/                 # schemas, lib (labels), services, hooks, components (PaymentForm)
+    reviews/                  # schemas, lib (nota média), services, hooks, components
+                               #   (ReviewForm, ReviewsSection)
   lib/                     # prisma, env, api-response, session, cn
     geo/                   # distância (Haversine) e geocodificação simulada
   schemas/                 # primitivas zod reutilizáveis
@@ -71,6 +73,8 @@ completo, `search`, `bookings`, `logistics`, `payments`, `reviews`, `notificatio
 | Monetização                          | Modelo híbrido — comissão (8%–12%) + assinatura Premium + anúncios patrocinados | Apenas comissão, ou apenas assinatura fixa | Comissão garante receita desde a primeira transação (sem exigir mensalidade obrigatória do locatário); assinatura Premium e anúncios passam a representar parcela crescente do faturamento à medida que a base de usuários aumenta, sem depender de uma única fonte (`Context.md` §8.21). |
 | Preço de entrega por máquina, mas transporte por parceiro é config. global | `Machine.deliveryPricePerKmInCents`/`deliveryBaseFeeInCents` (opcionais, definidos pelo proprietário); `PARTNER_TRANSPORT` usa `src/features/logistics/config.ts` | Preço de entrega também global | `Context.md` §8.10 diz explicitamente que o proprietário define preço por km e taxa mínima de entrega — fiel à especificação. Já "transporte por parceiro" não tem parceiro real integrado, então não há quem definir um preço por máquina; fica em configuração de plataforma, substituível depois por uma tabela de transportadoras (`Context.md` §8.11). |
 | Fator do equipamento não usa a categoria | `calculateEquipmentFactor` (`src/features/logistics/lib/equipment-factor.ts`) usa peso, maior dimensão e `requiresOperator` | Fator por categoria (ex.: mapa fixo `categoria → fator`) | `Context.md` §8.3 exige que categorias sejam administráveis pelo painel, não fixas no código; basear o fator logístico em um mapa `slug → número` engessaria a regra a categorias que podem mudar. Peso/dimensões/operador são campos numéricos sempre presentes no anúncio. |
+| Nota pública da máquina só conta avaliação do locatário | `getMachineReviews`/`getAverageRatingsByMachineIds` (`src/features/reviews`) filtram `targetUserId = ownerId` | Somar todas as avaliações da reserva (locatário + proprietário) na nota da máquina | A avaliação do proprietário é sobre o locatário (pessoa), não sobre o equipamento — misturá-la na nota pública do anúncio inflaria/distorceria a nota com algo que não é sobre a máquina. Sem um campo próprio de "papel" no `Review`, o `targetUserId` (sempre o proprietário quando quem avalia é o locatário, pois `CANNOT_BOOK_OWN_MACHINE` impede o proprietário de alugar a própria máquina) já identifica isso sem alterar o schema. |
+| Nota média calculada em memória, não `groupBy` puro no catálogo | `getAverageRatingsByMachineIds` busca as avaliações e agrupa em JS (`src/features/reviews/services/review.service.ts`) | `prisma.review.groupBy` direto | O filtro "só avaliação do locatário" (linha acima) compara `targetUserId` com o `ownerId` de cada máquina — dois campos de tabelas diferentes, algo que `groupBy`/`where` do Prisma não expressam em uma única consulta sem SQL bruto. Mesmo padrão já adotado para distância (cálculo em app, não SQL geoespacial) — volume do MVP não justifica a complexidade extra. |
 
 ## Valores monetários e datas
 
@@ -104,7 +108,7 @@ para regras de negócio.
    retrato congelado), aprovação/recusa do proprietário, pagamento simulado, acompanhamento de
    status até a conclusão (transporte, entrega/retirada, uso, devolução) e cancelamento — pelo
    locatário ou pelo proprietário, com política de estorno centralizada.
-5. **Confiança** — avaliações, notificações, mensagens, moderação.
+5. 🚧 **Confiança** — avaliações concluídas; notificações, mensagens e moderação seguem.
 6. **Administração e qualidade** — painel admin, indicadores, testes, acessibilidade, segurança, documentação, deploy.
 7. **Monetização avançada** (`Context.md` §8.21/§9.7) — comissão sobre operações (8%–12%, já
    habilitada via `serviceFeeInCents` na Fase 4), Arvum Suporte de Operação (add-on na reserva),
@@ -186,3 +190,26 @@ Cada etapa acima foi entregue como um fluxo completo e testável (schema já exi
 validação no servidor + rota + tela mínima + testes). Com a Fase 4 completa, a Fase 5 (Confiança —
 avaliações, notificações, mensagens) é a próxima: avaliações dependem de `Booking.status =
 COMPLETED` existir de fato, o que agora acontece via o fluxo de acompanhamento acima.
+
+## Fase 5 (Confiança) — detalhamento
+
+O schema (`Review`) já existia desde a Etapa 1 (vazio). Etapas funcionais incrementais:
+
+1. ✅ **Avaliações** — só participantes de uma reserva `COMPLETED` avaliam, uma vez cada
+   (`createReview`, `src/features/reviews/services/review.service.ts`; papel descoberto a partir
+   da própria reserva, nunca recebido do cliente — mesmo padrão de `cancelBooking`). Nota geral
+   obrigatória (1–5); aspectos opcionais variam por papel — locatário avalia estado do
+   equipamento, comunicação, pontualidade e experiência logística (sobre o proprietário/máquina);
+   proprietário avalia só comunicação e pontualidade (sobre o locatário) — nunca pede ao
+   proprietário nota de "estado do equipamento" do próprio anúncio. Formulário
+   (`ReviewForm`) aparece em `/reservas/[id]` e `/reservas/recebidas/[id]` quando a reserva está
+   concluída e o usuário ainda não avaliou; após enviar, a mesma seção mostra a avaliação já
+   registrada. A página pública de cada máquina (`/catalogo/[slug]`) e os cards do catálogo
+   mostram a nota média e, no detalhe, a lista de avaliações — sempre só as do locatário sobre
+   aquela máquina (nunca a avaliação que o proprietário fez do locatário, que não é sobre o
+   equipamento — ver tabela de decisões acima). Componente `Rating` (`src/components/ui/Rating.tsx`)
+   entra no design system (`Context.md` §12.2), com estrela cheia/vazia por glifo diferente, não só
+   cor (`Context.md` §13).
+
+Notificações e mensagens (Fase 5) e o painel de moderação (Fase 6, que passa a usar
+`ReviewStatus.REPORTED`) seguem como próximas etapas.

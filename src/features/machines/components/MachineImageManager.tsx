@@ -8,6 +8,9 @@ import type { MachineImage } from "@prisma/client";
 import { machineImageSchema, type MachineImageInput } from "../schemas/machine-image.schema";
 import { useAddMachineImage, useRemoveMachineImage } from "../hooks/useMachineImages";
 import { Button } from "@/components/ui/Button";
+import { PlusIcon } from "@/components/ui/PlusIcon";
+import { IconButton } from "@/components/ui/IconButton";
+import { TrashIcon } from "@/components/ui/TrashIcon";
 import { Input } from "@/components/ui/Input";
 import { FormField } from "@/components/ui/FormField";
 import { Alert } from "@/components/ui/Alert";
@@ -60,20 +63,21 @@ export function MachineImageManager({ machineId, images }: MachineImageManagerPr
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {images.map((image) => (
-            <div key={image.id} className="flex flex-col gap-2">
+            <div key={image.id} className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element -- URL arbitrária informada pelo proprietário, sem provedor de imagem configurado */}
               <img
                 src={image.url}
                 alt={image.altText ?? ""}
                 className="aspect-square w-full rounded-md border border-neutral-200 object-cover"
               />
-              <Button
+              <IconButton
+                icon={<TrashIcon />}
+                label="Remover imagem"
                 variant="danger"
                 isLoading={removeMutation.isPending}
                 onClick={() => handleRemove(image.id)}
-              >
-                Remover
-              </Button>
+                className="absolute top-2 right-2 shadow-sm"
+              />
             </div>
           ))}
         </div>
@@ -93,6 +97,7 @@ export function MachineImageManager({ machineId, images }: MachineImageManagerPr
           <Input {...register("altText")} />
         </FormField>
         <Button type="submit" isLoading={isSubmitting}>
+          <PlusIcon />
           Adicionar imagem
         </Button>
       </form>

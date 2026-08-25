@@ -122,14 +122,9 @@ export default async function HomePage() {
             A Arvum conecta produtores rurais que precisam de máquinas agrícolas a proprietários
             com equipamentos disponíveis, com logística integrada de ponta a ponta.
           </p>
-          <div className="flex gap-3">
-            <Link href="/cadastro">
-              <Button>Criar conta</Button>
-            </Link>
-            <Link href="/catalogo">
-              <Button variant="secondary">Ver catálogo</Button>
-            </Link>
-          </div>
+          <Link href="/catalogo">
+            <Button>Ver catálogo</Button>
+          </Link>
         </section>
 
         <section className="mx-auto max-w-5xl px-4 pb-20">

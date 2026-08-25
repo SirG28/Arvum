@@ -15,7 +15,7 @@ Integrantes:
 
 A especificação completa do produto está em [`Context.md`](./Context.md).
 
-## Status atual — Fase 4 (Transação) concluída
+## Status atual — Fase 5 (Confiança) em andamento — avaliações concluídas
 
 Roadmap completo em [`ARCHITECTURE.md`](./ARCHITECTURE.md#roadmap). Implementado:
 
@@ -65,10 +65,16 @@ Roadmap completo em [`ARCHITECTURE.md`](./ARCHITECTURE.md#roadmap). Implementado
   cobrança antes do pagamento, estorno integral se o proprietário cancelar, e estorno integral ou
   não (conforme antecedência até o início do período) se o locatário cancelar depois do pagamento
   confirmado — sempre explicado antes de confirmar o cancelamento.
+- Avaliações: depois que uma reserva é concluída, locatário e proprietário avaliam um ao outro uma
+  única vez por reserva (nota geral de 1 a 5 + aspectos opcionais — estado do equipamento,
+  comunicação, pontualidade e experiência logística para o locatário; comunicação e pontualidade
+  para o proprietário — e comentário opcional). A página de cada máquina mostra a nota média e as
+  avaliações recebidas do locatário (nunca a avaliação que o proprietário fez do locatário); o
+  catálogo mostra a nota média em cada resultado.
 
-Ainda não implementado (fases seguintes): taxa de serviço (comissão), avaliações, notificações,
-mensagens, painel administrativo, monetização avançada (assinatura Premium, anúncios
-patrocinados) — ver roadmap e as decisões de escopo em [`BUSINESS_RULES.md`](./BUSINESS_RULES.md).
+Ainda não implementado (fases seguintes): taxa de serviço (comissão), notificações, mensagens,
+painel administrativo, monetização avançada (assinatura Premium, anúncios patrocinados) — ver
+roadmap e as decisões de escopo em [`BUSINESS_RULES.md`](./BUSINESS_RULES.md).
 
 ## Stack
 

@@ -224,6 +224,37 @@ cadastrado."]`), nunca uma mensagem genérica.
 - Um `LogisticsQuote` é criado na mesma transação do `Booking`, já em `ACCEPTED` — não existe,
   nesta etapa, um fluxo separado de escolha entre cotações concorrentes.
 
+### Avaliações (Fase 5)
+
+- **Só após a reserva concluída** (`Booking.status = COMPLETED`) — locatário e proprietário podem
+  se avaliar, um do outro, uma única vez por reserva. A constraint `@@unique([bookingId, authorId])`
+  garante isso no banco; o serviço (`createReview`) checa antes e devolve `409 ALREADY_REVIEWED`
+  para uma mensagem clara, em vez de deixar o erro de banco vazar.
+- **O papel de quem avalia é descoberto a partir da própria reserva** (`renterId` ou
+  `machine.ownerId` comparado com a sessão), nunca recebido do cliente — mesmo padrão de
+  `cancelBooking`/`advanceBookingFulfillment`. Quem não participou da reserva recebe `404
+  BOOKING_NOT_FOUND` (nunca `403`, para não revelar a existência da reserva a quem é estranho a
+  ela).
+- **Nota geral (1 a 5) é obrigatória**; os aspectos são opcionais e variam por papel
+  (`Context.md` §8.14: separar estado do equipamento, comunicação, pontualidade e experiência
+  logística). O locatário pode avaliar os quatro aspectos, sempre sobre o proprietário/máquina; o
+  proprietário só avalia comunicação e pontualidade, sempre sobre o locatário — nunca pede a ele
+  uma nota de "estado do equipamento" do próprio anúncio, nem ao locatário uma nota sobre si mesmo.
+  O servidor descarta silenciosamente aspectos fora do papel de quem envia (`createReview`), em vez
+  de confiar apenas na interface para escondê-los.
+- **Nota média sempre recalculada a partir do conjunto atual de avaliações publicadas**
+  (`calculateAverageRating`, `src/features/reviews/lib/rating.ts`) — nunca um contador incremental
+  guardado à parte, evitando divergência se uma avaliação for ocultada pela moderação (Fase 6,
+  `ReviewStatus.HIDDEN`/`REPORTED`, ainda sem painel para acioná-la).
+- **A nota pública de uma máquina conta só as avaliações de quem alugou** (`targetUserId` igual ao
+  `ownerId` da máquina) — a avaliação que o proprietário faz do locatário é sobre a pessoa, não
+  sobre o equipamento, e não aparece na página da máquina nem entra na sua nota média. Como o
+  proprietário nunca pode alugar a própria máquina (`CANNOT_BOOK_OWN_MACHINE`, regra de Reservas
+  acima), esse filtro por `targetUserId` isola corretamente as duas direções sem exigir um campo de
+  papel a mais no `Review`.
+- Comentário é opcional (até 1000 caracteres); avaliações não podem ser anônimas para a
+  plataforma — o autor é sempre o usuário autenticado, nunca um campo de texto livre.
+
 ## Planejado — próximas fases
 
 As regras abaixo já estão especificadas no `Context.md` e serão implementadas quando os módulos
@@ -232,8 +263,8 @@ correspondentes forem construídos:
 - **Retrato de preços preservado**: alterações futuras no anúncio não podem mudar retroativamente
   o valor de uma reserva já confirmada (vale desde já, pois os valores são gravados no `Booking` no
   momento da criação — falta apenas garantir que nenhuma tela recalcule usando o anúncio atual).
-- **Avaliações** (Fase 5): apenas após reserva concluída; uma avaliação por participante e por
-  reserva; usuário não pode avaliar a si mesmo.
+- **Moderação de avaliações** (Fase 6): denúncia de comentário e ocultação pela moderação
+  (`ReviewStatus.REPORTED`/`HIDDEN` já existem no schema, sem painel para acioná-los ainda).
 - **Monetização** (Fase 7 — `Context.md` §8.21/§9.7): modelo híbrido com três entradas — comissão de
   8%–12% sobre cada operação (retida automaticamente na divisão do pagamento, sem cobrança separada
   ao locatário), assinatura mensal do Plano Premium para parceiros (R$ 99–199, com desconto na

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDeleteProperty } from "../hooks/useProperties";
 import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
+import { TrashIcon } from "@/components/ui/TrashIcon";
 import { Alert } from "@/components/ui/Alert";
 
 export function DeletePropertyButton({ propertyId }: { propertyId: string }) {
@@ -41,8 +43,11 @@ export function DeletePropertyButton({ propertyId }: { propertyId: string }) {
   }
 
   return (
-    <Button variant="danger" onClick={() => setConfirming(true)}>
-      Remover
-    </Button>
+    <IconButton
+      icon={<TrashIcon />}
+      label="Remover propriedade"
+      variant="danger"
+      onClick={() => setConfirming(true)}
+    />
   );
 }

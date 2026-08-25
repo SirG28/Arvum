@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Machine, MachineCategory, MachineImage, Property } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Rating } from "@/components/ui/Rating";
 import { FavoriteButton } from "@/features/favorites/components/FavoriteButton";
 
 type CatalogMachine = Machine & {
@@ -9,6 +10,8 @@ type CatalogMachine = Machine & {
   property: Property;
   images: MachineImage[];
   distanceKm: number | null;
+  averageRating: number | null;
+  reviewCount: number;
 };
 
 function formatBRL(cents: number) {
@@ -66,6 +69,14 @@ export function CatalogMachineCard({
           <p className="text-sm text-neutral-500">
             {machine.category.name} — {machine.property.city}/{machine.property.state}
           </p>
+          {machine.averageRating !== null && (
+            <div className="mt-0.5 flex items-center gap-1 text-sm text-neutral-600">
+              <Rating value={machine.averageRating} size="sm" />
+              <span>
+                {machine.averageRating.toLocaleString("pt-BR")} ({machine.reviewCount})
+              </span>
+            </div>
+          )}
           {machine.distanceKm !== null && (
             <p className="text-sm text-neutral-500">~{machine.distanceKm} km (estimativa)</p>
           )}

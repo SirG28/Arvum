@@ -15,6 +15,8 @@ import {
   useRemoveAvailabilityBlock,
 } from "../hooks/useMachineAvailability";
 import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
+import { TrashIcon } from "@/components/ui/TrashIcon";
 import { Input } from "@/components/ui/Input";
 import { FormField } from "@/components/ui/FormField";
 import { Alert } from "@/components/ui/Alert";
@@ -87,13 +89,13 @@ export function MachineAvailabilityManager({
                 {formatDate(block.startDate)} — {formatDate(block.endDate)}
                 {block.reason ? ` · ${block.reason}` : ""}
               </span>
-              <Button
+              <IconButton
+                icon={<TrashIcon />}
+                label="Remover bloqueio"
                 variant="danger"
                 isLoading={removeMutation.isPending}
                 onClick={() => handleRemove(block.id)}
-              >
-                Remover
-              </Button>
+              />
             </li>
           ))}
         </ul>
