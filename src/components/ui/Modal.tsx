@@ -3,6 +3,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
+import { useMountTransition } from "@/hooks/useMountTransition";
 
 interface ModalProps {
   open: boolean;
@@ -14,6 +15,7 @@ interface ModalProps {
 
 export function Modal({ open, onClose, title, children, className }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const { rendered, visible, onTransitionEnd } = useMountTransition(open);
 
   useEffect(() => {
     if (!open) return;
@@ -27,11 +29,19 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!rendered) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-neutral-900/50" aria-hidden="true" onClick={onClose} />
+      <div
+        className={cn(
+          "absolute inset-0 bg-neutral-900/50 transition-opacity duration-base ease-out",
+          visible ? "opacity-100" : "opacity-0",
+        )}
+        aria-hidden="true"
+        onClick={onClose}
+        onTransitionEnd={onTransitionEnd}
+      />
       <div
         ref={dialogRef}
         role="dialog"
@@ -39,7 +49,8 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
         aria-labelledby="modal-title"
         tabIndex={-1}
         className={cn(
-          "relative w-full max-w-md rounded-lg bg-white p-6 shadow-[var(--shadow-elevation-2)] focus:outline-none",
+          "relative w-full max-w-md rounded-lg bg-white p-6 shadow-[var(--shadow-elevation-2)] transition-[opacity,scale] duration-base ease-out focus:outline-none",
+          visible ? "scale-100 opacity-100" : "scale-95 opacity-0",
           className,
         )}
       >

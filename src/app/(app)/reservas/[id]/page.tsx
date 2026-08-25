@@ -10,6 +10,7 @@ import { LOGISTICS_MODE_LABELS } from "@/features/bookings/lib/logistics-labels"
 import { isBookingCancellableByRenter, resolveCancellationRefund } from "@/features/bookings/lib/cancellation";
 import { getNextFulfillmentAction } from "@/features/bookings/lib/fulfillment";
 import { PriceBreakdown } from "@/features/bookings/components/PriceBreakdown";
+import { BookingStatusTimeline } from "@/features/bookings/components/BookingStatusTimeline";
 import { CancelBookingButton } from "@/features/bookings/components/CancelBookingButton";
 import { FulfillmentActionButton } from "@/features/bookings/components/FulfillmentActionButton";
 import { PaymentForm } from "@/features/payments/components/PaymentForm";
@@ -113,14 +114,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
 
       <Card>
         <h2 className="text-sm font-semibold text-neutral-900">Andamento</h2>
-        <ol className="mt-3 flex flex-col gap-3 text-sm">
-          {booking.statusHistory.map((entry) => (
-            <li key={entry.id} className="flex justify-between gap-4">
-              <span className="text-neutral-900">{BOOKING_STATUS_LABELS[entry.nextStatus]}</span>
-              <span className="shrink-0 text-neutral-400">{formatDateTime(entry.createdAt)}</span>
-            </li>
-          ))}
-        </ol>
+        <BookingStatusTimeline bookingId={booking.id} statusHistory={booking.statusHistory} />
       </Card>
 
       {booking.status === "APPROVED" && (

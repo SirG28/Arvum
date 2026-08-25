@@ -61,12 +61,88 @@
   --breakpoint-lg: 1024px;
   --breakpoint-xl: 1440px;
 
-  --animate-duration-fast: 120ms;
-  --animate-duration-base: 200ms;
+  /* --duration-* gera as classes `duration-fast`/`duration-base`/`duration-slow` (Tailwind v4
+     mapeia --duration-* para o utilitário `duration-*`). Nomeadas antes como
+     --animate-duration-fast/base, que não gerava nenhuma classe (--animate-* é o namespace de
+     atalhos de animação, tipo `animate-spin` — não de duração), por isso nunca eram consumidos.
+     Easing não precisa de token próprio: --ease-in/--ease-out/--ease-in-out já vêm no tema padrão
+     do Tailwind v4 (ver node_modules/tailwindcss/theme.css). */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  /* Exceção deliberada à escala acima: não é uma transição de interface (menu, overlay), é um
+     aceno de atenção sustentado — "isto acabou de mudar" — que precisa ficar visível tempo
+     suficiente para ser notado antes de desaparecer (MOTION.md, Etapa 5). */
+  --duration-highlight: 1200ms;
+
+  /* --animate-* (uso correto do namespace desta vez — ver comentário acima): atalho de
+     `animation` completo, associado a um @keyframes declarado fora do @theme (MOTION.md,
+     Etapa 4). */
+  --animate-fade-slide-in: fade-slide-in var(--duration-base) var(--ease-out);
+  --animate-heart-pop: heart-pop var(--duration-slow) var(--ease-out);
+  --animate-status-highlight: status-highlight var(--duration-highlight) var(--ease-out);
+}
+
+@keyframes fade-slide-in {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes heart-pop {
+  0% {
+    scale: 1;
+  }
+  40% {
+    scale: 1.25;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+/* Entra (opacity/translate) rápido nos primeiros ~15% do tempo, sustenta um fundo destacado até
+   ~70%, depois esmaece até transparente — um único @keyframes cobre "isto é novo" (entrada) e
+   "isto acabou de mudar" (destaque), já que duas classes `animate-*` na mesma tag não compõem
+   (a segunda simplesmente substitui a `animation` da primeira). */
+@keyframes status-highlight {
+  0% {
+    opacity: 0;
+    translate: 0 4px;
+    background-color: var(--color-primary-100);
+  }
+  15% {
+    opacity: 1;
+    translate: 0 0;
+    background-color: var(--color-primary-100);
+  }
+  70% {
+    background-color: var(--color-primary-100);
+  }
+  100% {
+    background-color: transparent;
+  }
 }
 
 body {
   font-family: var(--font-sans);
   color: var(--color-neutral-900);
   background-color: var(--color-neutral-50);
+}
+
+/* Context.md §13 — respeitar a preferência de redução de movimento do sistema operacional. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

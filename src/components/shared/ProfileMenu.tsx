@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/cn";
+import { useMountTransition } from "@/hooks/useMountTransition";
 import { SignOutIcon } from "@/components/ui/SignOutIcon";
 import { HEART_ICON_PATH } from "@/components/ui/HeartIcon";
 import { USER_ICON_PATHS } from "@/components/ui/UserIcon";
@@ -95,6 +96,7 @@ export function ProfileMenu() {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const { rendered, visible, onTransitionEnd } = useMountTransition(open);
 
   useEffect(() => {
     setOpen(false);
@@ -135,7 +137,7 @@ export function ProfileMenu() {
         aria-label="Menu do perfil"
         title={session.user.name ?? "Meu perfil"}
         className={cn(
-          "inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors",
+          "inline-flex h-9 w-9 items-center justify-center rounded-full border transition-[background-color,border-color,color,scale] duration-fast ease-out active:scale-[0.97]",
           open
             ? "border-primary-200 bg-primary-50 text-primary-700"
             : "border-neutral-200 text-neutral-700 hover:bg-neutral-50",
@@ -144,11 +146,15 @@ export function ProfileMenu() {
         <ProfileMenuIcon />
       </button>
 
-      {open && (
+      {rendered && (
         <div
           role="menu"
           aria-label="Menu do perfil"
-          className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-[var(--shadow-elevation-2)]"
+          onTransitionEnd={onTransitionEnd}
+          className={cn(
+            "absolute right-0 top-full z-50 mt-2 w-64 origin-top-right overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-[var(--shadow-elevation-2)] transition-[opacity,scale] duration-base ease-out",
+            visible ? "scale-100 opacity-100" : "scale-95 opacity-0",
+          )}
         >
           <div className="border-b border-neutral-200 px-4 py-3">
             <p className="truncate text-sm font-medium text-neutral-900">{session.user.name}</p>

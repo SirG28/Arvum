@@ -36,7 +36,7 @@ export function CatalogMachineCard({
   const image = machine.images[0];
 
   return (
-    <Card className="relative flex h-full flex-col gap-3 transition-shadow hover:shadow-[var(--shadow-elevation-2)]">
+    <Card className="relative flex h-full flex-col gap-3 transition-[box-shadow,translate] duration-base ease-out hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-2)]">
       <FavoriteButton
         machineId={machine.id}
         initialFavorited={isFavorited}

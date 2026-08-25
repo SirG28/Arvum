@@ -163,7 +163,7 @@ export function BookingRequestForm({ machineId, properties }: BookingRequestForm
       )}
 
       {quote.isSuccess && (
-        <div className="rounded-md border border-neutral-200 p-4">
+        <div className="animate-fade-slide-in rounded-md border border-neutral-200 p-4">
           <h3 className="text-sm font-semibold text-neutral-900">Valores estimados</h3>
           <PriceBreakdown
             className="mt-3"

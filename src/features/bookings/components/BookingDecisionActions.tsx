@@ -8,6 +8,7 @@ import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import { Textarea } from "@/components/ui/Textarea";
 import { Alert } from "@/components/ui/Alert";
 import { useDecideBooking } from "../hooks/useBookings";
+import { markBookingJustAdvanced } from "../lib/timeline-highlight";
 
 // Ações do proprietário sobre uma solicitação aguardando aprovação (Context.md §8.8) — aprovar
 // não precisa de justificativa, recusar aceita um motivo opcional que fica registrado no
@@ -26,6 +27,7 @@ export function BookingDecisionActions({ bookingId }: { bookingId: string }) {
       await mutation.mutateAsync({ decision, reason: decision === "REJECTED" ? reason : undefined });
       setApproveOpen(false);
       setRejectOpen(false);
+      markBookingJustAdvanced(bookingId);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado.");

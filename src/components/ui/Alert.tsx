@@ -28,7 +28,11 @@ export function Alert({ tone = "info", title, children, className }: AlertProps)
   return (
     <div
       role={tone === "error" ? "alert" : "status"}
-      className={cn("flex gap-3 rounded-md border px-4 py-3 text-sm", toneClasses[tone], className)}
+      className={cn(
+        "animate-fade-slide-in flex gap-3 rounded-md border px-4 py-3 text-sm",
+        toneClasses[tone],
+        className,
+      )}
     >
       <span aria-hidden="true" className="font-bold">
         {toneIcon[tone]}

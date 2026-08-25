@@ -7,6 +7,7 @@ import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import { Alert } from "@/components/ui/Alert";
 import { useAdvanceFulfillment } from "../hooks/useBookings";
 import type { FulfillmentActionInfo } from "../lib/fulfillment";
+import { markBookingJustAdvanced } from "../lib/timeline-highlight";
 
 // Um único botão cobre as 6 ações de acompanhamento pós-pagamento (Context.md §8.9) — qual delas
 // mostrar e para quem já vem decidido por getNextFulfillmentAction (lib/fulfillment.ts), a mesma
@@ -28,6 +29,7 @@ export function FulfillmentActionButton({
     try {
       await mutation.mutateAsync(action.action);
       setConfirmOpen(false);
+      markBookingJustAdvanced(bookingId);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado.");

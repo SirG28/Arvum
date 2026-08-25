@@ -26,6 +26,10 @@ export function FavoriteButton({
   const router = useRouter();
   const pathname = usePathname();
   const [favorited, setFavorited] = useState(initialFavorited);
+  // Só true durante o keyframe do "pop" — removido no onAnimationEnd, senão a classe ficaria
+  // presente indefinidamente sem reproduzir a animação de novo (CSS animation não reinicia
+  // sozinha quando a classe já estava aplicada).
+  const [justFavorited, setJustFavorited] = useState(false);
   const addMutation = useAddFavorite();
   const removeMutation = useRemoveFavorite();
   const isPending = addMutation.isPending || removeMutation.isPending;
@@ -54,6 +58,7 @@ export function FavoriteButton({
       } else {
         await addMutation.mutateAsync(machineId);
         setFavorited(true);
+        setJustFavorited(true);
       }
       router.refresh();
     } catch {
@@ -66,6 +71,7 @@ export function FavoriteButton({
     <button
       type="button"
       onClick={handleToggle}
+      onAnimationEnd={() => setJustFavorited(false)}
       disabled={isPending}
       aria-pressed={favorited}
       aria-label={favorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
@@ -76,6 +82,7 @@ export function FavoriteButton({
         favorited
           ? "border-danger-500/30 text-danger-500"
           : "border-neutral-200 text-neutral-400 hover:text-neutral-600",
+        justFavorited && "animate-heart-pop",
         className,
       )}
     >

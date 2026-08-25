@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { PAYMENT_METHODS, type PaymentMethod } from "../schemas/payment.schema";
 import { PAYMENT_METHOD_LABELS } from "../lib/payment-method-labels";
 import { useConfirmPayment } from "../hooks/usePayments";
+import { markBookingJustAdvanced } from "@/features/bookings/lib/timeline-highlight";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { FormField } from "@/components/ui/FormField";
@@ -34,6 +35,7 @@ export function PaymentForm({ bookingId, totalValueInCents, className }: Payment
     setError(null);
     try {
       await mutation.mutateAsync({ method });
+      markBookingJustAdvanced(bookingId);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado.");

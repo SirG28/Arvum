@@ -12,7 +12,8 @@ type IconButtonVariant = "primary" | "danger";
 // (primary/danger), nunca um tom novo só para este componente.
 export function iconButtonClassName(variant: IconButtonVariant = "primary", className?: string) {
   return cn(
-    "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-white transition-colors",
+    "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-white",
+    "transition-[background-color,border-color,color,scale] duration-fast ease-out active:scale-[0.97]",
     "focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none",
     "disabled:cursor-not-allowed disabled:opacity-60",
     variant === "danger"

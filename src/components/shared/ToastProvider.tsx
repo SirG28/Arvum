@@ -7,6 +7,7 @@ interface ToastItem {
   id: string;
   tone: ToastTone;
   message: string;
+  leaving: boolean;
 }
 
 interface ToastContextValue {
@@ -20,17 +21,23 @@ const AUTO_DISMISS_MS = 5000;
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
-  const dismissToast = useCallback((id: string) => {
+  // Só marca "saindo" — a remoção de fato (removeToast) acontece quando o próprio Toast avisa que
+  // terminou a transição de saída (onExited), nunca no mesmo tick (MOTION.md, Etapa 2).
+  const startDismiss = useCallback((id: string) => {
+    setToasts((current) => current.map((toast) => (toast.id === id ? { ...toast, leaving: true } : toast)));
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
     setToasts((current) => current.filter((toast) => toast.id !== id));
   }, []);
 
   const showToast = useCallback(
     (tone: ToastTone, message: string) => {
       const id = crypto.randomUUID();
-      setToasts((current) => [...current, { id, tone, message }]);
-      setTimeout(() => dismissToast(id), AUTO_DISMISS_MS);
+      setToasts((current) => [...current, { id, tone, message, leaving: false }]);
+      setTimeout(() => startDismiss(id), AUTO_DISMISS_MS);
     },
-    [dismissToast],
+    [startDismiss],
   );
 
   return (
@@ -41,7 +48,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2 px-4 sm:right-4 sm:left-auto sm:items-end"
       >
         {toasts.map((toast) => (
-          <Toast key={toast.id} tone={toast.tone} onDismiss={() => dismissToast(toast.id)}>
+          <Toast
+            key={toast.id}
+            tone={toast.tone}
+            leaving={toast.leaving}
+            onDismiss={() => startDismiss(toast.id)}
+            onExited={() => removeToast(toast.id)}
+          >
             {toast.message}
           </Toast>
         ))}

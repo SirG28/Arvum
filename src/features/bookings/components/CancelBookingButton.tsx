@@ -7,6 +7,7 @@ import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import { Alert } from "@/components/ui/Alert";
 import { useCancelBooking } from "../hooks/useBookings";
 import type { CancellationRefundOutcome } from "../lib/cancellation";
+import { markBookingJustAdvanced } from "../lib/timeline-highlight";
 
 interface CancelBookingButtonProps {
   bookingId: string;
@@ -43,6 +44,7 @@ export function CancelBookingButton({ bookingId, role, refundOutcome }: CancelBo
     try {
       await mutation.mutateAsync();
       setConfirmOpen(false);
+      markBookingJustAdvanced(bookingId);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado.");

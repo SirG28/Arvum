@@ -10,6 +10,7 @@ import { isBookingPendingApproval } from "@/features/bookings/lib/approval";
 import { isBookingCancellableByOwner, resolveCancellationRefund } from "@/features/bookings/lib/cancellation";
 import { getNextFulfillmentAction } from "@/features/bookings/lib/fulfillment";
 import { PriceBreakdown } from "@/features/bookings/components/PriceBreakdown";
+import { BookingStatusTimeline } from "@/features/bookings/components/BookingStatusTimeline";
 import { BookingDecisionActions } from "@/features/bookings/components/BookingDecisionActions";
 import { CancelBookingButton } from "@/features/bookings/components/CancelBookingButton";
 import { FulfillmentActionButton } from "@/features/bookings/components/FulfillmentActionButton";
@@ -24,10 +25,6 @@ interface ReceivedBookingDetailPageProps {
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
-}
-
-function formatDateTime(date: Date) {
-  return date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
 export default async function ReceivedBookingDetailPage({ params }: ReceivedBookingDetailPageProps) {
@@ -118,14 +115,7 @@ export default async function ReceivedBookingDetailPage({ params }: ReceivedBook
 
       <Card>
         <h2 className="text-sm font-semibold text-neutral-900">Andamento</h2>
-        <ol className="mt-3 flex flex-col gap-3 text-sm">
-          {booking.statusHistory.map((entry) => (
-            <li key={entry.id} className="flex justify-between gap-4">
-              <span className="text-neutral-900">{BOOKING_STATUS_LABELS[entry.nextStatus]}</span>
-              <span className="shrink-0 text-neutral-400">{formatDateTime(entry.createdAt)}</span>
-            </li>
-          ))}
-        </ol>
+        <BookingStatusTimeline bookingId={booking.id} statusHistory={booking.statusHistory} />
       </Card>
 
       {isBookingPendingApproval(booking.status) && <BookingDecisionActions bookingId={booking.id} />}

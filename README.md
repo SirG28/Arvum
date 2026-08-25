@@ -170,4 +170,5 @@ Ver [`.env.example`](./.env.example). Nenhum segredo real deve ser commitado —
 
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — arquitetura, decisões técnicas e roadmap
 - [`BUSINESS_RULES.md`](./BUSINESS_RULES.md) — regras de negócio implementadas e planejadas
+- [`MOTION.md`](./MOTION.md) — princípios, tokens e mapeamento de motion na interface
 - [`Context.md`](./Context.md) — especificação completa do produto
