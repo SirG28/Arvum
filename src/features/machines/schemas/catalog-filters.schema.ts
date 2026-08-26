@@ -63,8 +63,8 @@ export function parseCatalogFilters(query: Record<string, string | undefined>): 
 
   const { q, categoria } = parsed.data;
 
-  let { precoMax, dataInicio, dataFim, origemCidade, raioMax } = parsed.data;
-  const { origemUf } = parsed.data;
+  let { dataInicio, dataFim, origemCidade, raioMax } = parsed.data;
+  const { precoMax, origemUf } = parsed.data;
 
   if (dataInicio !== undefined && dataFim !== undefined && dataFim <= dataInicio) {
     ignored.push({
