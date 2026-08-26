@@ -11,12 +11,12 @@ import { useCreateBookingRequest, useBookingQuote } from "../hooks/useBookings";
 import { LOGISTICS_MODE_LABELS } from "../lib/logistics-labels";
 import { PriceBreakdown } from "./PriceBreakdown";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { FormField } from "@/components/ui/FormField";
 import { Alert } from "@/components/ui/Alert";
 import { Spinner } from "@/components/ui/Spinner";
+import { DateRangePicker } from "@/components/ui/DateRangePicker";
 
 const STATUS_LABELS: Record<string, string> = {
   AWAITING_APPROVAL: "Aguardando aprovação do proprietário",
@@ -40,6 +40,7 @@ export function BookingRequestForm({ machineId, properties }: BookingRequestForm
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<z.input<typeof bookingRequestSchema>>({
     resolver: zodResolver(bookingRequestSchema),
@@ -125,12 +126,21 @@ export function BookingRequestForm({ machineId, properties }: BookingRequestForm
         </Select>
       </FormField>
 
-      <FormField label="De" required error={errors.startDate?.message}>
-        <Input type="date" {...register("startDate")} />
-      </FormField>
-      <FormField label="Até" required error={errors.endDate?.message}>
-        <Input type="date" {...register("endDate")} />
-      </FormField>
+      {/* O resolver do RHF entrega startDate/endDate como Date pós-validação, mas o input nativo
+          (e este DateRangePicker) sempre trabalha com string "yyyy-mm-dd" — mesma inconsistência
+          de tipo estático já existente neste formulário (ver comentário no onSubmit abaixo). */}
+      <DateRangePicker
+        label="Período da locação"
+        value={{
+          startDate: (startDate as unknown as string) ?? "",
+          endDate: (endDate as unknown as string) ?? "",
+        }}
+        onChange={(range) => {
+          setValue("startDate", range.startDate as unknown as Date, { shouldValidate: true });
+          setValue("endDate", range.endDate as unknown as Date, { shouldValidate: true });
+        }}
+        error={errors.startDate?.message ?? errors.endDate?.message}
+      />
 
       <FormField label="Como retirar/receber" required error={errors.logisticsMode?.message}>
         <Select {...register("logisticsMode")} defaultValue="">

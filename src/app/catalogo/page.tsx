@@ -1,16 +1,14 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
 import { listActiveCategories } from "@/features/categories/services/category.service";
-import {
-  listActiveMachines,
-  listCatalogFilterOptions,
-} from "@/features/machines/services/machine.service";
+import { listActiveMachines } from "@/features/machines/services/machine.service";
 import { listFavoriteMachineIds } from "@/features/favorites/services/favorite.service";
 import { parseCatalogFilters } from "@/features/machines/schemas/catalog-filters.schema";
 import { CatalogMachineCard } from "@/features/machines/components/CatalogMachineCard";
 import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
-import { Checkbox } from "@/components/ui/Checkbox";
+import { RangeSlider } from "@/components/ui/RangeSlider";
+import { CityAutocomplete } from "@/components/ui/CityAutocomplete";
+import { DateRangeFilterField } from "@/components/ui/DateRangeFilterField";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
@@ -32,10 +30,9 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const { filters, ignored } = parseCatalogFilters(rawParams);
   const { categorySlug: categoria, search: q } = filters;
 
-  const [user, categories, filterOptions, machines] = await Promise.all([
+  const [user, categories, machines] = await Promise.all([
     getCurrentUser(),
     listActiveCategories(),
-    listCatalogFilterOptions(),
     listActiveMachines(filters),
   ]);
 
@@ -49,12 +46,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   // Campos ocultos que preservam os demais filtros ao trocar de categoria pelos links de pílula.
   const hiddenFields: Record<string, string | undefined> = {
     q,
-    precoMin: rawParams.precoMin,
     precoMax: rawParams.precoMax,
-    marca: rawParams.marca,
-    cultura: rawParams.cultura,
-    finalidade: rawParams.finalidade,
-    operador: filters.requiresOperator ? "on" : undefined,
     dataInicio: toDateInputValue(filters.availableFrom),
     dataFim: toDateInputValue(filters.availableTo),
     origemCidade: filters.originCity,
@@ -79,132 +71,75 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
         {categoria && <input type="hidden" name="categoria" value={categoria} />}
 
         <div>
-          <Label htmlFor="q">Buscar por nome da máquina</Label>
+          <Label htmlFor="q">Buscar</Label>
           <div className="mt-1.5 flex gap-3">
-            <Input id="q" name="q" defaultValue={q} placeholder="Ex.: trator, colheitadeira" />
+            <Input
+              id="q"
+              name="q"
+              defaultValue={q}
+              placeholder="Ex.: trator, John Deere, colheita de soja"
+            />
             <Button type="submit" variant="secondary">
               Buscar
             </Button>
           </div>
+          <p className="mt-1 text-xs text-neutral-500">
+            Busca por nome, marca, finalidade e cultura recomendada.
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <Label htmlFor="precoMin">Preço mínimo (R$/dia)</Label>
-            <Input
-              id="precoMin"
-              name="precoMin"
-              type="number"
-              min={0}
-              step="0.01"
-              defaultValue={rawParams.precoMin}
-              className="mt-1.5"
-            />
-          </div>
-          <div>
             <Label htmlFor="precoMax">Preço máximo (R$/dia)</Label>
-            <Input
-              id="precoMax"
-              name="precoMax"
-              type="number"
-              min={0}
-              step="0.01"
-              defaultValue={rawParams.precoMax}
-              className="mt-1.5"
+            <div className="relative mt-1.5">
+              <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-neutral-500">
+                R$
+              </span>
+              <Input
+                id="precoMax"
+                name="precoMax"
+                type="number"
+                min={0}
+                step="0.01"
+                placeholder="Ex.: 500"
+                defaultValue={rawParams.precoMax}
+                className="pl-9"
+              />
+            </div>
+          </div>
+          <div>
+            <CityAutocomplete
+              cityFieldName="origemCidade"
+              stateFieldName="origemUf"
+              label="Onde você vai usar?"
+              defaultCity={filters.originCity}
+              defaultState={filters.originState}
             />
           </div>
           <div>
-            <Label htmlFor="marca">Marca</Label>
-            <Select id="marca" name="marca" defaultValue={rawParams.marca ?? ""} className="mt-1.5">
-              <option value="">Todas</option>
-              {filterOptions.brands.map((brand) => (
-                <option key={brand} value={brand}>
-                  {brand}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="cultura">Cultura</Label>
-            <Select id="cultura" name="cultura" defaultValue={rawParams.cultura ?? ""} className="mt-1.5">
-              <option value="">Todas</option>
-              {filterOptions.crops.map((crop) => (
-                <option key={crop} value={crop}>
-                  {crop}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="finalidade">Finalidade</Label>
-            <Input
-              id="finalidade"
-              name="finalidade"
-              placeholder="Ex.: plantio, colheita"
-              defaultValue={rawParams.finalidade}
-              className="mt-1.5"
+            <DateRangeFilterField
+              startFieldName="dataInicio"
+              endFieldName="dataFim"
+              label="Período"
+              defaultStartDate={toDateInputValue(filters.availableFrom)}
+              defaultEndDate={toDateInputValue(filters.availableTo)}
             />
           </div>
-          <div>
-            <Label htmlFor="origemCidade">Onde você vai usar? — cidade</Label>
-            <Input
-              id="origemCidade"
-              name="origemCidade"
-              placeholder="Ex.: Ribeirão Preto"
-              defaultValue={rawParams.origemCidade}
-              className="mt-1.5"
-            />
-          </div>
-          <div>
-            <Label htmlFor="origemUf">Onde você vai usar? — UF</Label>
-            <Input
-              id="origemUf"
-              name="origemUf"
-              maxLength={2}
-              placeholder="SP"
-              defaultValue={rawParams.origemUf}
-              className="mt-1.5"
-            />
-          </div>
-          <div>
-            <Label htmlFor="raioMax">Raio máximo (km)</Label>
-            <Input
-              id="raioMax"
-              name="raioMax"
-              type="number"
-              min={0}
-              step="1"
-              defaultValue={rawParams.raioMax}
-              className="mt-1.5"
-            />
-          </div>
-          <div>
-            <Label htmlFor="dataInicio">Período — data inicial</Label>
-            <Input
-              id="dataInicio"
-              name="dataInicio"
-              type="date"
-              defaultValue={toDateInputValue(filters.availableFrom)}
-              className="mt-1.5"
-            />
-          </div>
-          <div>
-            <Label htmlFor="dataFim">Período — data final</Label>
-            <Input
-              id="dataFim"
-              name="dataFim"
-              type="date"
-              defaultValue={toDateInputValue(filters.availableTo)}
-              className="mt-1.5"
-            />
-          </div>
-          <div className="flex items-end">
-            <Checkbox
-              id="operador"
-              name="operador"
-              label="Somente com operador"
-              defaultChecked={filters.requiresOperator}
-            />
+          <div className="flex flex-col">
+            <Label htmlFor="raioMax">Raio máximo</Label>
+            <div className="flex flex-1 items-center">
+              <RangeSlider
+                id="raioMax"
+                name="raioMax"
+                min={0}
+                max={500}
+                step={10}
+                defaultValue={rawParams.raioMax ? Number(rawParams.raioMax) : 500}
+                unlimitedValue={500}
+                unit=" km"
+                className="w-full"
+              />
+            </div>
           </div>
         </div>
 

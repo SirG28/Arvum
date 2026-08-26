@@ -12,35 +12,15 @@ describe("parseCatalogFilters", () => {
     const { filters, ignored } = parseCatalogFilters({
       q: "trator",
       categoria: "tratores",
-      marca: "John Deere",
-      cultura: "soja",
-      finalidade: "plantio",
-      precoMin: "100",
       precoMax: "500.50",
     });
 
     expect(filters).toMatchObject({
       search: "trator",
       categorySlug: "tratores",
-      brand: "John Deere",
-      crop: "soja",
-      purpose: "plantio",
-      priceMinInCents: 10000,
       priceMaxInCents: 50050,
     });
     expect(ignored).toEqual([]);
-  });
-
-  it("coerces the operator checkbox from the raw form value", () => {
-    expect(parseCatalogFilters({ operador: "on" }).filters.requiresOperator).toBe(true);
-    expect(parseCatalogFilters({}).filters.requiresOperator).toBeUndefined();
-  });
-
-  it("ignores an inverted price range with a warning", () => {
-    const { filters, ignored } = parseCatalogFilters({ precoMin: "500", precoMax: "100" });
-    expect(filters.priceMinInCents).toBeUndefined();
-    expect(filters.priceMaxInCents).toBeUndefined();
-    expect(ignored).toEqual([{ field: "preco", message: expect.any(String) }]);
   });
 
   it("parses a valid period", () => {

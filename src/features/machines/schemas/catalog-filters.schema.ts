@@ -20,12 +20,7 @@ const optionalDate = z.preprocess(emptyToUndefined, z.coerce.date().optional());
 const rawCatalogFiltersSchema = z.object({
   q: optionalTrimmedString,
   categoria: optionalTrimmedString,
-  precoMin: optionalPriceInReais,
   precoMax: optionalPriceInReais,
-  marca: optionalTrimmedString,
-  cultura: optionalTrimmedString,
-  finalidade: optionalTrimmedString,
-  operador: z.preprocess((value) => value === "on" || value === "true", z.boolean()).optional(),
   dataInicio: optionalDate,
   dataFim: optionalDate,
   origemCidade: optionalTrimmedString,
@@ -37,14 +32,11 @@ export type CatalogFiltersQuery = z.input<typeof rawCatalogFiltersSchema>;
 
 export interface CatalogFiltersResult {
   filters: {
+    // Casa com título, marca, finalidade e culturas recomendadas (listActiveMachines) — um único
+    // campo de busca cobre o que antes eram filtros dedicados de marca/cultura/finalidade.
     search?: string;
     categorySlug?: string;
-    priceMinInCents?: number;
     priceMaxInCents?: number;
-    brand?: string;
-    crop?: string;
-    purpose?: string;
-    requiresOperator?: boolean;
     availableFrom?: Date;
     availableTo?: Date;
     // Localização informada pelo locatário ("onde será utilizada" — Context.md §8.5). Usada para
@@ -69,19 +61,10 @@ export function parseCatalogFilters(query: Record<string, string | undefined>): 
     return { filters: {}, ignored };
   }
 
-  const { q, categoria, marca, cultura, finalidade, operador } = parsed.data;
+  const { q, categoria } = parsed.data;
 
-  let { precoMin, precoMax, dataInicio, dataFim, origemCidade, raioMax } = parsed.data;
+  let { precoMax, dataInicio, dataFim, origemCidade, raioMax } = parsed.data;
   const { origemUf } = parsed.data;
-
-  if (precoMin !== undefined && precoMax !== undefined && precoMin > precoMax) {
-    ignored.push({
-      field: "preco",
-      message: "O valor mínimo é maior que o máximo — filtro de preço ignorado.",
-    });
-    precoMin = undefined;
-    precoMax = undefined;
-  }
 
   if (dataInicio !== undefined && dataFim !== undefined && dataFim <= dataInicio) {
     ignored.push({
@@ -129,12 +112,7 @@ export function parseCatalogFilters(query: Record<string, string | undefined>): 
     filters: {
       search: q,
       categorySlug: categoria,
-      priceMinInCents: precoMin !== undefined ? Math.round(precoMin * 100) : undefined,
       priceMaxInCents: precoMax !== undefined ? Math.round(precoMax * 100) : undefined,
-      brand: marca,
-      crop: cultura,
-      purpose: finalidade,
-      requiresOperator: operador,
       availableFrom: dataInicio,
       availableTo: dataFim,
       originCity: hasOrigin ? origemCidade : undefined,
