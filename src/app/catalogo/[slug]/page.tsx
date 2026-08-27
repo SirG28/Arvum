@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getPublicMachineBySlug } from "@/features/machines/services/machine.service";
+import { isPremiumActive } from "@/features/subscriptions/lib/subscription-status";
 import { listFavoriteMachineIds } from "@/features/favorites/services/favorite.service";
 import { listPropertiesByOwner } from "@/features/properties/services/property.service";
 import { getMachineReviews } from "@/features/reviews/services/review.service";
@@ -161,7 +162,12 @@ export default async function MachineDetailPage({ params, searchParams }: Machin
               Caução: {formatBRL(machine.depositInCents)}
             </p>
           ) : null}
-          <p className="mt-1 text-xs text-neutral-500">Anunciado por {machine.owner.name}</p>
+          <p className="mt-1 flex items-center gap-2 text-xs text-neutral-500">
+            Anunciado por {machine.owner.name}
+            {isPremiumActive(machine.owner.subscription) && (
+              <Badge tone="success">Parceiro verificado</Badge>
+            )}
+          </p>
 
           <div className="mt-4">
             {!user ? (

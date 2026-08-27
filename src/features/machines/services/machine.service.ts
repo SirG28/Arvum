@@ -4,9 +4,11 @@ import { getOwnedProperty } from "@/features/properties/services/property.servic
 import { mockGeocodingProvider } from "@/lib/geo/geocoding";
 import { calculateDistanceKm, type GeoPoint } from "@/lib/geo/distance";
 import { getAverageRatingsByMachineIds } from "@/features/reviews/services/review.service";
+import { isPremiumActive } from "@/features/subscriptions/lib/subscription-status";
 import { generateMachineSlug } from "../lib/slug";
 import { canTransitionMachineStatus } from "../lib/machine-status";
 import { toMachinePersistedData, type MachineFormOutput } from "../schemas/machine.schema";
+import { sortByPremiumFirst } from "../lib/premium-boost";
 
 // Reservas nestes status ainda impedem a remoção definitiva da máquina (§9.2) e contam como
 // ocupação real do calendário (bookings.service.ts reusa esta lista para checar sobreposição).
@@ -212,6 +214,7 @@ export async function listActiveMachines(filters: CatalogFilters = {}) {
       category: true,
       property: true,
       images: { orderBy: { position: "asc" }, take: 1 },
+      owner: { select: { subscription: { select: { currentPeriodEnd: true } } } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -237,11 +240,16 @@ export async function listActiveMachines(filters: CatalogFilters = {}) {
   const ratings = await getAverageRatingsByMachineIds(
     filtered.map((machine) => ({ id: machine.id, ownerId: machine.ownerId })),
   );
-  return filtered.map((machine) => ({
+  const withRatings = filtered.map((machine) => ({
     ...machine,
     averageRating: ratings.get(machine.id)?.averageRating ?? null,
     reviewCount: ratings.get(machine.id)?.count ?? 0,
+    ownerHasPremium: isPremiumActive(machine.owner.subscription),
   }));
+
+  // Destaque de parceiros Premium (Context.md §8.21): reordena colocando quem tem assinatura
+  // ativa primeiro, sem descartar a ordenação por distância/data já aplicada acima (sort estável).
+  return sortByPremiumFirst(withRatings, (machine) => machine.ownerHasPremium);
 }
 
 export async function getPublicMachineBySlug(
@@ -253,7 +261,9 @@ export async function getPublicMachineBySlug(
     include: {
       category: true,
       property: true,
-      owner: { select: { id: true, name: true } },
+      owner: {
+        select: { id: true, name: true, subscription: { select: { currentPeriodEnd: true } } },
+      },
       images: { orderBy: { position: "asc" } },
       availability: { orderBy: { startDate: "asc" } },
     },

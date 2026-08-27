@@ -75,6 +75,7 @@ completo, `search`, `bookings`, `logistics`, `payments`, `reviews`, `notificatio
 | Fator do equipamento não usa a categoria | `calculateEquipmentFactor` (`src/features/logistics/lib/equipment-factor.ts`) usa peso, maior dimensão e `requiresOperator` | Fator por categoria (ex.: mapa fixo `categoria → fator`) | `Context.md` §8.3 exige que categorias sejam administráveis pelo painel, não fixas no código; basear o fator logístico em um mapa `slug → número` engessaria a regra a categorias que podem mudar. Peso/dimensões/operador são campos numéricos sempre presentes no anúncio. |
 | Nota pública da máquina só conta avaliação do locatário | `getMachineReviews`/`getAverageRatingsByMachineIds` (`src/features/reviews`) filtram `targetUserId = ownerId` | Somar todas as avaliações da reserva (locatário + proprietário) na nota da máquina | A avaliação do proprietário é sobre o locatário (pessoa), não sobre o equipamento — misturá-la na nota pública do anúncio inflaria/distorceria a nota com algo que não é sobre a máquina. Sem um campo próprio de "papel" no `Review`, o `targetUserId` (sempre o proprietário quando quem avalia é o locatário, pois `CANNOT_BOOK_OWN_MACHINE` impede o proprietário de alugar a própria máquina) já identifica isso sem alterar o schema. |
 | Nota média calculada em memória, não `groupBy` puro no catálogo | `getAverageRatingsByMachineIds` busca as avaliações e agrupa em JS (`src/features/reviews/services/review.service.ts`) | `prisma.review.groupBy` direto | O filtro "só avaliação do locatário" (linha acima) compara `targetUserId` com o `ownerId` de cada máquina — dois campos de tabelas diferentes, algo que `groupBy`/`where` do Prisma não expressam em uma única consulta sem SQL bruto. Mesmo padrão já adotado para distância (cálculo em app, não SQL geoespacial) — volume do MVP não justifica a complexidade extra. |
+| Painel do proprietário é um hub enxuto, não o `Context.md` §8.19 inteiro | `/painel-do-proprietario` reúne só atalhos para o que já existe (Minhas máquinas, Solicitações recebidas) + Plano Premium | Calendário, receita agregada, alertas e pendências de cadastro numa única tela | O escopo completo do §8.19 reconstruiria o que já funciona em páginas próprias sem necessidade imediata; o hub existe para dar um lar ao Plano Premium (preocupação exclusiva de quem anuncia, que não cabia no menu de perfil genérico misturado com locatário) e ao que mais vier do roadmap de parceiro. `Property` fica fora de propósito: não é exclusivo de proprietário (locatário também cadastra, como destino de entrega). |
 
 ## Valores monetários e datas
 
@@ -110,12 +111,14 @@ para regras de negócio.
    locatário ou pelo proprietário, com política de estorno centralizada.
 5. 🚧 **Confiança** — avaliações concluídas; notificações, mensagens e moderação seguem.
 6. **Administração e qualidade** — painel admin, indicadores, testes, acessibilidade, segurança, documentação, deploy.
-7. **Monetização avançada** (`Context.md` §8.21/§9.7) — comissão sobre operações (8%–12%, já
-   habilitada via `serviceFeeInCents` na Fase 4), Arvum Suporte de Operação (add-on na reserva),
-   Plano Premium para parceiros (assinatura recorrente, destaque, selo verificado, redução de
-   comissão, relatórios) e anúncios patrocinados (posições de destaque, sempre identificados).
-   Exige as novas entidades `Subscription` e `SponsoredListing` (`Context.md` §17), inexistentes no
-   schema atual.
+7. 🚧 **Monetização avançada** (`Context.md` §8.21/§9.7) — comissão sobre operações (8%–12%, já
+   habilitada via `serviceFeeInCents` na Fase 4, cálculo ainda não implementado); ✅ Arvum Suporte
+   de Operação (add-on opcional na reserva, `src/features/support/`, antecipado desta fase); ✅ Plano
+   Premium para parceiros (assinatura mensal, destaque, selo verificado, relatórios de desempenho,
+   `src/features/subscriptions/`, model `Subscription`, também antecipado — redução de comissão
+   pronta em `getEffectiveCommissionRate` mas ainda não conectada ao cálculo da comissão); falta
+   anúncios patrocinados (posições de destaque, sempre identificados) — exige a nova entidade
+   `SponsoredListing` (`Context.md` §17), inexistente no schema atual.
 
 Adaptadores simulados (mapas/geolocalização, pagamento, transportadoras) serão introduzidos nas
 fases 2–4 atrás de interfaces de serviço, permitindo substituição futura por provedores reais sem

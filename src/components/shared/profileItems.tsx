@@ -14,6 +14,12 @@ import { USER_ICON_PATHS } from "@/components/ui/UserIcon";
 // "Minhas reservas" (ReservationsIndicator.tsx) — nenhuma das duas jamais esteve aqui dentro,
 // então não é uma remoção nova, é manter a mesma regra: o que é urgente vive no cabeçalho, o resto
 // vive neste menu.
+//
+// "Minhas máquinas" também fica fora desta lista de propósito (diferente de "Solicitações
+// recebidas", isso É uma remoção — havia um item aqui antes): agora centralizada dentro de
+// "Painel do proprietário" (/painel-do-proprietario), que reúne o que é exclusivo de quem anuncia
+// máquinas (atalho para /maquinas, solicitações recebidas, Plano Premium) num único lugar, em vez
+// de espalhar pelo menu genérico que mistura papéis de locatário e proprietário.
 export const PROFILE_ITEMS = [
   {
     href: "/perfil",
@@ -32,17 +38,16 @@ export const PROFILE_ITEMS = [
     ),
   },
   {
-    href: "/maquinas",
-    label: "Minhas máquinas",
-    // Sem equivalente no Feather (não tem ícone de maquinário agrícola) — redesenhado maior,
-    // ocupando quase todo o viewBox como os demais, em vez do desenho original (confinado a uma
-    // faixa estreita no meio do quadro).
+    href: "/painel-do-proprietario",
+    label: "Painel do proprietário",
+    // Mesmo traçado do ícone usado em OwnerRequestsIndicator.tsx (documento com check) — a
+    // Arvum não tem um ícone próprio de "painel", e reaproveitar um traçado já familiar de
+    // "solicitações/gestão" evita introduzir um terceiro desenho para o mesmo tipo de conceito.
     icon: (
       <>
-        <rect x="2" y="6" width="14" height="10" rx="1.4" />
-        <path d="M16 10h3.2L22 13.5v3h-6" />
-        <circle cx="7" cy="19" r="2" />
-        <circle cx="18" cy="19" r="2" />
+        <rect x="4" y="6" width="16" height="14" rx="2" />
+        <path d="M8 6V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1" />
+        <path d="m8.5 13 2.3 2.3L15.5 11" />
       </>
     ),
   },

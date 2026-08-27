@@ -10,6 +10,7 @@ import { bookingRequestSchema, type BookingRequestInput } from "../schemas/booki
 import { useCreateBookingRequest, useBookingQuote } from "../hooks/useBookings";
 import { LOGISTICS_MODE_LABELS } from "../lib/logistics-labels";
 import { PriceBreakdown } from "./PriceBreakdown";
+import { OperationSupportOption } from "./OperationSupportOption";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
@@ -51,6 +52,7 @@ export function BookingRequestForm({ machineId, properties }: BookingRequestForm
   const startDate = watch("startDate");
   const endDate = watch("endDate");
   const logisticsMode = watch("logisticsMode");
+  const operationSupportIncluded = watch("operationSupportIncluded");
 
   // Prévia automática de valores conforme o locatário preenche o formulário (Context.md §33:
   // tudo que o usuário precisa saber deve ficar claro antes de solicitar) — debounced para não
@@ -69,12 +71,18 @@ export function BookingRequestForm({ machineId, properties }: BookingRequestForm
     }
 
     const timeoutId = setTimeout(() => {
-      quote.mutate({ destinationPropertyId, startDate, endDate, logisticsMode });
+      quote.mutate({
+        destinationPropertyId,
+        startDate,
+        endDate,
+        logisticsMode,
+        operationSupportIncluded,
+      });
     }, QUOTE_DEBOUNCE_MS);
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [destinationPropertyId, startDate, endDate, logisticsMode]);
+  }, [destinationPropertyId, startDate, endDate, logisticsMode, operationSupportIncluded]);
 
   // O zodResolver já entrega startDate/endDate como Date (pós-validação) apesar do tipo estático
   // do formulário ser o shape bruto — mesmo padrão de MachineAvailabilityManager.tsx.
@@ -155,6 +163,8 @@ export function BookingRequestForm({ machineId, properties }: BookingRequestForm
         </Select>
       </FormField>
 
+      <OperationSupportOption registration={register("operationSupportIncluded")} />
+
       <FormField label="Observações" helpText="Opcional" error={errors.notes?.message}>
         <Textarea rows={3} placeholder="Alguma informação para o proprietário?" {...register("notes")} />
       </FormField>
@@ -180,6 +190,7 @@ export function BookingRequestForm({ machineId, properties }: BookingRequestForm
             rentalValueInCents={quote.data.totals.rentalValueInCents}
             logisticsValueInCents={quote.data.totals.logisticsValueInCents}
             serviceFeeInCents={quote.data.totals.serviceFeeInCents}
+            operationSupportValueInCents={quote.data.totals.operationSupportValueInCents}
             depositInCents={quote.data.totals.depositInCents}
             discountInCents={quote.data.totals.discountInCents}
             totalValueInCents={quote.data.totals.totalValueInCents}

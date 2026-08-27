@@ -9,6 +9,7 @@ type FeaturedMachine = Machine & {
   distanceKm: number | null;
   averageRating: number | null;
   reviewCount: number;
+  ownerHasPremium: boolean;
 };
 
 interface FeaturedMachinesProps {

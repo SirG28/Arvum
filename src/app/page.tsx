@@ -27,10 +27,10 @@ const DASHBOARD_LINKS = [
     icon: PROFILE_ITEMS.find((item) => item.href === "/propriedades")!.icon,
   },
   {
-    title: "Minhas máquinas",
-    description: "Cadastre e acompanhe a disponibilidade das suas máquinas.",
-    href: "/maquinas",
-    icon: PROFILE_ITEMS.find((item) => item.href === "/maquinas")!.icon,
+    title: "Painel do proprietário",
+    description: "Máquinas, solicitações recebidas e o Plano Premium, tudo num só lugar.",
+    href: "/painel-do-proprietario",
+    icon: PROFILE_ITEMS.find((item) => item.href === "/painel-do-proprietario")!.icon,
   },
   {
     title: "Catálogo",

@@ -105,6 +105,7 @@ export default async function ReceivedBookingDetailPage({ params }: ReceivedBook
           rentalValueInCents={booking.rentalValueInCents}
           logisticsValueInCents={booking.logisticsValueInCents}
           serviceFeeInCents={booking.serviceFeeInCents}
+          operationSupportValueInCents={booking.operationSupportValueInCents}
           depositInCents={booking.depositInCents}
           discountInCents={booking.discountInCents}
           totalValueInCents={booking.totalValueInCents}

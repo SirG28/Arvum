@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Inter, Sora } from "next/font/google";
+import { auth } from "@/auth";
 import { Providers } from "@/components/shared/Providers";
 import "./globals.css";
 
@@ -41,11 +42,13 @@ export const viewport = {
   themeColor: "#2f7d52",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const session = await auth();
+
   return (
     <html lang="pt-BR" className={`${inter.variable} ${sora.variable}`}>
       <body suppressHydrationWarning>
-        <Providers>{children}</Providers>
+        <Providers session={session}>{children}</Providers>
       </body>
     </html>
   );

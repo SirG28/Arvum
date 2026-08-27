@@ -16,6 +16,7 @@ export const bookingRequestSchema = z
       required_error: "Selecione como a máquina será retirada ou entregue.",
       invalid_type_error: "Selecione como a máquina será retirada ou entregue.",
     }),
+    operationSupportIncluded: z.boolean().default(false),
     notes: z.string().trim().optional(),
   })
   .refine((data) => data.endDate > data.startDate, {

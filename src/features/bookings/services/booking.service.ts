@@ -4,6 +4,7 @@ import { getOwnedProperty } from "@/features/properties/services/property.servic
 import { ACTIVE_BOOKING_STATUSES } from "@/features/machines/services/machine.service";
 import { calculateDistanceKm } from "@/lib/geo/distance";
 import { calculateLogisticsCost, type LogisticsCostResult } from "@/features/logistics/lib/pricing";
+import { calculateOperationSupportCost } from "@/features/support/lib/pricing";
 import { calculateRentalDays, calculateBookingTotals } from "../lib/pricing";
 import {
   isBookingCancellableByRenter,
@@ -87,6 +88,7 @@ export interface BookingQuote {
   destinationProperty: Prisma.PropertyGetPayload<Record<string, never>>;
   rentalDays: number;
   logisticsCost: LogisticsCostResult;
+  operationSupportIncluded: boolean;
   totals: ReturnType<typeof calculateBookingTotals>;
   initialStatus: "APPROVED" | "AWAITING_APPROVAL";
 }
@@ -155,18 +157,29 @@ export async function buildBookingQuote(
   const logisticsCost = calculateLogisticsCost({ mode: input.logisticsMode, distanceKm, machine });
   if (typeof logisticsCost === "string") return logisticsCost;
 
+  const operationSupportValueInCents = calculateOperationSupportCost(input.operationSupportIncluded);
+
   const totals = calculateBookingTotals({
     rentalDays,
     dailyPriceInCents: machine.dailyPriceInCents,
     depositInCents: machine.depositInCents,
     logisticsValueInCents: logisticsCost.totalInCents,
+    operationSupportValueInCents,
   });
 
   // Reserva instantânea pula a aprovação manual do proprietário (Context.md §8.8) — a decisão é
   // do anúncio (`machine.instantBooking`), nunca escolhida pelo locatário na hora de reservar.
   const initialStatus = machine.instantBooking ? "APPROVED" : "AWAITING_APPROVAL";
 
-  return { machine, destinationProperty, rentalDays, logisticsCost, totals, initialStatus };
+  return {
+    machine,
+    destinationProperty,
+    rentalDays,
+    logisticsCost,
+    operationSupportIncluded: input.operationSupportIncluded,
+    totals,
+    initialStatus,
+  };
 }
 
 export type CreateBookingResult =
@@ -181,7 +194,7 @@ export async function createBookingRequest(
   const quote = await buildBookingQuote(renterId, machineId, input);
   if (typeof quote === "string") return quote;
 
-  const { machine, totals, logisticsCost, initialStatus } = quote;
+  const { machine, totals, logisticsCost, operationSupportIncluded, initialStatus } = quote;
 
   return prisma.$transaction(async (tx) => {
     const booking = await tx.booking.create({
@@ -194,6 +207,7 @@ export async function createBookingRequest(
         status: initialStatus,
         logisticsMode: input.logisticsMode,
         distanceKm: logisticsCost.distanceKm,
+        operationSupportIncluded,
         notes: input.notes,
         ...totals,
       },

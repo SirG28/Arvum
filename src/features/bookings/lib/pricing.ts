@@ -12,6 +12,7 @@ interface BookingTotalsInput {
   depositInCents?: number | null;
   logisticsValueInCents?: number;
   serviceFeeInCents?: number;
+  operationSupportValueInCents?: number;
   discountInCents?: number;
 }
 
@@ -19,13 +20,14 @@ export interface BookingTotals {
   rentalValueInCents: number;
   logisticsValueInCents: number;
   serviceFeeInCents: number;
+  operationSupportValueInCents: number;
   depositInCents: number;
   discountInCents: number;
   totalValueInCents: number;
 }
 
 // Composição transparente do valor da locação (Context.md §8.12):
-// total = locacao + logistica + taxaServico + caucao - descontos.
+// total = locacao + logistica + taxaServico + suporteDeOperacao + caucao - descontos.
 // Cálculo logístico real e taxa de serviço chegam nas próximas etapas da Fase 4 — por ora,
 // entram como zero para não travar o fluxo de solicitação de reserva.
 export function calculateBookingTotals({
@@ -34,17 +36,24 @@ export function calculateBookingTotals({
   depositInCents = 0,
   logisticsValueInCents = 0,
   serviceFeeInCents = 0,
+  operationSupportValueInCents = 0,
   discountInCents = 0,
 }: BookingTotalsInput): BookingTotals {
   const rentalValueInCents = rentalDays * dailyPriceInCents;
   const deposit = depositInCents ?? 0;
   const totalValueInCents =
-    rentalValueInCents + logisticsValueInCents + serviceFeeInCents + deposit - discountInCents;
+    rentalValueInCents +
+    logisticsValueInCents +
+    serviceFeeInCents +
+    operationSupportValueInCents +
+    deposit -
+    discountInCents;
 
   return {
     rentalValueInCents,
     logisticsValueInCents,
     serviceFeeInCents,
+    operationSupportValueInCents,
     depositInCents: deposit,
     discountInCents,
     totalValueInCents,

@@ -70,6 +70,18 @@ describe("bookingRequestSchema", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it("assume operationSupportIncluded como false quando omitido", () => {
+    const result = bookingRequestSchema.safeParse({
+      ...basePayload,
+      startDate: daysFromNow(1),
+      endDate: daysFromNow(3),
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.operationSupportIncluded).toBe(false);
+    }
+  });
 });
 
 describe("bookingDecisionSchema", () => {

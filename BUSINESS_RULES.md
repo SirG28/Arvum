@@ -154,6 +154,16 @@ cadastrado."]`), nunca uma mensagem genérica.
     (sem cobrança / estorno integral / sem estorno) antes de o usuário confirmar.
   - O cancelamento é sempre uma transição de status (`CANCELLED`) com `BookingStatusHistory`,
     nunca uma remoção física do registro (`Context.md` §8.4/§9.3).
+- **Arvum Suporte de Operação** (`Context.md` §8.21/§9.7, antecipado da Fase 7 para a etapa de
+  reservas): add-on opcional por reserva, nunca uma assinatura — o locatário marca ou não
+  `operationSupportIncluded` no próprio formulário de solicitação, antes de confirmar. Preço fixo
+  centralizado em `src/features/support/config.ts` (`OPERATION_SUPPORT_PRICE_IN_CENTS`), calculado
+  por `calculateOperationSupportCost` (`src/features/support/lib/pricing.ts`) — nenhum componente
+  calcula esse valor diretamente, mesmo padrão de `calculateLogisticsCost`. O valor entra em
+  `calculateBookingTotals` como mais uma parcela do total (junto de locação, logística, taxa de
+  serviço e caução) e é gravado como retrato imutável em `Booking.operationSupportValueInCents`. A
+  interface nunca sugere cobertura financeira contra danos — os textos usam apenas "atendimento" e
+  "mediação", com o aviso "não é um seguro" sempre visível junto à opção.
 
 ### Acompanhamento de status (Fase 4)
 
@@ -255,6 +265,50 @@ cadastrado."]`), nunca uma mensagem genérica.
 - Comentário é opcional (até 1000 caracteres); avaliações não podem ser anônimas para a
   plataforma — o autor é sempre o usuário autenticado, nunca um campo de texto livre.
 
+### Plano Premium para parceiros (`Context.md` §8.21/§9.7/§17, antecipado da Fase 7)
+
+- **Assinatura mensal por proprietário, preço único** (R$ 149,90 — ponto médio da faixa R$ 99–199
+  do `Context.md`), sem tiers e sem tabela de preços no banco (`src/features/subscriptions/config.ts`,
+  mesmo padrão do preço fixo do Suporte de Operação). Um único registro por proprietário
+  (`Subscription.ownerId @unique`) — assinar de novo sempre reescreve o mesmo registro com um
+  período novo de 30 dias, nunca uma tabela de histórico de cobranças.
+- **Sem simulação de renovação automática de verdade**: o projeto não tem scheduler/cron
+  (`Context.md` §27). Assinar sempre inicia um período novo a partir de agora, pelo preço atual —
+  sem carregar tempo restante de uma assinatura anterior. Cancelar (`cancelPremiumSubscription`,
+  `src/features/subscriptions/services/subscription.service.ts`) só impede a renovação futura; o
+  `currentPeriodEnd` nunca é alterado, então os benefícios continuam até lá (`Context.md` §9.7: "o
+  cancelamento não reduz retroativamente benefícios já utilizados no período pago").
+- **"Ativo" é sempre calculado a partir de `currentPeriodEnd`**, nunca só do `status` armazenado
+  (`isPremiumActive`, `src/features/subscriptions/lib/subscription-status.ts`) — sem renovação real,
+  um registro pode ficar com `status: ACTIVE` no banco depois que o período expirou; o `status`
+  serve só para a mensagem certa na tela (ativa vs. cancelada mas ainda dentro do período).
+- **Destaque no catálogo**: `listActiveMachines`/`getPublicMachineBySlug`
+  (`src/features/machines/services/machine.service.ts`) carregam o status da assinatura do
+  proprietário e aplicam `sortByPremiumFirst` (`src/features/machines/lib/premium-boost.ts`, sort
+  estável testado) — reordena colocando parceiros Premium primeiro sem descartar a ordenação por
+  distância/data já aplicada. Selo "Parceiro verificado" no card do catálogo
+  (`CatalogMachineCard.tsx`) e na página de detalhe, sempre condicionado a `isPremiumActive`.
+- **Redução de comissão pronta, mas não conectada**: `getEffectiveCommissionRate`
+  (`src/features/subscriptions/lib/commission.ts`) retorna a taxa reduzida para parceiros Premium —
+  função centralizada e testada, seguindo a regra do `Context.md` §9.7 ("a regra de redução deve
+  ficar centralizada em serviço próprio, nunca espalhada pelo fluxo de pagamento"), mas ainda não é
+  chamada por nenhum serviço: a comissão em si (`Booking.serviceFeeInCents`) ainda não é calculada
+  em lugar nenhum do projeto (Fase 7 pendente).
+- **Relatório de desempenho usa só dados que já existem** (`getOwnerPerformanceReport`,
+  `src/features/subscriptions/services/report.service.ts`): reservas por status, receita total
+  (soma de `totalValueInCents` das reservas com pagamento confirmado em diante — constante própria
+  `PAID_BOOKING_STATUSES`, diferente de `ACTIVE_BOOKING_STATUSES` do `machine.service.ts`, que
+  exclui `COMPLETED` e não serve para receita) e nota média (reaproveita `getUserReviewSummary`, já
+  usada em `/perfil`). Nenhuma contagem de visualizações — não há tracking de página no projeto.
+- **Painel do proprietário** (`Context.md` §8.19, hub enxuto — não a especificação inteira):
+  `/painel-do-proprietario` reúne atalhos para o que é exclusivo de quem anuncia máquinas (Minhas
+  máquinas, Solicitações recebidas) e a gestão do Plano Premium. `Property` fica de fora — não é
+  exclusivo de proprietário, um locatário também cadastra propriedade como destino de entrega na
+  reserva, então "Minhas propriedades" continua só no menu de perfil geral. "Minhas máquinas" saiu
+  do menu de perfil genérico (`profileItems.tsx`) por estar centralizada no painel; "Solicitações
+  recebidas" nunca esteve lá — continua com atalho fixo no cabeçalho por ser urgente
+  (`OwnerRequestsIndicator.tsx`), independente do painel.
+
 ## Planejado — próximas fases
 
 As regras abaixo já estão especificadas no `Context.md` e serão implementadas quando os módulos
@@ -267,13 +321,13 @@ correspondentes forem construídos:
   (`ReviewStatus.REPORTED`/`HIDDEN` já existem no schema, sem painel para acioná-los ainda).
 - **Monetização** (Fase 7 — `Context.md` §8.21/§9.7): modelo híbrido com três entradas — comissão de
   8%–12% sobre cada operação (retida automaticamente na divisão do pagamento, sem cobrança separada
-  ao locatário), assinatura mensal do Plano Premium para parceiros (R$ 99–199, com desconto na
-  comissão, destaque na busca, selo de verificado e relatórios de desempenho) e anúncios
-  patrocinados (sempre identificados, nunca misturados a resultados orgânicos). A comissão reaproveita
-  o campo já existente `Booking.serviceFeeInCents`; Plano Premium e anúncios patrocinados exigem as
-  novas entidades `Subscription` e `SponsoredListing` (`Context.md` §17). O Arvum Suporte de Operação
-  é um add-on opcional por reserva — suporte operacional, não seguro, sem cobertura financeira contra
-  danos.
+  ao locatário), assinatura mensal do Plano Premium para parceiros e anúncios patrocinados (sempre
+  identificados, nunca misturados a resultados orgânicos). O Arvum Suporte de Operação (ver seção
+  "Reservas") e o Plano Premium (ver seção "Parceiros" acima, incluindo `Subscription` no schema)
+  já estão implementados — o que falta da Fase 7 é só a comissão em si (a comissão reaproveitaria o
+  campo já existente `Booking.serviceFeeInCents`; a redução para parceiros Premium já está pronta e
+  testada em `getEffectiveCommissionRate`, só falta ser chamada) e os anúncios patrocinados (exigem
+  a entidade `SponsoredListing`, `Context.md` §17, ainda inexistente no schema).
 
 Valores monetários são sempre armazenados em centavos inteiros (`Int`), nunca `Float`, conforme
 refletido no `prisma/schema.prisma` e nos formulários de máquinas (conversão de reais para centavos

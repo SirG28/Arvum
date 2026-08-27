@@ -29,6 +29,7 @@ describe("calculateBookingTotals", () => {
       rentalValueInCents: 30000,
       logisticsValueInCents: 2000,
       serviceFeeInCents: 1000,
+      operationSupportValueInCents: 0,
       depositInCents: 5000,
       discountInCents: 500,
       totalValueInCents: 37500,
@@ -43,5 +44,15 @@ describe("calculateBookingTotals", () => {
     });
     expect(totals.depositInCents).toBe(0);
     expect(totals.totalValueInCents).toBe(30000);
+  });
+
+  it("soma o valor do suporte de operação ao total quando contratado", () => {
+    const totals = calculateBookingTotals({
+      rentalDays: 3,
+      dailyPriceInCents: 10000,
+      operationSupportValueInCents: 4990,
+    });
+    expect(totals.operationSupportValueInCents).toBe(4990);
+    expect(totals.totalValueInCents).toBe(34990);
   });
 });

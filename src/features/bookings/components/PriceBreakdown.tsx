@@ -5,6 +5,7 @@ interface PriceBreakdownProps {
   rentalValueInCents: number;
   logisticsValueInCents: number;
   serviceFeeInCents: number;
+  operationSupportValueInCents?: number;
   depositInCents: number;
   discountInCents: number;
   totalValueInCents: number;
@@ -24,6 +25,7 @@ export function PriceBreakdown({
   rentalValueInCents,
   logisticsValueInCents,
   serviceFeeInCents,
+  operationSupportValueInCents = 0,
   depositInCents,
   discountInCents,
   totalValueInCents,
@@ -53,6 +55,12 @@ export function PriceBreakdown({
           <dt className="text-neutral-500">Taxa de serviço</dt>
           <dd className="text-neutral-900">{formatBRL(serviceFeeInCents)}</dd>
         </div>
+        {operationSupportValueInCents > 0 && (
+          <div className="flex justify-between">
+            <dt className="text-neutral-500">Suporte de operação</dt>
+            <dd className="text-neutral-900">{formatBRL(operationSupportValueInCents)}</dd>
+          </div>
+        )}
         {depositInCents > 0 && (
           <div className="flex justify-between">
             <dt className="text-neutral-500">Caução</dt>
