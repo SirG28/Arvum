@@ -3,26 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
+import { NAV_ITEMS } from "./navItems";
 
-// Navegação geral do site — itens específicos do usuário logado (propriedades, máquinas,
-// favoritos, configurações) vivem no menu de perfil (ver ProfileMenu.tsx), não aqui.
-//
-// O ícone não aparece na barra horizontal do desktop (abaixo) — só existe para o
-// MobileNavDrawer, onde este item entra na mesma lista dos PROFILE_ITEMS e precisa do mesmo
-// padrão visual (ícone + rótulo) para não destoar dos demais dentro do menu aberto.
-export const NAV_ITEMS = [
-  {
-    href: "/catalogo",
-    label: "Catálogo",
-    // Traçado do ícone "search" do Feather (mesma família da engrenagem de Configurações).
-    icon: (
-      <>
-        <circle cx="11" cy="11" r="8" />
-        <path d="m21 21-4.35-4.35" />
-      </>
-    ),
-  },
-] as const;
+// Reexportado para não quebrar quem já importa NAV_ITEMS a partir daqui (ex.: MobileNavDrawer) —
+// a lista em si vive em navItems.tsx (módulo sem "use client", importável por Server Components
+// como app/page.tsx).
+export { NAV_ITEMS };
 
 // Escondido em telas pequenas — mobile usa o menu hambúrguer (MobileNavDrawer) para não estourar
 // a largura do header (4 links + logo + perfil + sair não cabem em ~375px).

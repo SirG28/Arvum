@@ -67,7 +67,16 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
         <Alert key={issue.field} tone="warning" title={issue.message} />
       ))}
 
-      <form className="flex flex-col gap-4 rounded-md border border-neutral-200 p-4" action="/catalogo" method="get">
+      {/* key força remount ao navegar (inclusive na navegação client-side do "Limpar filtros"),
+          para os inputs não controlados (defaultValue) e os Client Components de filtro
+          (CityAutocomplete, DateRangeFilterField, RangeSlider) resincronizarem seu estado interno
+          com a nova URL — sem isso, eles só leem seu valor inicial na primeira montagem. */}
+      <form
+        key={JSON.stringify(rawParams)}
+        className="flex flex-col gap-4 rounded-md border border-neutral-200 p-4"
+        action="/catalogo"
+        method="get"
+      >
         {categoria && <input type="hidden" name="categoria" value={categoria} />}
 
         <div>

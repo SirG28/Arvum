@@ -2,6 +2,8 @@ import Link from "next/link";
 import { AppHeader } from "@/components/shared/AppHeader";
 import { PublicHeader } from "@/components/shared/PublicHeader";
 import { Footer } from "@/components/shared/Footer";
+import { PROFILE_ITEMS } from "@/components/shared/profileItems";
+import { NAV_ITEMS } from "@/components/shared/navItems";
 import { getCurrentUser } from "@/lib/session";
 import { listTopCategories } from "@/features/categories/services/category.service";
 import { listActiveMachines } from "@/features/machines/services/machine.service";
@@ -15,26 +17,32 @@ import { HighlightBand, type HomeStats } from "@/features/home/components/Highli
 import { FeaturedCategories } from "@/features/home/components/FeaturedCategories";
 import { FeaturedMachines } from "@/features/home/components/FeaturedMachines";
 
+// Ícones reaproveitados de PROFILE_ITEMS/NAV_ITEMS (menu de perfil e menu hambúrguer) — mesmo
+// traçado nos dois lugares, nunca dois desenhos diferentes para o mesmo destino.
 const DASHBOARD_LINKS = [
   {
     title: "Minhas propriedades",
     description: "Gerencie as propriedades cadastradas na sua conta.",
     href: "/propriedades",
+    icon: PROFILE_ITEMS.find((item) => item.href === "/propriedades")!.icon,
   },
   {
     title: "Minhas máquinas",
     description: "Cadastre e acompanhe a disponibilidade das suas máquinas.",
     href: "/maquinas",
+    icon: PROFILE_ITEMS.find((item) => item.href === "/maquinas")!.icon,
   },
   {
     title: "Catálogo",
     description: "Veja as máquinas disponíveis de outros produtores.",
     href: "/catalogo",
+    icon: NAV_ITEMS.find((item) => item.href === "/catalogo")!.icon,
   },
   {
     title: "Meu perfil",
     description: "Confira seus dados de conta.",
     href: "/perfil",
+    icon: PROFILE_ITEMS.find((item) => item.href === "/perfil")!.icon,
   },
 ];
 
@@ -78,6 +86,20 @@ export default async function HomePage() {
                   href={link.href}
                   className="rounded-lg border border-neutral-200 bg-white p-6 shadow-[var(--shadow-elevation-1)] transition-colors hover:border-primary-200 hover:bg-primary-50"
                 >
+                  <div className="mb-3 inline-flex rounded-md bg-primary-50 p-2 text-primary-600">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      strokeWidth={1.6}
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-5 w-5"
+                      aria-hidden="true"
+                    >
+                      {link.icon}
+                    </svg>
+                  </div>
                   <h3 className="text-sm font-semibold text-neutral-900">{link.title}</h3>
                   <p className="mt-1 text-sm text-neutral-500">{link.description}</p>
                 </Link>
