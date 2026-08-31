@@ -38,6 +38,16 @@ export async function listMachinesByOwner(ownerId: string) {
   });
 }
 
+// Só para decidir se o indicador de "Solicitações recebidas" aparece no header (OwnerRequestsIndicator.tsx)
+// — mostrar esse atalho pra quem nunca anunciou nada é ruído permanente sem nenhuma utilidade,
+// já que essa conta nunca vai ter uma solicitação pra aprovar. findFirst (não count): só existência
+// importa aqui, sem motivo pra contar todas as linhas.
+export function hasOwnerMachines(ownerId: string) {
+  return prisma.machine
+    .findFirst({ where: { ownerId, deletedAt: null }, select: { id: true } })
+    .then((machine) => machine !== null);
+}
+
 export type CreateMachineResult = Machine | "PROPERTY_NOT_OWNED";
 
 export async function createMachine(
@@ -250,6 +260,35 @@ export async function listActiveMachines(filters: CatalogFilters = {}) {
   // Destaque de parceiros Premium (Context.md §8.21): reordena colocando quem tem assinatura
   // ativa primeiro, sem descartar a ordenação por distância/data já aplicada acima (sort estável).
   return sortByPremiumFirst(withRatings, (machine) => machine.ownerHasPremium);
+}
+
+// Vitrine de anúncios no perfil público/próprio do vendedor — mesmo critério de "publicamente
+// visível" de listActiveMachines (status ACTIVE, não removida), sem os filtros e o cálculo de
+// distância que só fazem sentido na busca do catálogo. Devolve o mesmo formato que
+// CatalogMachineCard já espera, para reaproveitar o componente sem adaptação.
+export async function listActiveMachinesByOwner(ownerId: string) {
+  const machines = await prisma.machine.findMany({
+    where: { ownerId, status: "ACTIVE", deletedAt: null },
+    include: {
+      category: true,
+      property: true,
+      images: { orderBy: { position: "asc" }, take: 1 },
+      owner: { select: { subscription: { select: { currentPeriodEnd: true } } } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const ratings = await getAverageRatingsByMachineIds(
+    machines.map((machine) => ({ id: machine.id, ownerId: machine.ownerId })),
+  );
+
+  return machines.map((machine) => ({
+    ...machine,
+    distanceKm: null,
+    averageRating: ratings.get(machine.id)?.averageRating ?? null,
+    reviewCount: ratings.get(machine.id)?.count ?? 0,
+    ownerHasPremium: isPremiumActive(machine.owner.subscription),
+  }));
 }
 
 export async function getPublicMachineBySlug(

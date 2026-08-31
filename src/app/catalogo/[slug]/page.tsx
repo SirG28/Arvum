@@ -163,7 +163,10 @@ export default async function MachineDetailPage({ params, searchParams }: Machin
             </p>
           ) : null}
           <p className="mt-1 flex items-center gap-2 text-xs text-neutral-500">
-            Anunciado por {machine.owner.name}
+            Anunciado por{" "}
+            <Link href={`/perfil/${machine.owner.id}`} className="font-medium text-neutral-700 hover:underline">
+              {machine.owner.name}
+            </Link>
             {isPremiumActive(machine.owner.subscription) && (
               <Badge tone="success">Parceiro verificado</Badge>
             )}

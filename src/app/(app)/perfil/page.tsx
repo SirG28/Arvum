@@ -1,79 +1,85 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getUserById } from "@/features/users/services/user.service";
-import { getUserReviewSummary } from "@/features/reviews/services/review.service";
+import { getUserReviewSummary, getUserReviews } from "@/features/reviews/services/review.service";
+import { listActiveMachinesByOwner } from "@/features/machines/services/machine.service";
+import { listFavoriteMachineIds } from "@/features/favorites/services/favorite.service";
+import { getSubscriptionByOwner } from "@/features/subscriptions/services/subscription.service";
+import { isPremiumActive } from "@/features/subscriptions/lib/subscription-status";
 import { Card } from "@/components/ui/Card";
-import { Rating } from "@/components/ui/Rating";
 import { ProfileForm } from "@/features/users/components/ProfileForm";
-import { ChangeEmailSection } from "@/features/users/components/ChangeEmailSection";
-import { DeactivateAccountButton } from "@/features/users/components/DeactivateAccountButton";
+import { ProfileView } from "@/features/users/components/ProfileView";
+import { ProfileMachinesSection } from "@/features/users/components/ProfileMachinesSection";
+import { ReviewsSection } from "@/features/reviews/components/ReviewsSection";
 
 export const metadata = { title: "Meu perfil" };
 
-function formatMemberSince(date: Date) {
-  return new Date(date).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+interface ProfilePageProps {
+  searchParams: Promise<Record<string, string | undefined>>;
 }
 
-export default async function ProfilePage() {
+export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const currentUser = await getCurrentUser();
   if (!currentUser) redirect("/login?callbackUrl=/perfil");
 
   const user = await getUserById(currentUser.id);
   if (!user) redirect("/login?callbackUrl=/perfil");
 
-  const { averageRating, count: reviewCount } = await getUserReviewSummary(user.id);
+  const { edit } = await searchParams;
 
-  return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
-      <Card>
-        <h1 className="text-lg font-semibold text-neutral-900">Meu perfil</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          Essas informações podem ser vistas por quem você aluga ou anuncia uma máquina.
-        </p>
-
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-700">
-          {averageRating !== null ? (
-            <div className="flex items-center gap-1.5">
-              <Rating value={averageRating} size="sm" />
-              <span>
-                {averageRating.toLocaleString("pt-BR")} ({reviewCount}{" "}
-                {reviewCount === 1 ? "avaliação recebida" : "avaliações recebidas"})
-              </span>
-            </div>
-          ) : (
-            <span className="text-neutral-400">Ainda sem avaliações recebidas</span>
-          )}
-          <span className="text-neutral-400">·</span>
-          <span className="text-neutral-500">Na Arvum desde {formatMemberSince(user.createdAt)}</span>
-        </div>
-
-        <div className="mt-6">
-          <ProfileForm user={user} />
-        </div>
-      </Card>
-
-      <div className="flex flex-col gap-6">
+  // Modo edição é uma tela à parte, não uma seção a mais dentro do perfil — o resto do conteúdo
+  // (anúncios, avaliações) só distrairia enquanto a pessoa está mexendo nos próprios dados. E-mail
+  // e desativação de conta não aparecem em nenhum dos dois: não são informações de "perfil", ficam
+  // em Configurações (Segurança e Privacidade).
+  if (edit === "1") {
+    return (
+      <div className="mx-auto max-w-2xl">
         <Card>
-          <h2 className="text-sm font-semibold text-neutral-900">E-mail</h2>
+          <h1 className="text-lg font-semibold text-neutral-900">Editar perfil</h1>
           <p className="mt-1 text-sm text-neutral-500">
-            Usado para entrar na Arvum e receber notificações sobre suas reservas e anúncios.
+            Essas informações podem ser vistas por quem você aluga ou anuncia uma máquina.
           </p>
-          <div className="mt-4">
-            <ChangeEmailSection email={user.email} pendingEmail={user.pendingEmail} />
-          </div>
-        </Card>
-
-        <Card>
-          <h2 className="text-sm font-semibold text-neutral-900">Desativar conta</h2>
-          <p className="mt-1 text-sm text-neutral-500">
-            Sua conta fica inacessível até ser reativada; o histórico de reservas e avaliações é
-            mantido.
-          </p>
-          <div className="mt-4">
-            <DeactivateAccountButton />
+          <div className="mt-6">
+            <ProfileForm user={user} closeHref="/perfil" />
           </div>
         </Card>
       </div>
+    );
+  }
+
+  const [{ averageRating, count: reviewCount }, reviews, subscription, machines, favoriteIds] =
+    await Promise.all([
+      getUserReviewSummary(user.id),
+      getUserReviews(user.id),
+      getSubscriptionByOwner(user.id),
+      listActiveMachinesByOwner(user.id),
+      listFavoriteMachineIds(user.id),
+    ]);
+
+  return (
+    <div className="mx-auto flex max-w-4xl flex-col gap-6">
+      <Card>
+        <ProfileView
+          user={user}
+          averageRating={averageRating}
+          reviewCount={reviewCount}
+          isVerifiedPartner={isPremiumActive(subscription)}
+          editHref="/perfil?edit=1"
+        />
+      </Card>
+
+      <Card>
+        <ProfileMachinesSection
+          ownerName={user.name}
+          machines={machines}
+          favoriteIds={favoriteIds}
+          isAuthenticated
+        />
+      </Card>
+
+      <Card>
+        <ReviewsSection averageRating={null} count={reviewCount} reviews={reviews} />
+      </Card>
     </div>
   );
 }

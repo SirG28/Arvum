@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Rating } from "@/components/ui/Rating";
 import { FavoriteButton } from "@/features/favorites/components/FavoriteButton";
 
-type CatalogMachine = Machine & {
+export type CatalogMachine = Machine & {
   category: MachineCategory;
   property: Property;
   images: MachineImage[];

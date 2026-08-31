@@ -139,14 +139,18 @@ export function useOpenBookingsCount(enabled: boolean) {
 }
 
 // Equivalente do lado do proprietário: solicitações aguardando decisão — mesmo padrão de
-// useOpenBookingsCount, para o indicador de "Solicitações recebidas" no header.
+// useOpenBookingsCount, para o indicador de "Solicitações recebidas" no header. hasMachines viaja
+// junto (mesma resposta) porque é o que decide se o indicador aparece — quem nunca anunciou nada
+// não tem por que ver esse atalho.
 export function useOwnerPendingCount(enabled: boolean) {
   return useQuery({
     queryKey: ["bookings", "owner-pending-count"],
     queryFn: async () => {
       const response = await fetch("/api/v1/bookings/owner-pending-count");
-      const { data } = (await parseErrorOrThrow(response)) as { data: { count: number } };
-      return data.count;
+      const { data } = (await parseErrorOrThrow(response)) as {
+        data: { count: number; hasMachines: boolean };
+      };
+      return data;
     },
     enabled,
   });

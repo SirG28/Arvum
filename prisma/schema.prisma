@@ -112,6 +112,9 @@ model User {
   documentType            DocumentType?
   documentNumber          String?       @unique
   avatarUrl               String?
+  // Texto curto de apresentação exibido no perfil (público e próprio) — puramente descritivo, sem
+  // regra de negócio associada (Context.md não define nada específico sobre isso).
+  bio                     String?
   role                    UserRole      @default(USER)
   status                  UserStatus    @default(ACTIVE)
   // Registro de aceite dos termos (Context.md §19) — preenchido no cadastro, quando

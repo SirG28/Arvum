@@ -16,6 +16,7 @@ const PUBLIC_USER_SELECT = {
   documentType: true,
   documentNumber: true,
   avatarUrl: true,
+  bio: true,
   createdAt: true,
   pendingEmail: true,
 } as const;
@@ -24,6 +25,27 @@ export type PublicUser = NonNullable<Awaited<ReturnType<typeof getUserById>>>;
 
 export function getUserById(userId: string) {
   return prisma.user.findUnique({ where: { id: userId }, select: PUBLIC_USER_SELECT });
+}
+
+// Perfil visível para qualquer visitante (perfil público de outro usuário) — ao contrário de
+// PUBLIC_USER_SELECT (que, apesar do nome, é "seguro para devolver ao próprio dono", não para
+// terceiros), este nunca inclui e-mail, telefone ou documento. Só contas ativas têm perfil
+// público — uma conta desativada não deve ficar navegável por quem tem o link.
+const PUBLIC_PROFILE_SELECT = {
+  id: true,
+  name: true,
+  avatarUrl: true,
+  bio: true,
+  createdAt: true,
+} as const;
+
+export type PublicUserProfile = NonNullable<Awaited<ReturnType<typeof getPublicUserProfile>>>;
+
+export function getPublicUserProfile(userId: string) {
+  return prisma.user.findUnique({
+    where: { id: userId, status: "ACTIVE" },
+    select: PUBLIC_PROFILE_SELECT,
+  });
 }
 
 export type UpdateProfileResult = PublicUser | "DOCUMENT_ALREADY_USED";
@@ -48,6 +70,7 @@ export async function updateUserProfile(
       documentType: input.documentType ?? null,
       documentNumber: input.documentNumber ?? null,
       avatarUrl: input.avatarUrl ?? null,
+      bio: input.bio ?? null,
     },
     select: PUBLIC_USER_SELECT,
   });

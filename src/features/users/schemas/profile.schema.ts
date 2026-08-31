@@ -34,6 +34,10 @@ export const profileSchema = z
         .url("Informe uma URL válida.")
         .optional(),
     ),
+    bio: z.preprocess(
+      emptyToUndefined,
+      z.string().trim().max(280, "Máximo de 280 caracteres.").optional(),
+    ),
   })
   .refine((data) => !data.documentNumber || data.documentType, {
     message: "Selecione o tipo de documento (CPF ou CNPJ).",

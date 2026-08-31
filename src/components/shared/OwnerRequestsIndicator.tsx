@@ -8,16 +8,20 @@ import { useOwnerPendingCount } from "@/features/bookings/hooks/useBookings";
 
 // Equivalente do lado do proprietário ao ReservationsIndicator: solicitações aguardando decisão
 // são a pendência mais urgente do painel do proprietário (Context.md §8.9 — aprovar/recusar não é
-// uma ação que pode esperar o locatário desistir). Sempre visível para qualquer conta logada,
-// mesmo padrão do ReservationsIndicator — sem contagem, o ícone fica discreto (sem badge), então
-// não é ruído para quem nunca anunciou uma máquina.
+// uma ação que pode esperar o locatário desistir), por isso o atalho vive fixo no header (com
+// contador) em vez de só dentro de /painel-do-proprietario, que exigiria abrir o menu pra ver.
+// Diferente do ReservationsIndicator (relevante pra qualquer conta, já que qualquer um pode
+// alugar), só aparece pra quem já anunciou pelo menos uma máquina — mostrar pra quem nunca
+// anunciou nada seria ruído permanente no header sem nenhuma utilidade, já que essa conta nunca
+// vai ter uma solicitação pra aprovar.
 export function OwnerRequestsIndicator() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const isActive = pathname?.startsWith("/reservas/recebidas");
-  const { data: count } = useOwnerPendingCount(!!session?.user);
+  const { data } = useOwnerPendingCount(!!session?.user);
+  const count = data?.count;
 
-  if (!session?.user) return null;
+  if (!session?.user || !data?.hasMachines) return null;
 
   return (
     <Link

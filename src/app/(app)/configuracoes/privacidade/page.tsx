@@ -5,6 +5,7 @@ import { getUserSettings } from "@/features/users/services/user.service";
 import { Card } from "@/components/ui/Card";
 import { BackLink } from "@/components/ui/BackLink";
 import { DataDeletionRequestButton } from "@/features/users/components/DataDeletionRequestButton";
+import { DeactivateAccountButton } from "@/features/users/components/DeactivateAccountButton";
 
 export const metadata = { title: "Privacidade" };
 
@@ -51,6 +52,17 @@ export default async function PrivacySettingsPage() {
         </p>
         <div className="mt-4">
           <DataDeletionRequestButton requestedAt={settings.dataDeletionRequestedAt} />
+        </div>
+      </Card>
+
+      <Card>
+        <h2 className="text-sm font-semibold text-neutral-900">Desativar conta</h2>
+        <p className="mt-1 text-sm text-neutral-500">
+          Sua conta fica inacessível até ser reativada; o histórico de reservas e avaliações é
+          mantido.
+        </p>
+        <div className="mt-4">
+          <DeactivateAccountButton />
         </div>
       </Card>
     </div>

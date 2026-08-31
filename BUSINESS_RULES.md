@@ -307,7 +307,9 @@ cadastrado."]`), nunca uma mensagem genérica.
   reserva, então "Minhas propriedades" continua só no menu de perfil geral. "Minhas máquinas" saiu
   do menu de perfil genérico (`profileItems.tsx`) por estar centralizada no painel; "Solicitações
   recebidas" nunca esteve lá — continua com atalho fixo no cabeçalho por ser urgente
-  (`OwnerRequestsIndicator.tsx`), independente do painel.
+  (`OwnerRequestsIndicator.tsx`), independente do painel, mas só aparece pra quem já anunciou
+  pelo menos uma máquina (`hasOwnerMachines`, `machine.service.ts`) — pra quem nunca anunciou nada
+  é ruído permanente sem utilidade, já que essa conta nunca vai ter solicitação pra aprovar.
 
 ## Planejado — próximas fases
 

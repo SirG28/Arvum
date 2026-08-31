@@ -94,6 +94,29 @@ export async function getUserReviewSummary(userId: string) {
   };
 }
 
+// Últimas avaliações recebidas por um usuário (perfil próprio/público) — mesmo formato aceito por
+// ReviewsSection.tsx, reaproveitado da página de detalhe da máquina. Diferente de lá, aqui as
+// avaliações misturam os dois papéis da conta (Context.md §8.1: não há separação entre locatário e
+// proprietário) — quem lê a lista precisa saber se foi avaliado como dono da máquina alugada ou
+// como quem alugou, por isso "role" é derivado comparando o dono da máquina da reserva com quem
+// recebeu a avaliação (mesma regra usada para decidir targetUserId em createReview).
+export async function getUserReviews(userId: string, limit = 5) {
+  const reviews = await prisma.review.findMany({
+    where: { targetUserId: userId, status: "PUBLISHED" },
+    include: {
+      author: { select: { id: true, name: true } },
+      machine: { select: { ownerId: true } },
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+
+  return reviews.map((review) => ({
+    ...review,
+    role: (review.machine.ownerId === userId ? "OWNER" : "RENTER") as "OWNER" | "RENTER",
+  }));
+}
+
 // Nota média de várias máquinas de uma vez (catálogo) — uma única consulta em vez de N, mesmo
 // cuidado de desempenho já aplicado ao restante da busca (Context.md §23). Mesma regra de
 // getMachineReviews: só conta quem avaliou como locatário (target = proprietário da máquina).

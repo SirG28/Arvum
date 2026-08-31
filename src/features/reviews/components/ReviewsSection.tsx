@@ -1,5 +1,9 @@
+import Link from "next/link";
 import { Rating } from "@/components/ui/Rating";
+import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+
+const ROLE_LABELS = { OWNER: "Como proprietário", RENTER: "Como locatário" } as const;
 
 interface ReviewsSectionProps {
   averageRating: number | null;
@@ -9,7 +13,11 @@ interface ReviewsSectionProps {
     rating: number;
     comment: string | null;
     createdAt: Date;
-    author: { name: string };
+    author: { id: string; name: string };
+    // Só informado no perfil (próprio/público), onde a lista mistura avaliações recebidas como
+    // proprietário e como locatário — a página da máquina não precisa, já que lá é sempre "como
+    // proprietário" (locatários avaliando o dono).
+    role?: "OWNER" | "RENTER";
   }>;
 }
 
@@ -41,8 +49,16 @@ export function ReviewsSection({ averageRating, count, reviews }: ReviewsSection
         <ul className="flex flex-col gap-4">
           {reviews.map((review) => (
             <li key={review.id} className="border-b border-neutral-100 pb-4 last:border-0 last:pb-0">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium text-neutral-900">{review.author.name}</span>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/perfil/${review.author.id}`}
+                    className="text-sm font-medium text-neutral-900 hover:underline"
+                  >
+                    {review.author.name}
+                  </Link>
+                  {review.role && <Badge tone="neutral">{ROLE_LABELS[review.role]}</Badge>}
+                </div>
                 <span className="text-xs text-neutral-400">{formatDate(review.createdAt)}</span>
               </div>
               <Rating value={review.rating} size="sm" className="mt-1" />

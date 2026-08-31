@@ -9,7 +9,9 @@ export default auth((req) => {
   const isProtected =
     req.nextUrl.pathname.startsWith("/propriedades") ||
     req.nextUrl.pathname.startsWith("/maquinas") ||
-    req.nextUrl.pathname.startsWith("/perfil") ||
+    // Só o próprio perfil (edição via ?edit=1, sem segmento de rota) exige login — /perfil/[id] é
+    // o perfil público de outro usuário, visível sem estar logado, como o catálogo.
+    req.nextUrl.pathname === "/perfil" ||
     req.nextUrl.pathname.startsWith("/favoritos") ||
     req.nextUrl.pathname.startsWith("/reservas") ||
     req.nextUrl.pathname.startsWith("/configuracoes");

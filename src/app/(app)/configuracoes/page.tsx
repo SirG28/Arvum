@@ -7,7 +7,7 @@ export const metadata = { title: "Configurações" };
 const SETTINGS_LINKS = [
   {
     title: "Segurança",
-    description: "Altere a senha usada para entrar na Arvum.",
+    description: "Altere a senha e o e-mail usados para entrar na Arvum.",
     href: "/configuracoes/seguranca",
   },
   {
@@ -17,7 +17,7 @@ const SETTINGS_LINKS = [
   },
   {
     title: "Privacidade",
-    description: "Termos de uso, política de privacidade e exclusão de dados.",
+    description: "Termos de uso, exclusão de dados e desativação da conta.",
     href: "/configuracoes/privacidade",
   },
 ];
@@ -30,7 +30,8 @@ export default async function SettingsPage() {
     <div className="mx-auto max-w-2xl">
       <h1 className="text-lg font-semibold text-neutral-900">Configurações</h1>
       <p className="mt-1 text-sm text-neutral-500">
-        Segurança, notificações e privacidade. Para editar seus dados e desativar a conta, acesse{" "}
+        Segurança, notificações e privacidade. Para editar seu nome, foto e os demais dados do seu
+        perfil, acesse{" "}
         <Link href="/perfil" className="text-primary-700 underline">
           Meu perfil
         </Link>
