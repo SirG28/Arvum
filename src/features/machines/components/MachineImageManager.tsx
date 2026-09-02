@@ -115,6 +115,7 @@ export function MachineImageManager({ machineId, images }: MachineImageManagerPr
       />
       <Button
         type="button"
+        variant="secondary"
         isLoading={isProcessing}
         onClick={() => fileInputRef.current?.click()}
         className="self-start"

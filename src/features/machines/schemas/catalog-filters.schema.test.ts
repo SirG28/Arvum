@@ -3,9 +3,21 @@ import { parseCatalogFilters } from "./catalog-filters.schema";
 
 describe("parseCatalogFilters", () => {
   it("ignores absent fields", () => {
-    const { filters, ignored } = parseCatalogFilters({});
+    const { filters, page, ignored } = parseCatalogFilters({});
     expect(filters).toEqual({});
+    expect(page).toBe(1);
     expect(ignored).toEqual([]);
+  });
+
+  it("parses a valid page number", () => {
+    const { page } = parseCatalogFilters({ pagina: "3" });
+    expect(page).toBe(3);
+  });
+
+  it("falls back to page 1 for an invalid page number", () => {
+    expect(parseCatalogFilters({ pagina: "0" }).page).toBe(1);
+    expect(parseCatalogFilters({ pagina: "-2" }).page).toBe(1);
+    expect(parseCatalogFilters({ pagina: "abc" }).page).toBe(1);
   });
 
   it("parses text and price filters, converting reais to cents", () => {

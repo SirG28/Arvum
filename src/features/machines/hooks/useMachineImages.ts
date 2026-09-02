@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { MachineImageInput } from "../schemas/machine-image.schema";
-import { parseErrorOrThrow } from "./fetch-json";
+import { parseErrorOrThrow } from "@/lib/fetch-json";
 
 export function useAddMachineImage(machineId: string) {
   const queryClient = useQueryClient();

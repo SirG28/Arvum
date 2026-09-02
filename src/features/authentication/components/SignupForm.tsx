@@ -20,7 +20,9 @@ export function SignupForm() {
 
   return (
     <form action={formAction} className="flex flex-col gap-4" noValidate>
-      {state.errors && Object.keys(state.errors).length > 0 && !state.errors.email && (
+      {state.formError && <Alert tone="error" title={state.formError} />}
+
+      {!state.formError && state.errors && Object.keys(state.errors).length > 0 && !state.errors.email && (
         <Alert tone="error" title="Verifique os campos destacados abaixo." />
       )}
 

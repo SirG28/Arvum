@@ -28,14 +28,19 @@ function toDateInputValue(date?: Date) {
 
 export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const rawParams = await searchParams;
-  const { filters, ignored } = parseCatalogFilters(rawParams);
+  const { filters, page, ignored } = parseCatalogFilters(rawParams);
   const { categorySlug: categoria, search: q } = filters;
 
-  const [user, categories, machines] = await Promise.all([
+  const [user, categories, machinesPage] = await Promise.all([
     getCurrentUser(),
     listActiveCategories(),
-    listActiveMachines(filters),
+    listActiveMachines(filters, { page }),
   ]);
+  // listActiveMachines já devolve a página real exibida (nunca além do fim do resultado) — quando
+  // ela difere da pedida na URL (ex.: um filtro aplicado depois reduziu o total enquanto ainda em
+  // "pagina=5"), a página pedida não existe mais e a UI avisa em vez de sugerir um link quebrado.
+  const { machines, page: currentPage, total, totalPages } = machinesPage;
+  const isPageOutOfRange = page !== currentPage && total > 0;
 
   const favoriteIds = user ? await listFavoriteMachineIds(user.id) : new Set<string>();
 
@@ -208,8 +213,15 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
       </div>
 
       <p className="text-sm text-neutral-500">
-        {machines.length} {machines.length === 1 ? "máquina encontrada" : "máquinas encontradas"}
+        {total} {total === 1 ? "máquina encontrada" : "máquinas encontradas"}
       </p>
+
+      {isPageOutOfRange && (
+        <Alert
+          tone="warning"
+          title={`Esta página não existe mais para os filtros atuais — mostrando a página ${currentPage}.`}
+        />
+      )}
 
       {machines.length === 0 ? (
         <EmptyState
@@ -217,19 +229,74 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
           description="Tente ajustar os filtros ou removê-los para ver mais resultados."
         />
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {machines.map((machine) => (
-            <CatalogMachineCard
-              key={machine.id}
-              machine={machine}
-              isFavorited={favoriteIds.has(machine.id)}
-              isAuthenticated={Boolean(user)}
-              originQuery={originQuery}
+        <>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {machines.map((machine) => (
+              <CatalogMachineCard
+                key={machine.id}
+                machine={machine}
+                isFavorited={favoriteIds.has(machine.id)}
+                isAuthenticated={Boolean(user)}
+                originQuery={originQuery}
+              />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <CatalogPagination
+              page={currentPage}
+              totalPages={totalPages}
+              baseQuery={cleanQuery({ ...hiddenFields, categoria })}
             />
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
+  );
+}
+
+interface CatalogPaginationProps {
+  page: number;
+  totalPages: number;
+  baseQuery: Record<string, string | undefined>;
+}
+
+function CatalogPagination({ page, totalPages, baseQuery }: CatalogPaginationProps) {
+  function hrefForPage(target: number) {
+    return {
+      pathname: "/catalogo",
+      query: target > 1 ? { ...baseQuery, pagina: String(target) } : baseQuery,
+    };
+  }
+
+  return (
+    <nav aria-label="Paginação do catálogo" className="flex items-center justify-center gap-4">
+      {page > 1 ? (
+        <Link href={hrefForPage(page - 1)}>
+          <Button type="button" variant="secondary">
+            Anterior
+          </Button>
+        </Link>
+      ) : (
+        <Button type="button" variant="secondary" disabled>
+          Anterior
+        </Button>
+      )}
+      <span className="text-sm text-neutral-500">
+        Página {page} de {totalPages}
+      </span>
+      {page < totalPages ? (
+        <Link href={hrefForPage(page + 1)}>
+          <Button type="button" variant="secondary">
+            Próxima
+          </Button>
+        </Link>
+      ) : (
+        <Button type="button" variant="secondary" disabled>
+          Próxima
+        </Button>
+      )}
+    </nav>
   );
 }
 

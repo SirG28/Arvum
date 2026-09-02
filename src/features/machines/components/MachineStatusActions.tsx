@@ -15,8 +15,8 @@ const ACTIONS: Partial<Record<MachineStatus, { label: string; target: MachineSta
   DRAFT: [{ label: "Publicar anúncio", target: "ACTIVE" }],
   ACTIVE: [{ label: "Pausar anúncio", target: "PAUSED", variant: "secondary" }],
   UNAVAILABLE: [
-    { label: "Reativar anúncio", target: "ACTIVE" },
     { label: "Pausar anúncio", target: "PAUSED", variant: "secondary" },
+    { label: "Reativar anúncio", target: "ACTIVE" },
   ],
   PAUSED: [{ label: "Reativar anúncio", target: "ACTIVE" }],
 };
@@ -60,6 +60,18 @@ export function MachineStatusActions({ machineId, status }: MachineStatusActions
       </div>
       {error && <Alert tone="error" title={error} />}
       <div className="flex flex-wrap gap-2">
+        {/* Arquivar vem antes das ações de status (publicar/pausar/reativar) — é a ação menos
+            importante das duas, então não deve abrir a fileira nem competir com o verde de
+            "Publicar anúncio", que é a ação que o proprietário mais quer encontrar primeiro. */}
+        {ARCHIVABLE.includes(status) && (
+          <Button
+            variant="secondary"
+            isLoading={mutation.isPending}
+            onClick={() => handleChange("ARCHIVED")}
+          >
+            Arquivar anúncio
+          </Button>
+        )}
         {actions.map((action) => (
           <Button
             key={action.target}
@@ -70,15 +82,6 @@ export function MachineStatusActions({ machineId, status }: MachineStatusActions
             {action.label}
           </Button>
         ))}
-        {ARCHIVABLE.includes(status) && (
-          <Button
-            variant="danger"
-            isLoading={mutation.isPending}
-            onClick={() => handleChange("ARCHIVED")}
-          >
-            Arquivar anúncio
-          </Button>
-        )}
       </div>
     </div>
   );

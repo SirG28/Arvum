@@ -119,21 +119,27 @@ export function MachineAvailabilityManager({
         onCancel={() => setPendingRemovalId(null)}
       />
 
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-3 sm:flex-row sm:items-end"
-        noValidate
-      >
-        <FormField label="De" required error={errors.startDate?.message}>
-          <Input type="date" {...register("startDate")} />
-        </FormField>
-        <FormField label="Até" required error={errors.endDate?.message}>
-          <Input type="date" {...register("endDate")} />
-        </FormField>
-        <FormField label="Motivo" helpText="Opcional" error={errors.reason?.message}>
-          <Input placeholder="Ex.: manutenção programada" {...register("reason")} />
-        </FormField>
-        <Button type="submit" isLoading={isSubmitting}>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3" noValidate>
+        {/* items-start (não items-end): "Motivo" tem um texto auxiliar ("Opcional") que "De"/"Até"
+            não têm — alinhar pela base empurraria os campos mais curtos pra cima. */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+          <div className="flex-1">
+            <FormField label="De" required error={errors.startDate?.message}>
+              <Input type="date" {...register("startDate")} />
+            </FormField>
+          </div>
+          <div className="flex-1">
+            <FormField label="Até" required error={errors.endDate?.message}>
+              <Input type="date" {...register("endDate")} />
+            </FormField>
+          </div>
+          <div className="flex-1">
+            <FormField label="Motivo" helpText="Opcional" error={errors.reason?.message}>
+              <Input placeholder="Ex.: manutenção programada" {...register("reason")} />
+            </FormField>
+          </div>
+        </div>
+        <Button type="submit" variant="secondary" isLoading={isSubmitting} className="self-start">
           Bloquear período
         </Button>
       </form>

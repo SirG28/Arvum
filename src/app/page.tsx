@@ -49,9 +49,9 @@ const DASHBOARD_LINKS = [
 export default async function HomePage() {
   const user = await getCurrentUser();
 
-  const [categories, activeMachines, favoriteIds, stats] = await Promise.all([
+  const [categories, activeMachinesPage, favoriteIds, stats] = await Promise.all([
     listTopCategories(6),
-    listActiveMachines(),
+    listActiveMachines({}, { pageSize: 6 }),
     user ? listFavoriteMachineIds(user.id) : Promise.resolve(new Set<string>()),
     user
       ? Promise.all([countOpenBookingsByRenter(user.id), countPendingBookingsForOwner(user.id)]).then(
@@ -60,7 +60,7 @@ export default async function HomePage() {
       : Promise.resolve(null),
   ]);
 
-  const featuredMachines = activeMachines.slice(0, 6);
+  const featuredMachines = activeMachinesPage.machines;
   const pendingCount = stats ? stats.openBookings + stats.pendingRequests : 0;
 
   return (

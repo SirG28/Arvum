@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Payment } from "@prisma/client";
 import type { PaymentRequestInput } from "../schemas/payment.schema";
-import { parseErrorOrThrow } from "./fetch-json";
+import { parseErrorOrThrow } from "@/lib/fetch-json";
 import { useToast } from "@/components/shared/ToastProvider";
 
 export function useConfirmPayment(bookingId: string) {

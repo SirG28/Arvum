@@ -1,13 +1,19 @@
 "use server";
 
+import { headers } from "next/headers";
 import { signupSchema } from "../schemas/signup.schema";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "../lib/password";
 import { signIn } from "@/auth";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/request-ip";
 
 export interface SignupActionState {
   success: boolean;
   errors?: Record<string, string[]>;
+  // Erro que não pertence a um campo específico (ex.: limite de tentativas) — diferente de
+  // `errors`, que sempre aponta pra um input do formulário.
+  formError?: string;
   // Campos não sensíveis reenviados para repopular o formulário após uma falha de validação
   // (o React reseta inputs não controlados por padrão ao final de uma Server Action).
   // Senha nunca é incluída aqui.
@@ -34,6 +40,19 @@ export async function signupAction(
 ): Promise<SignupActionState> {
   const values = valuesFromFormData(formData);
   const submittedAt = Date.now();
+
+  // Por IP, não por e-mail: diferente do login (onde faz sentido também proteger uma conta
+  // específica), aqui o alvo é a criação de contas em massa, não uma conta já existente.
+  const ip = getClientIp(await headers());
+  const { allowed } = consumeRateLimit(`signup:ip:${ip}`, { windowMs: 60 * 60 * 1000, max: 5 });
+  if (!allowed) {
+    return {
+      success: false,
+      formError: "Muitas tentativas de cadastro. Aguarde alguns minutos e tente novamente.",
+      values,
+      submittedAt,
+    };
+  }
 
   const parsed = signupSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {

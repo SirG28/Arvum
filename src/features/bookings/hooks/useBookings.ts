@@ -5,7 +5,7 @@ import type { Booking } from "@prisma/client";
 import type { z } from "zod";
 import { bookingRequestSchema, type BookingRequestInput } from "../schemas/booking.schema";
 import type { BookingTotals } from "../lib/pricing";
-import { parseErrorOrThrow } from "./fetch-json";
+import { parseErrorOrThrow } from "@/lib/fetch-json";
 import { useToast } from "@/components/shared/ToastProvider";
 
 export interface BookingQuotePreview {

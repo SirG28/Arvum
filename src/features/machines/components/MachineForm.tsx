@@ -644,7 +644,11 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
           </Button>
         )}
         {(isEditing || isReviewStep) && (
-          <Button type="submit" isLoading={isSubmitting}>
+          <Button
+            type="submit"
+            variant={!isEditing && pendingImages.length > 0 ? "primary" : "secondary"}
+            isLoading={isSubmitting}
+          >
             {isEditing
               ? "Salvar alterações"
               : pendingImages.length > 0

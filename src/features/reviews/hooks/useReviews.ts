@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Review } from "@prisma/client";
 import type { ReviewRequestInput, ReportReviewInput } from "../schemas/review.schema";
-import { parseErrorOrThrow } from "./fetch-json";
+import { parseErrorOrThrow } from "@/lib/fetch-json";
 import { useToast } from "@/components/shared/ToastProvider";
 
 export function useCreateReview(bookingId: string) {

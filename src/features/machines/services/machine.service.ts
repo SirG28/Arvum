@@ -40,11 +40,16 @@ export async function listMachinesByOwner(ownerId: string) {
 
 // Só para decidir se o indicador de "Solicitações recebidas" aparece no header (OwnerRequestsIndicator.tsx)
 // — mostrar esse atalho pra quem nunca anunciou nada é ruído permanente sem nenhuma utilidade,
-// já que essa conta nunca vai ter uma solicitação pra aprovar. findFirst (não count): só existência
-// importa aqui, sem motivo pra contar todas as linhas.
+// já que essa conta nunca vai ter uma solicitação pra aprovar. Máquina em rascunho não conta: ainda
+// não foi publicada (nunca apareceu no catálogo), então não existe locatário que possa ter
+// solicitado nada para ela. findFirst (não count): só existência importa aqui, sem motivo pra
+// contar todas as linhas.
 export function hasOwnerMachines(ownerId: string) {
   return prisma.machine
-    .findFirst({ where: { ownerId, deletedAt: null }, select: { id: true } })
+    .findFirst({
+      where: { ownerId, deletedAt: null, status: { not: "DRAFT" } },
+      select: { id: true },
+    })
     .then((machine) => machine !== null);
 }
 
@@ -197,53 +202,77 @@ function withDistanceFromOrigin<T extends { property: { latitude: number | null;
   }));
 }
 
-export async function listActiveMachines(filters: CatalogFilters = {}) {
+export const CATALOG_PAGE_SIZE = 12;
+
+interface CatalogPagination {
+  page?: number;
+  pageSize?: number;
+}
+
+function buildActiveMachinesWhere(filters: CatalogFilters) {
   const hasPeriod = filters.availableFrom && filters.availableTo;
 
-  const machines = await prisma.machine.findMany({
-    where: {
-      status: "ACTIVE",
-      deletedAt: null,
-      ...(filters.categorySlug ? { category: { slug: filters.categorySlug } } : {}),
-      // Um único campo de busca cobre o que antes eram filtros dedicados de marca/cultura/
-      // finalidade — casa com título, marca, finalidade (contains) e culturas recomendadas
-      // (match exato de tag, já que é uma lista de strings curtas, não texto livre).
-      ...(filters.search
-        ? {
-            OR: [
-              { title: { contains: filters.search, mode: "insensitive" } },
-              { brand: { contains: filters.search, mode: "insensitive" } },
-              { purpose: { contains: filters.search, mode: "insensitive" } },
-              { recommendedCrops: { has: filters.search } },
-            ],
-          }
-        : {}),
-      ...(filters.priceMaxInCents !== undefined
-        ? { dailyPriceInCents: { lte: filters.priceMaxInCents } }
-        : {}),
-      ...(hasPeriod
-        ? {
-            availability: {
-              none: {
-                type: "MANUAL_BLOCK",
-                startDate: { lt: filters.availableTo },
-                endDate: { gt: filters.availableFrom },
-              },
+  return {
+    status: "ACTIVE" as const,
+    deletedAt: null,
+    ...(filters.categorySlug ? { category: { slug: filters.categorySlug } } : {}),
+    // Um único campo de busca cobre o que antes eram filtros dedicados de marca/cultura/
+    // finalidade — casa com título, marca, finalidade (contains) e culturas recomendadas
+    // (match exato de tag, já que é uma lista de strings curtas, não texto livre).
+    ...(filters.search
+      ? {
+          OR: [
+            { title: { contains: filters.search, mode: "insensitive" as const } },
+            { brand: { contains: filters.search, mode: "insensitive" as const } },
+            { purpose: { contains: filters.search, mode: "insensitive" as const } },
+            { recommendedCrops: { has: filters.search } },
+          ],
+        }
+      : {}),
+    ...(filters.priceMaxInCents !== undefined
+      ? { dailyPriceInCents: { lte: filters.priceMaxInCents } }
+      : {}),
+    ...(hasPeriod
+      ? {
+          availability: {
+            none: {
+              type: "MANUAL_BLOCK" as const,
+              startDate: { lt: filters.availableTo },
+              endDate: { gt: filters.availableFrom },
             },
-            bookings: {
-              none: {
-                status: { in: [...ACTIVE_BOOKING_STATUSES] },
-                startDate: { lt: filters.availableTo },
-                endDate: { gt: filters.availableFrom },
-              },
+          },
+          bookings: {
+            none: {
+              status: { in: [...ACTIVE_BOOKING_STATUSES] },
+              startDate: { lt: filters.availableTo },
+              endDate: { gt: filters.availableFrom },
             },
-          }
-        : {}),
-    },
-    include: {
-      category: true,
-      property: true,
-      images: { orderBy: { position: "asc" }, take: 1 },
+          },
+        }
+      : {}),
+  };
+}
+
+// Busca paginada em duas fases: o catálogo pode ter centenas de máquinas ativas, e a ordenação
+// final depende de distância (calculada em memória, sem API externa) e destaque Premium (não dá
+// pra ordenar isso direto no banco sem denormalizar). Fase 1 busca só os campos usados nesse
+// cálculo para descobrir a ordem e a página certa; fase 2 busca a galeria/categoria/propriedade
+// completas só para os IDs que de fato vão aparecer nesta página — evita puxar imagens de todas as
+// máquinas do catálogo pra descartar a maioria logo em seguida.
+export async function listActiveMachines(
+  filters: CatalogFilters = {},
+  pagination: CatalogPagination = {},
+) {
+  const page = Math.max(1, pagination.page ?? 1);
+  const pageSize = pagination.pageSize ?? CATALOG_PAGE_SIZE;
+  const where = buildActiveMachinesWhere(filters);
+
+  const candidates = await prisma.machine.findMany({
+    where,
+    select: {
+      id: true,
+      ownerId: true,
+      property: { select: { latitude: true, longitude: true } },
       owner: { select: { subscription: { select: { currentPeriodEnd: true } } } },
     },
     orderBy: { createdAt: "desc" },
@@ -254,7 +283,7 @@ export async function listActiveMachines(filters: CatalogFilters = {}) {
       ? mockGeocodingProvider.geocode({ city: filters.originCity, state: filters.originState })
       : null;
 
-  const withDistance = withDistanceFromOrigin(machines, origin);
+  const withDistance = withDistanceFromOrigin(candidates, origin);
 
   const filtered =
     filters.maxDistanceKm !== undefined
@@ -265,21 +294,51 @@ export async function listActiveMachines(filters: CatalogFilters = {}) {
     filtered.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
   }
 
+  // Destaque de parceiros Premium (Context.md §8.21): reordena colocando quem tem assinatura
+  // ativa primeiro, sem descartar a ordenação por distância/data já aplicada acima (sort estável).
+  const ordered = sortByPremiumFirst(filtered, (machine) => isPremiumActive(machine.owner.subscription));
+
+  const total = ordered.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  // Página pedida além do fim do resultado (ex.: um filtro aplicado depois reduziu o total) —
+  // volta pra última página existente em vez de devolver uma lista vazia sem uma real página 1.
+  const clampedPage = Math.min(page, totalPages);
+  const pageSlice = ordered.slice((clampedPage - 1) * pageSize, clampedPage * pageSize);
+
+  if (pageSlice.length === 0) {
+    return { machines: [], page: clampedPage, pageSize, total, totalPages };
+  }
+
+  const orderedIds = pageSlice.map((machine) => machine.id);
+  const distanceById = new Map(pageSlice.map((machine) => [machine.id, machine.distanceKm]));
+
+  const fullMachines = await prisma.machine.findMany({
+    where: { id: { in: orderedIds } },
+    include: {
+      category: true,
+      property: true,
+      images: { orderBy: { position: "asc" }, take: 1 },
+      owner: { select: { subscription: { select: { currentPeriodEnd: true } } } },
+    },
+  });
+  // findMany com `id: { in }` não preserva a ordem da lista — reaplica a ordem já calculada acima.
+  const fullById = new Map(fullMachines.map((machine) => [machine.id, machine]));
+  const orderedFull = orderedIds.map((id) => fullById.get(id)!);
+
   // Nota média por máquina (Context.md §8.5: resultados devem exibir nota média) — uma única
-  // consulta para toda a página em vez de uma por máquina.
+  // consulta para os itens desta página em vez de uma por máquina.
   const ratings = await getAverageRatingsByMachineIds(
-    filtered.map((machine) => ({ id: machine.id, ownerId: machine.ownerId })),
+    orderedFull.map((machine) => ({ id: machine.id, ownerId: machine.ownerId })),
   );
-  const withRatings = filtered.map((machine) => ({
+  const machines = orderedFull.map((machine) => ({
     ...machine,
+    distanceKm: distanceById.get(machine.id) ?? null,
     averageRating: ratings.get(machine.id)?.averageRating ?? null,
     reviewCount: ratings.get(machine.id)?.count ?? 0,
     ownerHasPremium: isPremiumActive(machine.owner.subscription),
   }));
 
-  // Destaque de parceiros Premium (Context.md §8.21): reordena colocando quem tem assinatura
-  // ativa primeiro, sem descartar a ordenação por distância/data já aplicada acima (sort estável).
-  return sortByPremiumFirst(withRatings, (machine) => machine.ownerHasPremium);
+  return { machines, page: clampedPage, pageSize, total, totalPages };
 }
 
 // Vitrine de anúncios no perfil público/próprio do vendedor — mesmo critério de "publicamente

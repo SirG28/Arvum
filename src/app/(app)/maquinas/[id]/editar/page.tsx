@@ -35,13 +35,6 @@ export default async function EditMachinePage({ params }: EditMachinePageProps) 
       <BackLink href="/maquinas" label="Minhas máquinas" />
 
       <Card>
-        <h1 className="text-lg font-semibold text-neutral-900">Status do anúncio</h1>
-        <div className="mt-4">
-          <MachineStatusActions machineId={machine.id} status={machine.status} />
-        </div>
-      </Card>
-
-      <Card>
         <h2 className="text-lg font-semibold text-neutral-900">Dados da máquina</h2>
         <div className="mt-6">
           <MachineForm machine={machine} properties={properties} categories={categories} />
@@ -62,6 +55,15 @@ export default async function EditMachinePage({ params }: EditMachinePageProps) 
         </p>
         <div className="mt-6">
           <MachineAvailabilityManager machineId={machine.id} blocks={machine.availability} />
+        </div>
+      </Card>
+
+      {/* Depois dos dados, fotos e disponibilidade — não faz sentido pedir a decisão de publicar
+          (ou pausar/arquivar) antes do proprietário sequer ter preenchido/revisado o anúncio. */}
+      <Card>
+        <h2 className="text-lg font-semibold text-neutral-900">Status do anúncio</h2>
+        <div className="mt-4">
+          <MachineStatusActions machineId={machine.id} status={machine.status} />
         </div>
       </Card>
 

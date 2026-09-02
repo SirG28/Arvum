@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { parseErrorOrThrow } from "@/features/bookings/hooks/fetch-json";
+import { parseErrorOrThrow } from "@/lib/fetch-json";
 import { useToast } from "@/components/shared/ToastProvider";
 
 export function useSubscribeToPremium() {

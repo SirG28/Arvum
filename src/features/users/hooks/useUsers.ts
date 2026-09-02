@@ -6,7 +6,7 @@ import type { ChangePasswordInput } from "../schemas/change-password.schema";
 import type { NotificationPreferencesInput } from "../schemas/notification-preferences.schema";
 import type { ChangeEmailRequestInput } from "../schemas/change-email.schema";
 import type { PublicUser, UserSettings } from "../services/user.service";
-import { parseErrorOrThrow } from "./fetch-json";
+import { parseErrorOrThrow } from "@/lib/fetch-json";
 import { useToast } from "@/components/shared/ToastProvider";
 
 export function useUpdateProfile() {

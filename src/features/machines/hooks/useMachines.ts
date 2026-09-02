@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Machine, MachineStatus } from "@prisma/client";
 import type { MachineFormOutput } from "../schemas/machine.schema";
-import { parseErrorOrThrow } from "./fetch-json";
+import { parseErrorOrThrow } from "@/lib/fetch-json";
 
 export function useCreateMachine() {
   const queryClient = useQueryClient();

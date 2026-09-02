@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { MachineAvailabilityInput } from "../schemas/machine-availability.schema";
-import { parseErrorOrThrow } from "./fetch-json";
+import { parseErrorOrThrow } from "@/lib/fetch-json";
 
 export function useAddAvailabilityBlock(machineId: string) {
   const queryClient = useQueryClient();

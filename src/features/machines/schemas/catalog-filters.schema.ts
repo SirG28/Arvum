@@ -17,6 +17,18 @@ const optionalTrimmedString = z.preprocess(
 
 const optionalDate = z.preprocess(emptyToUndefined, z.coerce.date().optional());
 
+// Página começa em 1; qualquer valor ausente, inválido ou fora da faixa (ex.: "pagina=0", texto,
+// negativo) cai de volta pra 1 em vez de invalidar a busca inteira. A normalização acontece toda
+// no preprocess (em vez de .int().positive() no schema): um valor inválido aqui não pode derrubar
+// o parse do objeto inteiro, senão os demais filtros (busca, categoria etc.) seriam descartados
+// junto por causa de uma página mal formada na URL.
+const pageNumber = z.preprocess((value) => {
+  const raw = emptyToUndefined(value);
+  if (raw === undefined) return undefined;
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+}, z.number().optional());
+
 const rawCatalogFiltersSchema = z.object({
   q: optionalTrimmedString,
   categoria: optionalTrimmedString,
@@ -26,6 +38,7 @@ const rawCatalogFiltersSchema = z.object({
   origemCidade: optionalTrimmedString,
   origemUf: optionalTrimmedString,
   raioMax: optionalNonNegativeNumber,
+  pagina: pageNumber,
 });
 
 export type CatalogFiltersQuery = z.input<typeof rawCatalogFiltersSchema>;
@@ -45,6 +58,9 @@ export interface CatalogFiltersResult {
     originState?: string;
     maxDistanceKm?: number;
   };
+  // Página do catálogo (1-based) — separada de `filters` porque não é um critério de busca em si,
+  // só um recorte do resultado já filtrado (listActiveMachines).
+  page: number;
   // Filtros que não puderam ser aplicados por combinação inválida (ex.: preço/período
   // invertidos) — a busca segue com os demais filtros válidos, e a UI avisa o motivo.
   ignored: { field: string; message: string }[];
@@ -58,10 +74,10 @@ export function parseCatalogFilters(query: Record<string, string | undefined>): 
   const ignored: { field: string; message: string }[] = [];
 
   if (!parsed.success) {
-    return { filters: {}, ignored };
+    return { filters: {}, page: 1, ignored };
   }
 
-  const { q, categoria } = parsed.data;
+  const { q, categoria, pagina } = parsed.data;
 
   let { dataInicio, dataFim, origemCidade, raioMax } = parsed.data;
   const { precoMax, origemUf } = parsed.data;
@@ -119,6 +135,7 @@ export function parseCatalogFilters(query: Record<string, string | undefined>): 
       originState: hasOrigin ? originState : undefined,
       maxDistanceKm: raioMax,
     },
+    page: pagina ?? 1,
     ignored,
   };
 }

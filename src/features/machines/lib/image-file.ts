@@ -1,14 +1,21 @@
-const MAX_DIMENSION = 1600;
-const JPEG_QUALITY = 0.82;
+// A maior exibição real dessa imagem é a galeria do anúncio (MachineGallery.tsx), dentro do
+// container `max-w-5xl` da página — na prática nunca passa de ~630px de largura em CSS mesmo em
+// desktop (a maior parte do espaço divide com a lateral de reserva), o que dá uns 1260px físicos
+// numa tela retina de 2x. 1280px no maior lado já cobre isso com folga; qualquer coisa maior só
+// infla o data URL guardado em MachineImage.url (sem provedor de storage — Context.md) sem ganho
+// visível, e cada máquina no catálogo carrega essa string inteira embutida no HTML da página.
+const MAX_DIMENSION = 1280;
+const JPEG_QUALITY = 0.75;
 // Acima disso nem tenta processar — foto de celular moderna passa fácil de 10-20MB em RAW/HEIC
 // convertido, e não há necessidade de carregar isso na memória só pra reduzir depois.
 const MAX_SOURCE_FILE_SIZE = 20 * 1024 * 1024;
 
 // Converte o arquivo escolhido no seletor nativo em um data URL já redimensionado — sem isso, uma
 // foto de celular direto da câmera (vários MB) viraria uma string enorme guardada em
-// MachineImage.url (Context.md: sem provedor de storage configurado neste projeto, então a imagem
-// em si mora no banco). 1600px no maior lado e JPEG a 82% já bastam pra exibição no catálogo e no
-// detalhe, e mantêm o payload da requisição bem abaixo de qualquer limite de corpo de requisição.
+// MachineImage.url. Mantém o payload da requisição bem abaixo de qualquer limite de corpo de
+// requisição e, mais importante, o HTML de cada página que lista a máquina (catálogo, destaques da
+// home, painel do proprietário) mais enxuto — essas imagens vêm embutidas ali, não como requisição
+// HTTP separada que o navegador possa paralelizar ou cachear.
 export async function resizeImageToDataUrl(file: File): Promise<string> {
   if (!file.type.startsWith("image/")) {
     throw new Error("Selecione um arquivo de imagem (JPG, PNG ou WEBP).");
