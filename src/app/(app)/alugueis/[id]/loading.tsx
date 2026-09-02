@@ -1,5 +1,5 @@
 import { BookingDetailSkeleton } from "@/features/bookings/components/BookingDetailSkeleton";
 
 export default function BookingDetailLoading() {
-  return <BookingDetailSkeleton label="Carregando reserva" />;
+  return <BookingDetailSkeleton label="Carregando aluguel" />;
 }

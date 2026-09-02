@@ -110,7 +110,7 @@ export function MachineAvailabilityManager({
       <ConfirmationDialog
         open={pendingRemovalId !== null}
         title="Remover este bloqueio?"
-        description="O período volta a ficar disponível para reservas."
+        description="O período volta a ficar disponível para aluguel."
         confirmLabel="Sim, remover bloqueio"
         cancelLabel="Cancelar"
         tone="danger"

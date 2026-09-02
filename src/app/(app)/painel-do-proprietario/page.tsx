@@ -11,8 +11,6 @@ import { PerformanceReport } from "@/features/subscriptions/components/Performan
 
 export const metadata = { title: "Painel do proprietário" };
 
-// Ícone reaproveitado de OwnerRequestsIndicator.tsx (mesmo traçado, nunca dois desenhos diferentes
-// para o mesmo destino).
 const RECEIVED_REQUESTS_ICON = (
   <>
     <rect x="4" y="6" width="16" height="14" rx="2" />
@@ -34,7 +32,7 @@ const MACHINES_ICON = (
 
 // Atalhos exclusivos de quem anuncia máquinas (Context.md §8.19) — "Minhas propriedades"
 // deliberadamente fora daqui: não é exclusivo de proprietário, um locatário também cadastra
-// propriedade como destino de entrega na reserva, então continua só no menu de perfil geral.
+// propriedade como destino de entrega no aluguel, então continua só no menu de perfil geral.
 const OWNER_SHORTCUTS = [
   {
     title: "Minhas máquinas",
@@ -43,9 +41,9 @@ const OWNER_SHORTCUTS = [
     icon: MACHINES_ICON,
   },
   {
-    title: "Solicitações recebidas",
-    description: "Aprove ou recuse pedidos de reserva das suas máquinas.",
-    href: "/reservas/recebidas",
+    title: "Aluguéis recebidos",
+    description: "Acompanhe os aluguéis das suas máquinas.",
+    href: "/alugueis/recebidos",
     icon: RECEIVED_REQUESTS_ICON,
   },
 ];

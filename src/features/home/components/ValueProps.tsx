@@ -2,7 +2,7 @@ const VALUE_PROPS = [
   {
     title: "Acesso",
     description:
-      "Produtores encontram e reservam máquinas agrícolas próximas, sem depender de empréstimos informais.",
+      "Produtores encontram e alugam máquinas agrícolas próximas, sem depender de empréstimos informais.",
     icon: (
       <svg
         viewBox="0 0 24 24"
@@ -45,7 +45,7 @@ const VALUE_PROPS = [
   {
     title: "Logística integrada",
     description:
-      "Custo de transporte e forma de entrega calculados de ponta a ponta dentro da própria reserva.",
+      "Custo de transporte e forma de entrega calculados de ponta a ponta dentro do próprio aluguel.",
     icon: (
       <svg
         viewBox="0 0 24 24"

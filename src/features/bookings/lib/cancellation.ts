@@ -1,11 +1,8 @@
 import type { BookingStatus } from "@prisma/client";
 
-// Estados anteriores à confirmação de pagamento (Context.md §9.4: "antes da aprovação" e "depois
-// da aprovação e antes do pagamento" → cancelamento sempre sem cobrança).
+// Antes do pagamento confirmado, o único estado possível é AWAITING_PAYMENT (Context.md §9.4:
+// cancelamento sempre sem cobrança nesta janela, já que nada foi de fato pago ainda).
 const RENTER_FREE_CANCEL_STATUSES = [
-  "DRAFT",
-  "AWAITING_APPROVAL",
-  "APPROVED",
   "AWAITING_PAYMENT",
 ] as const satisfies readonly BookingStatus[];
 
@@ -17,11 +14,11 @@ const RENTER_POST_PAYMENT_CANCEL_STATUSES = [
   "PAYMENT_CONFIRMED",
 ] as const satisfies readonly BookingStatus[];
 
-// O proprietário só cancela depois de já ter aprovado a solicitação — para recusar antes disso,
-// usa a decisão de aprovação/recusa (approval.ts), nunca esta função (evita duas ações com
-// significados sobrepostos). Mesmo limite superior do locatário: até o transporte ser organizado.
+// Não existe mais uma etapa de aprovação separada do cancelamento (a condição do aluguel é o
+// próprio anúncio da máquina) — o proprietário pode cancelar a qualquer momento antes do
+// pagamento (ex.: máquina indisponível de fato), sem cobrança, e continua podendo cancelar depois
+// do pagamento confirmado, até o transporte ser organizado (mesmo limite superior do locatário).
 const OWNER_CANCEL_STATUSES = [
-  "APPROVED",
   "AWAITING_PAYMENT",
   "PAYMENT_CONFIRMED",
 ] as const satisfies readonly BookingStatus[];

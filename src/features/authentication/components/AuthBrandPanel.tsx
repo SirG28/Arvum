@@ -22,7 +22,7 @@ const BENEFITS = [
   },
   {
     title: "Logística integrada",
-    description: "Custo e prazo de transporte calculados direto na reserva.",
+    description: "Custo e prazo de transporte calculados direto no aluguel.",
     icon: (
       <svg
         viewBox="0 0 24 24"

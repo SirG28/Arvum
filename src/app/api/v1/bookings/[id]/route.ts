@@ -6,11 +6,11 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-// "Cancelar" em vez de excluir de fato: o histórico da reserva (BookingStatusHistory) é sempre
+// "Cancelar" em vez de excluir de fato: o histórico do aluguel (BookingStatusHistory) é sempre
 // preservado (Context.md §8.4/§9.3) — o método HTTP DELETE reflete a intenção do usuário
-// ("excluir a reserva"), mas o servidor faz uma transição de status, nunca uma remoção física.
+// ("excluir o aluguel"), mas o servidor faz uma transição de status, nunca uma remoção física.
 // Serve tanto o locatário quanto o proprietário da máquina (Context.md §9.4) — cancelBooking
-// descobre o papel a partir da própria reserva, nunca confiando em um campo enviado pelo cliente.
+// descobre o papel a partir do próprio aluguel, nunca confiando em um campo enviado pelo cliente.
 export async function DELETE(_request: Request, { params }: RouteParams) {
   const session = await auth();
   if (!session?.user) {
@@ -21,12 +21,12 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
   const result = await cancelBooking(session.user.id, id);
 
   if (result === "NOT_FOUND") {
-    return apiError("BOOKING_NOT_FOUND", "Reserva não encontrada.", 404);
+    return apiError("BOOKING_NOT_FOUND", "Aluguel não encontrado.", 404);
   }
   if (result === "NOT_CANCELLABLE") {
     return apiError(
       "BOOKING_NOT_CANCELLABLE",
-      "Esta reserva não pode mais ser cancelada pelo estágio atual.",
+      "Este aluguel não pode mais ser cancelado pelo estágio atual.",
       409,
     );
   }

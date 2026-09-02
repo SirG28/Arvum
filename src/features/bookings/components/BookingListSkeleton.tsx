@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Card } from "@/components/ui/Card";
 
-// Compartilhado por /reservas/loading.tsx (locatário) e /reservas/recebidas/loading.tsx
+// Compartilhado por /alugueis/loading.tsx (locatário) e /alugueis/recebidos/loading.tsx
 // (proprietário) — as duas listas têm exatamente o mesmo formato de card (ver BookingListCard.tsx
 // / OwnerBookingListCard.tsx), só a fonte dos dados muda.
 export function BookingListSkeleton({ label }: { label: string }) {

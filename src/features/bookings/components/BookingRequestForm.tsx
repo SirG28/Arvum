@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
@@ -19,11 +20,6 @@ import { Alert } from "@/components/ui/Alert";
 import { Spinner } from "@/components/ui/Spinner";
 import { DateRangePicker } from "@/components/ui/DateRangePicker";
 
-const STATUS_LABELS: Record<string, string> = {
-  AWAITING_APPROVAL: "Aguardando aprovação do proprietário",
-  APPROVED: "Aprovada — reserva instantânea",
-};
-
 const QUOTE_DEBOUNCE_MS = 500;
 
 interface BookingRequestFormProps {
@@ -32,8 +28,8 @@ interface BookingRequestFormProps {
 }
 
 export function BookingRequestForm({ machineId, properties }: BookingRequestFormProps) {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const [confirmedStatus, setConfirmedStatus] = useState<string | null>(null);
   const mutation = useCreateBookingRequest(machineId);
   const quote = useBookingQuote(machineId);
 
@@ -85,33 +81,23 @@ export function BookingRequestForm({ machineId, properties }: BookingRequestForm
   }, [destinationPropertyId, startDate, endDate, logisticsMode, operationSupportIncluded]);
 
   // O zodResolver já entrega startDate/endDate como Date (pós-validação) apesar do tipo estático
-  // do formulário ser o shape bruto — mesmo padrão de MachineAvailabilityManager.tsx.
+  // do formulário ser o shape bruto — mesmo padrão de MachineAvailabilityManager.tsx. Sem etapa de
+  // aprovação: o aluguel já nasce aguardando pagamento, então levamos o locatário direto para lá
+  // em vez de mostrar uma tela intermediária de confirmação.
   async function onSubmit(rawData: z.input<typeof bookingRequestSchema>) {
     const data = rawData as unknown as BookingRequestInput;
     setError(null);
     try {
       const booking = await mutation.mutateAsync(data);
-      setConfirmedStatus(booking.status);
+      router.push(`/alugueis/${booking.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado.");
     }
   }
 
-  if (confirmedStatus) {
-    return (
-      <Alert tone="success" title="Solicitação enviada">
-        {STATUS_LABELS[confirmedStatus] ?? confirmedStatus}. Acompanhe o andamento em{" "}
-        <Link href="/reservas" className="font-medium underline">
-          minhas reservas
-        </Link>
-        .
-      </Alert>
-    );
-  }
-
   if (properties.length === 0) {
     return (
-      <Alert tone="warning" title="Cadastre uma propriedade antes de reservar">
+      <Alert tone="warning" title="Cadastre uma propriedade antes de alugar">
         Você precisa de uma propriedade de destino para receber a máquina.{" "}
         <Link href="/propriedades/nova" className="font-medium underline">
           Cadastrar propriedade
@@ -200,8 +186,8 @@ export function BookingRequestForm({ machineId, properties }: BookingRequestForm
         </div>
       )}
 
-      <Button type="submit" isLoading={isSubmitting} className="w-full">
-        Solicitar reserva
+      <Button type="submit" isLoading={isSubmitting || mutation.isPending} className="w-full">
+        Solicitar aluguel
       </Button>
     </form>
   );

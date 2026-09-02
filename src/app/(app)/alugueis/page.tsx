@@ -6,28 +6,27 @@ import { BookingListCard } from "@/features/bookings/components/BookingListCard"
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 
-export const metadata = { title: "Minhas reservas" };
+export const metadata = { title: "Meus aluguéis" };
 
-export default async function ReservationsPage() {
+export default async function RentalsPage() {
   const user = await getCurrentUser();
-  if (!user) redirect("/login?callbackUrl=/reservas");
+  if (!user) redirect("/login?callbackUrl=/alugueis");
 
   const bookings = await listBookingsByRenter(user.id);
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900">Minhas reservas</h1>
+        <h1 className="text-lg font-semibold text-neutral-900">Meus aluguéis</h1>
         <p className="text-sm text-neutral-500">
-          Acompanhe as máquinas que você solicitou, desde a aprovação do proprietário até a
-          conclusão.
+          Acompanhe as máquinas que você alugou, desde o pagamento até a conclusão.
         </p>
       </div>
 
       {bookings.length === 0 ? (
         <EmptyState
-          title="Você ainda não tem nenhuma reserva"
-          description="Encontre uma máquina no catálogo e solicite a reserva do período que precisar."
+          title="Você ainda não tem nenhum aluguel"
+          description="Encontre uma máquina no catálogo e solicite o aluguel do período que precisar."
           action={
             <Link href="/catalogo">
               <Button>Ver catálogo</Button>

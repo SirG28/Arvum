@@ -1,13 +1,13 @@
 import { apiError } from "@/lib/api-response";
 import type { BookingQuoteError } from "../services/booking.service";
 
-// Único lugar com o texto de cada erro de cotação/reserva — reaproveitado pela rota de criação e
+// Único lugar com o texto de cada erro de cotação/aluguel — reaproveitado pela rota de criação e
 // pela rota de prévia de preço, para nunca haver duas mensagens diferentes para o mesmo erro
 // (Context.md §11.5: mensagens de erro devem explicar o que aconteceu e o que fazer).
 const BOOKING_QUOTE_ERROR_RESPONSES: Record<BookingQuoteError, { message: string; status: number }> = {
   MACHINE_NOT_FOUND: { message: "Máquina não encontrada.", status: 404 },
   CANNOT_BOOK_OWN_MACHINE: {
-    message: "Você não pode reservar uma máquina anunciada por você mesmo.",
+    message: "Você não pode alugar uma máquina anunciada por você mesmo.",
     status: 403,
   },
   PROPERTY_NOT_OWNED: {

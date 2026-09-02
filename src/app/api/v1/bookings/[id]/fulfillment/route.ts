@@ -7,7 +7,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-// Avança a reserva para a próxima etapa de acompanhamento (Context.md §8.9: transporte, entrega,
+// Avança o aluguel para a próxima etapa de acompanhamento (Context.md §8.9: transporte, entrega,
 // uso e devolução) — advanceBookingFulfillment decide, a partir do status atual e da modalidade
 // logística, se o usuário logado é de fato o responsável pela próxima ação (nunca confiando em um
 // papel enviado pelo cliente).
@@ -27,15 +27,15 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   const result = await advanceBookingFulfillment(session.user.id, id, parsed.data.action);
 
   if (result === "NOT_FOUND") {
-    return apiError("BOOKING_NOT_FOUND", "Reserva não encontrada.", 404);
+    return apiError("BOOKING_NOT_FOUND", "Aluguel não encontrado.", 404);
   }
   if (result === "FORBIDDEN") {
-    return apiError("FORBIDDEN", "Você não pode executar esta ação nesta reserva.", 403);
+    return apiError("FORBIDDEN", "Você não pode executar esta ação neste aluguel.", 403);
   }
   if (result === "INVALID_TRANSITION") {
     return apiError(
       "BOOKING_INVALID_TRANSITION",
-      "Esta ação não é mais válida para o estágio atual da reserva.",
+      "Esta ação não é mais válida para o estágio atual do aluguel.",
       409,
     );
   }

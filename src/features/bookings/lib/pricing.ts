@@ -29,7 +29,7 @@ export interface BookingTotals {
 // Composição transparente do valor da locação (Context.md §8.12):
 // total = locacao + logistica + taxaServico + suporteDeOperacao + caucao - descontos.
 // Cálculo logístico real e taxa de serviço chegam nas próximas etapas da Fase 4 — por ora,
-// entram como zero para não travar o fluxo de solicitação de reserva.
+// entram como zero para não travar o fluxo de solicitação de aluguel.
 export function calculateBookingTotals({
   rentalDays,
   dailyPriceInCents,

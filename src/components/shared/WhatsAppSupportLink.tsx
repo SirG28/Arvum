@@ -11,7 +11,7 @@ interface WhatsAppSupportLinkProps {
 
 // Só renderiza se houver número configurado (NEXT_PUBLIC_SUPPORT_WHATSAPP_NUMBER) — sem número
 // real, nenhum link quebrado aparece na interface. Ponto único de contato humano nos momentos de
-// maior fricção (cadastro de máquina, primeira reserva): para o público da Arvum, conversa direta
+// maior fricção (cadastro de máquina, primeiro aluguel): para o público da Arvum, conversa direta
 // resolve dúvida mais rápido que qualquer texto de ajuda na tela (Arvum Playbook §02).
 //
 // Botão-ícone (só o glifo do WhatsApp, círculo verde da marca) — a legenda é texto normal ao lado,

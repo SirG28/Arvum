@@ -70,7 +70,7 @@ export default async function EditMachinePage({ params }: EditMachinePageProps) 
       <Card>
         <h2 className="text-lg font-semibold text-neutral-900">Remover máquina</h2>
         <p className="mt-1 text-sm text-neutral-500">
-          A remoção é definitiva e só é permitida quando não há reservas ativas vinculadas.
+          A remoção é definitiva e só é permitida quando não há aluguéis ativos vinculados.
         </p>
         <div className="mt-4">
           <DeleteMachineButton machineId={machine.id} />

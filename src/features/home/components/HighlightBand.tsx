@@ -2,7 +2,6 @@ import Link from "next/link";
 
 export interface HomeStats {
   openBookings: number;
-  pendingRequests: number;
 }
 
 interface StatCardProps {
@@ -35,37 +34,21 @@ function StatCard({ value, label, href, tone = "neutral" }: StatCardProps) {
 }
 
 export function HighlightBand({ stats }: { stats: HomeStats | null }) {
-  if (!stats || (stats.pendingRequests === 0 && stats.openBookings === 0)) {
+  if (!stats || stats.openBookings === 0) {
     return null;
   }
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-10">
       <div className="flex flex-wrap justify-center gap-4">
-        {stats.pendingRequests > 0 && (
-          <div className="w-full max-w-xs">
-            <StatCard
-              value={stats.pendingRequests}
-              label={
-                stats.pendingRequests === 1
-                  ? "solicitação aguardando sua aprovação"
-                  : "solicitações aguardando sua aprovação"
-              }
-              href="/reservas/recebidas"
-              tone="primary"
-            />
-          </div>
-        )}
-        {stats.openBookings > 0 && (
-          <div className="w-full max-w-xs">
-            <StatCard
-              value={stats.openBookings}
-              label={stats.openBookings === 1 ? "reserva em andamento" : "reservas em andamento"}
-              href="/reservas"
-              tone={stats.pendingRequests === 0 ? "primary" : "neutral"}
-            />
-          </div>
-        )}
+        <div className="w-full max-w-xs">
+          <StatCard
+            value={stats.openBookings}
+            label={stats.openBookings === 1 ? "aluguel em andamento" : "aluguéis em andamento"}
+            href="/alugueis"
+            tone="primary"
+          />
+        </div>
       </div>
     </section>
   );

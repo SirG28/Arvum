@@ -10,8 +10,8 @@ interface ProvidersProps {
   children: ReactNode;
   // Sessão já validada no servidor (RootLayout, via auth()) — evita que o SessionProvider precise
   // buscar /api/auth/session no cliente para descobrir de novo quem está logado, o que fazia os
-  // indicadores do header (ReservationsIndicator/OwnerRequestsIndicator/ProfileMenu) renderizarem
-  // null até essa chamada extra voltar.
+  // indicadores do header (RentalsIndicator/ProfileMenu) renderizarem null até essa chamada
+  // extra voltar.
   session: Session | null;
 }
 

@@ -1,25 +1,30 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { getBookingForOwner } from "@/features/bookings/services/booking.service";
+import { getBookingForRenter } from "@/features/bookings/services/booking.service";
+import { hasOwnerMachines } from "@/features/machines/services/machine.service";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { BackLink } from "@/components/ui/BackLink";
+import { Alert } from "@/components/ui/Alert";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_BADGE_TONE } from "@/features/bookings/lib/status-labels";
 import { LOGISTICS_MODE_LABELS } from "@/features/bookings/lib/logistics-labels";
-import { isBookingPendingApproval } from "@/features/bookings/lib/approval";
-import { isBookingCancellableByOwner, resolveCancellationRefund } from "@/features/bookings/lib/cancellation";
+import { isBookingCancellableByRenter, resolveCancellationRefund } from "@/features/bookings/lib/cancellation";
+import { isPaymentHoldExpired } from "@/features/bookings/lib/hold";
 import { getNextFulfillmentAction } from "@/features/bookings/lib/fulfillment";
 import { PriceBreakdown } from "@/features/bookings/components/PriceBreakdown";
 import { BookingStatusTimeline } from "@/features/bookings/components/BookingStatusTimeline";
-import { BookingDecisionActions } from "@/features/bookings/components/BookingDecisionActions";
 import { CancelBookingButton } from "@/features/bookings/components/CancelBookingButton";
 import { FulfillmentActionButton } from "@/features/bookings/components/FulfillmentActionButton";
+import { PaymentForm } from "@/features/payments/components/PaymentForm";
+import { PAYMENT_METHOD_LABELS } from "@/features/payments/lib/payment-method-labels";
 import { ReviewForm } from "@/features/reviews/components/ReviewForm";
 import { Rating } from "@/components/ui/Rating";
 
-export const metadata = { title: "Detalhe da solicitação" };
+export const metadata = { title: "Detalhe do aluguel" };
 
-interface ReceivedBookingDetailPageProps {
+interface BookingDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
@@ -27,20 +32,27 @@ function formatDate(date: Date) {
   return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-export default async function ReceivedBookingDetailPage({ params }: ReceivedBookingDetailPageProps) {
+function formatDateTime(date: Date) {
+  return date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
+
+export default async function BookingDetailPage({ params }: BookingDetailPageProps) {
   const { id } = await params;
   const user = await getCurrentUser();
-  if (!user) redirect(`/login?callbackUrl=/reservas/recebidas/${id}`);
+  if (!user) redirect(`/login?callbackUrl=/alugueis/${id}`);
 
-  const booking = await getBookingForOwner(user.id, id);
+  const booking = await getBookingForRenter(user.id, id);
   if (!booking) notFound();
 
   const image = booking.machine.images[0];
+  // Só oferece o convite pra virar proprietário a quem ainda não anunciou nada — pra quem já
+  // anuncia máquinas, isso é ruído permanente sem utilidade.
+  const showOwnerInvite = booking.status === "COMPLETED" && !(await hasOwnerMachines(user.id));
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div>
-        <BackLink href="/reservas/recebidas" label="Solicitações recebidas" />
+        <BackLink href="/alugueis" label="Meus aluguéis" />
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <h1 className="text-lg font-semibold text-neutral-900">{booking.machine.title}</h1>
           <Badge tone={BOOKING_STATUS_BADGE_TONE[booking.status]}>
@@ -66,12 +78,6 @@ export default async function ReceivedBookingDetailPage({ params }: ReceivedBook
         </div>
 
         <dl className="grid flex-1 grid-cols-2 gap-4 text-sm">
-          <div className="col-span-2">
-            <dt className="text-neutral-400">Solicitado por</dt>
-            <dd className="text-neutral-900">
-              {booking.renter.name} — {booking.renter.email}
-            </dd>
-          </div>
           <div>
             <dt className="text-neutral-400">Período</dt>
             <dd className="text-neutral-900">
@@ -91,7 +97,7 @@ export default async function ReceivedBookingDetailPage({ params }: ReceivedBook
           </div>
           {booking.notes && (
             <div className="col-span-2">
-              <dt className="text-neutral-400">Observações do locatário</dt>
+              <dt className="text-neutral-400">Observações</dt>
               <dd className="text-neutral-900">{booking.notes}</dd>
             </div>
           )}
@@ -119,11 +125,28 @@ export default async function ReceivedBookingDetailPage({ params }: ReceivedBook
         <BookingStatusTimeline bookingId={booking.id} statusHistory={booking.statusHistory} />
       </Card>
 
-      {isBookingPendingApproval(booking.status) && <BookingDecisionActions bookingId={booking.id} />}
+      {booking.status === "AWAITING_PAYMENT" && !isPaymentHoldExpired(booking.status, booking.createdAt) && (
+        <Card>
+          <h2 className="text-sm font-semibold text-neutral-900">Pagamento</h2>
+          <p className="mt-1 text-sm text-neutral-500">
+            Confirme o pagamento para garantir o aluguel.
+          </p>
+          <PaymentForm className="mt-3" bookingId={booking.id} totalValueInCents={booking.totalValueInCents} />
+        </Card>
+      )}
+
+      {booking.status === "AWAITING_PAYMENT" && isPaymentHoldExpired(booking.status, booking.createdAt) && (
+        <Alert
+          tone="warning"
+          title="O prazo para pagamento expirou"
+        >
+          Solicite o aluguel novamente para tentar garantir este período.
+        </Alert>
+      )}
 
       {(() => {
         const nextAction = getNextFulfillmentAction(booking.status, booking.logisticsMode);
-        if (!nextAction || nextAction.actor !== "OWNER") return null;
+        if (!nextAction || nextAction.actor !== "RENTER") return null;
         return (
           <Card>
             <h2 className="text-sm font-semibold text-neutral-900">Próxima etapa</h2>
@@ -135,12 +158,25 @@ export default async function ReceivedBookingDetailPage({ params }: ReceivedBook
         );
       })()}
 
-      {isBookingCancellableByOwner(booking.status) && (
-        <CancelBookingButton
-          bookingId={booking.id}
-          role="OWNER"
-          refundOutcome={resolveCancellationRefund(booking.status, booking.startDate, "OWNER")}
-        />
+      {booking.payments[0] && (
+        <Card>
+          <h2 className="text-sm font-semibold text-neutral-900">Pagamento confirmado</h2>
+          <dl className="mt-3 grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <dt className="text-neutral-400">Forma de pagamento</dt>
+              <dd className="text-neutral-900">
+                {PAYMENT_METHOD_LABELS[booking.payments[0].paymentMethod as "CREDIT_CARD" | "PIX"] ??
+                  booking.payments[0].paymentMethod}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-neutral-400">Pago em</dt>
+              <dd className="text-neutral-900">
+                {booking.payments[0].paidAt ? formatDateTime(booking.payments[0].paidAt) : "—"}
+              </dd>
+            </div>
+          </dl>
+        </Card>
       )}
 
       {booking.status === "COMPLETED" && (
@@ -148,7 +184,7 @@ export default async function ReceivedBookingDetailPage({ params }: ReceivedBook
           <h2 className="text-sm font-semibold text-neutral-900">Avaliação</h2>
           {booking.reviews[0] ? (
             <div className="mt-3 flex flex-col gap-2">
-              <p className="text-sm text-neutral-500">Você já avaliou este locatário.</p>
+              <p className="text-sm text-neutral-500">Você já avaliou esta locação.</p>
               <Rating value={booking.reviews[0].rating} size="sm" />
               {booking.reviews[0].comment && (
                 <p className="text-sm text-neutral-700">{booking.reviews[0].comment}</p>
@@ -157,17 +193,47 @@ export default async function ReceivedBookingDetailPage({ params }: ReceivedBook
           ) : (
             <>
               <p className="mt-1 text-sm text-neutral-500">
-                Conte como foi a locação com {booking.renter.name}.
+                Conte como foi alugar esta máquina de {booking.machine.owner.name}.
               </p>
               <ReviewForm
                 className="mt-3"
                 bookingId={booking.id}
-                role="OWNER"
-                targetName={booking.renter.name}
+                role="RENTER"
+                targetName={booking.machine.owner.name}
               />
             </>
           )}
         </Card>
+      )}
+
+      {showOwnerInvite && (
+        <Card className="bg-primary-50 border-primary-100">
+          <h2 className="text-sm font-semibold text-neutral-900">
+            Alguma máquina parada na sua propriedade?
+          </h2>
+          <p className="mt-1 text-sm text-neutral-600">
+            Agora que você já sabe como é alugar por aqui, que tal anunciar um equipamento seu e
+            começar a ganhar com o tempo em que ele fica parado?
+          </p>
+          <Link href="/maquinas/nova" className="mt-3 inline-block">
+            <Button variant="secondary">Anunciar uma máquina</Button>
+          </Link>
+        </Card>
+      )}
+
+      <Link
+        href={`/catalogo/${booking.machine.slug}`}
+        className="text-sm font-medium text-neutral-700 underline hover:text-neutral-900"
+      >
+        Ver anúncio da máquina
+      </Link>
+
+      {isBookingCancellableByRenter(booking.status) && (
+        <CancelBookingButton
+          bookingId={booking.id}
+          role="RENTER"
+          refundOutcome={resolveCancellationRefund(booking.status, booking.startDate, "RENTER")}
+        />
       )}
     </div>
   );

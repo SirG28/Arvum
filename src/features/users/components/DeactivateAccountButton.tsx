@@ -32,7 +32,7 @@ export function DeactivateAccountButton() {
       <ConfirmationDialog
         open={confirmOpen}
         title="Desativar sua conta?"
-        description="Você será desconectado e não vai mais conseguir entrar na Arvum. Seu histórico de reservas e avaliações é mantido, mas anúncios ou solicitações em andamento não serão gerenciados por você depois disso — resolva o que estiver pendente antes de continuar."
+        description="Você será desconectado e não vai mais conseguir entrar na Arvum. Seu histórico de aluguéis e avaliações é mantido, mas anúncios ou aluguéis em andamento não serão gerenciados por você depois disso — resolva o que estiver pendente antes de continuar."
         confirmLabel="Sim, desativar conta"
         cancelLabel="Voltar"
         tone="danger"

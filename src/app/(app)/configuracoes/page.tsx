@@ -12,7 +12,7 @@ const SETTINGS_LINKS = [
   },
   {
     title: "Notificações",
-    description: "Escolha como quer ser avisado sobre reservas e solicitações.",
+    description: "Escolha como quer ser avisado sobre aluguéis e pagamentos.",
     href: "/configuracoes/notificacoes",
   },
   {

@@ -34,7 +34,7 @@ export function NotificationPreferencesForm({ notifyByEmail }: NotificationPrefe
       {error && <Alert tone="error" title={error} />}
       <Checkbox
         id="notifyByEmail"
-        label="Receber notificações por e-mail sobre minhas reservas e anúncios"
+        label="Receber notificações por e-mail sobre meus aluguéis e anúncios"
         checked={checked}
         disabled={mutation.isPending}
         onChange={(event) => handleChange(event.target.checked)}

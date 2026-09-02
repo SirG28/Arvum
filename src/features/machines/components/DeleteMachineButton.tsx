@@ -36,7 +36,7 @@ export function DeleteMachineButton({ machineId }: { machineId: string }) {
       <ConfirmationDialog
         open={confirmOpen}
         title="Remover esta máquina definitivamente?"
-        description="Essa ação não pode ser desfeita. A remoção só é permitida quando não há reservas ativas vinculadas a esta máquina."
+        description="Essa ação não pode ser desfeita. A remoção só é permitida quando não há aluguéis ativos vinculados a esta máquina."
         confirmLabel="Sim, remover máquina"
         cancelLabel="Cancelar"
         tone="danger"

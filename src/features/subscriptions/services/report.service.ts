@@ -24,7 +24,7 @@ export interface OwnerPerformanceReport {
 }
 
 // Relatório de desempenho do Plano Premium (Context.md §8.21) — usa só dados que já existem
-// (reservas e avaliações), sem contagem de visualizações (não há tracking de página no projeto).
+// (aluguéis e avaliações), sem contagem de visualizações (não há tracking de página no projeto).
 export async function getOwnerPerformanceReport(ownerId: string): Promise<OwnerPerformanceReport> {
   const [statusGroups, revenue, reviewSummary] = await Promise.all([
     prisma.booking.groupBy({

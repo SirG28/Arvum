@@ -179,9 +179,9 @@ export function cancelEmailChange(userId: string) {
   });
 }
 
-// Desativação (Context.md §8.1/§9.1), não exclusão física: o histórico de reservas, pagamentos e
+// Desativação (Context.md §8.1/§9.1), não exclusão física: o histórico de aluguéis, pagamentos e
 // avaliações é preservado (§9.1 — "a exclusão da conta não deve destruir o histórico financeiro ou
-// de reservas"). auth.ts já recusa login para status != ACTIVE, então isto sozinho já impede o
+// de aluguéis"). auth.ts já recusa login para status != ACTIVE, então isto sozinho já impede o
 // acesso à conta.
 export async function deactivateUserAccount(userId: string): Promise<void> {
   await prisma.user.update({ where: { id: userId }, data: { status: "DEACTIVATED" } });
@@ -211,7 +211,7 @@ export function updateNotificationPreferences(userId: string, notifyByEmail: boo
 }
 
 // LGPD — "mecanismo de solicitação de exclusão" (Context.md §19): registra a intenção, não apaga
-// nada automaticamente. Parte do histórico (financeiro, reservas) pode precisar ser retida por
+// nada automaticamente. Parte do histórico (financeiro, aluguéis) pode precisar ser retida por
 // obrigação legal (§9.1), então a exclusão de fato depende de triagem manual — sem painel
 // administrativo ainda para isso (Fase 6), o pedido fica registrado esperando essa etapa.
 // Idempotente: uma segunda chamada não sobrescreve a data do primeiro pedido.

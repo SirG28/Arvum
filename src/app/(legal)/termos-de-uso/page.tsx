@@ -3,15 +3,15 @@ export const metadata = { title: "Termos de Uso" };
 const SECTIONS = [
   {
     title: "1. Sobre a Arvum",
-    body: "A Arvum é uma plataforma digital (marketplace) que conecta produtores rurais que precisam alugar máquinas agrícolas a proprietários com equipamentos disponíveis. A Arvum não é proprietária das máquinas anunciadas, não emprega operadores e não presta o serviço de transporte diretamente — atua como intermediária, organizando a busca, a reserva, o pagamento e a comunicação entre as partes.",
+    body: "A Arvum é uma plataforma digital (marketplace) que conecta produtores rurais que precisam alugar máquinas agrícolas a proprietários com equipamentos disponíveis. A Arvum não é proprietária das máquinas anunciadas, não emprega operadores e não presta o serviço de transporte diretamente — atua como intermediária, organizando a busca, o aluguel, o pagamento e a comunicação entre as partes.",
   },
   {
     title: "2. Cadastro",
     body: "Para usar a Arvum é necessário criar uma conta com informações verdadeiras e atualizadas. Uma mesma conta pode alugar máquinas (locatário) e anunciar máquinas próprias (proprietário) — não é preciso criar contas separadas para cada papel. Você é responsável por manter sua senha em sigilo e por toda atividade realizada na sua conta.",
   },
   {
-    title: "3. Anúncios e reservas",
-    body: "Proprietários são responsáveis pela veracidade das informações do anúncio (condição, disponibilidade, preço) e pelas condições reais da máquina anunciada. Locatários são responsáveis por usar a máquina conforme combinado e devolvê-la nas condições acordadas. A Arvum verifica disponibilidade e impede reservas conflitantes, mas não garante a condição física do equipamento nem realiza vistoria presencial.",
+    title: "3. Anúncios e aluguéis",
+    body: "Proprietários são responsáveis pela veracidade das informações do anúncio (condição, disponibilidade, preço) e pelas condições reais da máquina anunciada. Locatários são responsáveis por usar a máquina conforme combinado e devolvê-la nas condições acordadas. A Arvum verifica disponibilidade e impede aluguéis conflitantes, mas não garante a condição física do equipamento nem realiza vistoria presencial.",
   },
   {
     title: "4. Pagamentos e comissão",
@@ -19,7 +19,7 @@ const SECTIONS = [
   },
   {
     title: "5. Cancelamento",
-    body: "A política de cancelamento e as regras de estorno são apresentadas ao usuário antes da confirmação de qualquer cancelamento, e variam conforme o estágio da reserva e quem está cancelando.",
+    body: "A política de cancelamento e as regras de estorno são apresentadas ao usuário antes da confirmação de qualquer cancelamento, e variam conforme o estágio do aluguel e quem está cancelando.",
   },
   {
     title: "6. Avaliações",
@@ -27,7 +27,7 @@ const SECTIONS = [
   },
   {
     title: "7. Suspensão e encerramento de conta",
-    body: "Contas que violem estes termos, apresentem informações falsas ou sejam usadas de forma fraudulenta podem ser suspensas. Você pode desativar sua própria conta a qualquer momento em Configurações — o histórico de reservas e avaliações é mantido conforme descrito na nossa Política de Privacidade.",
+    body: "Contas que violem estes termos, apresentem informações falsas ou sejam usadas de forma fraudulenta podem ser suspensas. Você pode desativar sua própria conta a qualquer momento em Configurações — o histórico de aluguéis e avaliações é mantido conforme descrito na nossa Política de Privacidade.",
   },
   {
     title: "8. Limitações desta versão",

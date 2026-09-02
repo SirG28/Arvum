@@ -175,11 +175,11 @@ export default async function MachineDetailPage({ params, searchParams }: Machin
           <div className="mt-4">
             {!user ? (
               <Link href={`/login?callbackUrl=/catalogo/${machine.slug}`}>
-                <Button className="w-full">Entrar para reservar</Button>
+                <Button className="w-full">Entrar para alugar</Button>
               </Link>
             ) : isOwner ? (
               <Alert tone="info" title="Esta é sua máquina">
-                Você não pode reservar um anúncio próprio.
+                Você não pode alugar um anúncio próprio.
               </Alert>
             ) : (
               <BookingRequestForm machineId={machine.id} properties={renterProperties} />
@@ -188,8 +188,8 @@ export default async function MachineDetailPage({ params, searchParams }: Machin
 
           {!isOwner && (
             <WhatsAppSupportLink
-              message={`Olá! Tenho uma dúvida sobre reservar "${machine.title}" na Arvum.`}
-              label="Dúvidas antes de reservar? Fale com a Arvum"
+              message={`Olá! Tenho uma dúvida sobre alugar "${machine.title}" na Arvum.`}
+              label="Dúvidas antes de alugar? Fale com a Arvum"
               className="mt-4"
             />
           )}

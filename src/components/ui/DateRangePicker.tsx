@@ -14,7 +14,7 @@ interface DateRangePickerProps {
   label: string;
   value: DateRange;
   onChange: (range: DateRange) => void;
-  // Menor data selecionável (yyyy-mm-dd) — por padrão, hoje: reservar/filtrar por datas passadas
+  // Menor data selecionável (yyyy-mm-dd) — por padrão, hoje: alugar/filtrar por datas passadas
   // não faz sentido em nenhum dos dois usos deste componente.
   minDate?: string;
   error?: string;
@@ -54,7 +54,7 @@ function startOfToday(): Date {
 
 // Calendário de intervalo em um único campo: primeiro clique define a data inicial, o segundo
 // define a final (fecha sozinho); clicar antes da data inicial recomeça a seleção. Usado tanto no
-// filtro do catálogo (§ período de disponibilidade) quanto no formulário de reserva do produto.
+// filtro do catálogo (§ período de disponibilidade) quanto no formulário de aluguel do produto.
 export function DateRangePicker({ label, value, onChange, minDate, error, className }: DateRangePickerProps) {
   const inputId = useId();
   const containerRef = useRef<HTMLDivElement>(null);

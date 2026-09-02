@@ -1,28 +1,23 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { getBookingForRenter } from "@/features/bookings/services/booking.service";
-import { hasOwnerMachines } from "@/features/machines/services/machine.service";
+import { getBookingForOwner } from "@/features/bookings/services/booking.service";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { BackLink } from "@/components/ui/BackLink";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_BADGE_TONE } from "@/features/bookings/lib/status-labels";
 import { LOGISTICS_MODE_LABELS } from "@/features/bookings/lib/logistics-labels";
-import { isBookingCancellableByRenter, resolveCancellationRefund } from "@/features/bookings/lib/cancellation";
+import { isBookingCancellableByOwner, resolveCancellationRefund } from "@/features/bookings/lib/cancellation";
 import { getNextFulfillmentAction } from "@/features/bookings/lib/fulfillment";
 import { PriceBreakdown } from "@/features/bookings/components/PriceBreakdown";
 import { BookingStatusTimeline } from "@/features/bookings/components/BookingStatusTimeline";
 import { CancelBookingButton } from "@/features/bookings/components/CancelBookingButton";
 import { FulfillmentActionButton } from "@/features/bookings/components/FulfillmentActionButton";
-import { PaymentForm } from "@/features/payments/components/PaymentForm";
-import { PAYMENT_METHOD_LABELS } from "@/features/payments/lib/payment-method-labels";
 import { ReviewForm } from "@/features/reviews/components/ReviewForm";
 import { Rating } from "@/components/ui/Rating";
 
-export const metadata = { title: "Detalhe da reserva" };
+export const metadata = { title: "Detalhe do aluguel" };
 
-interface BookingDetailPageProps {
+interface ReceivedRentalDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
@@ -30,28 +25,20 @@ function formatDate(date: Date) {
   return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-function formatDateTime(date: Date) {
-  return date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
-}
-
-export default async function BookingDetailPage({ params }: BookingDetailPageProps) {
+export default async function ReceivedRentalDetailPage({ params }: ReceivedRentalDetailPageProps) {
   const { id } = await params;
   const user = await getCurrentUser();
-  if (!user) redirect(`/login?callbackUrl=/reservas/${id}`);
+  if (!user) redirect(`/login?callbackUrl=/alugueis/recebidos/${id}`);
 
-  const booking = await getBookingForRenter(user.id, id);
+  const booking = await getBookingForOwner(user.id, id);
   if (!booking) notFound();
 
   const image = booking.machine.images[0];
-  // Só oferece o convite pra virar proprietário a quem ainda não anunciou nada — pra quem já
-  // anuncia máquinas, isso é ruído permanente sem utilidade (mesmo critério de
-  // OwnerRequestsIndicator.tsx).
-  const showOwnerInvite = booking.status === "COMPLETED" && !(await hasOwnerMachines(user.id));
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div>
-        <BackLink href="/reservas" label="Minhas reservas" />
+        <BackLink href="/alugueis/recebidos" label="Aluguéis recebidos" />
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <h1 className="text-lg font-semibold text-neutral-900">{booking.machine.title}</h1>
           <Badge tone={BOOKING_STATUS_BADGE_TONE[booking.status]}>
@@ -77,6 +64,12 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
         </div>
 
         <dl className="grid flex-1 grid-cols-2 gap-4 text-sm">
+          <div className="col-span-2">
+            <dt className="text-neutral-400">Solicitado por</dt>
+            <dd className="text-neutral-900">
+              {booking.renter.name} — {booking.renter.email}
+            </dd>
+          </div>
           <div>
             <dt className="text-neutral-400">Período</dt>
             <dd className="text-neutral-900">
@@ -96,7 +89,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
           </div>
           {booking.notes && (
             <div className="col-span-2">
-              <dt className="text-neutral-400">Observações</dt>
+              <dt className="text-neutral-400">Observações do locatário</dt>
               <dd className="text-neutral-900">{booking.notes}</dd>
             </div>
           )}
@@ -124,20 +117,9 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
         <BookingStatusTimeline bookingId={booking.id} statusHistory={booking.statusHistory} />
       </Card>
 
-      {booking.status === "APPROVED" && (
-        <Card>
-          <h2 className="text-sm font-semibold text-neutral-900">Pagamento</h2>
-          <p className="mt-1 text-sm text-neutral-500">
-            Sua solicitação foi aprovada pelo proprietário. Confirme o pagamento para seguir com a
-            reserva.
-          </p>
-          <PaymentForm className="mt-3" bookingId={booking.id} totalValueInCents={booking.totalValueInCents} />
-        </Card>
-      )}
-
       {(() => {
         const nextAction = getNextFulfillmentAction(booking.status, booking.logisticsMode);
-        if (!nextAction || nextAction.actor !== "RENTER") return null;
+        if (!nextAction || nextAction.actor !== "OWNER") return null;
         return (
           <Card>
             <h2 className="text-sm font-semibold text-neutral-900">Próxima etapa</h2>
@@ -149,25 +131,12 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
         );
       })()}
 
-      {booking.payments[0] && (
-        <Card>
-          <h2 className="text-sm font-semibold text-neutral-900">Pagamento confirmado</h2>
-          <dl className="mt-3 grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <dt className="text-neutral-400">Forma de pagamento</dt>
-              <dd className="text-neutral-900">
-                {PAYMENT_METHOD_LABELS[booking.payments[0].paymentMethod as "CREDIT_CARD" | "PIX"] ??
-                  booking.payments[0].paymentMethod}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-neutral-400">Pago em</dt>
-              <dd className="text-neutral-900">
-                {booking.payments[0].paidAt ? formatDateTime(booking.payments[0].paidAt) : "—"}
-              </dd>
-            </div>
-          </dl>
-        </Card>
+      {isBookingCancellableByOwner(booking.status) && (
+        <CancelBookingButton
+          bookingId={booking.id}
+          role="OWNER"
+          refundOutcome={resolveCancellationRefund(booking.status, booking.startDate, "OWNER")}
+        />
       )}
 
       {booking.status === "COMPLETED" && (
@@ -175,7 +144,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
           <h2 className="text-sm font-semibold text-neutral-900">Avaliação</h2>
           {booking.reviews[0] ? (
             <div className="mt-3 flex flex-col gap-2">
-              <p className="text-sm text-neutral-500">Você já avaliou esta locação.</p>
+              <p className="text-sm text-neutral-500">Você já avaliou este locatário.</p>
               <Rating value={booking.reviews[0].rating} size="sm" />
               {booking.reviews[0].comment && (
                 <p className="text-sm text-neutral-700">{booking.reviews[0].comment}</p>
@@ -184,47 +153,17 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
           ) : (
             <>
               <p className="mt-1 text-sm text-neutral-500">
-                Conte como foi alugar esta máquina de {booking.machine.owner.name}.
+                Conte como foi a locação com {booking.renter.name}.
               </p>
               <ReviewForm
                 className="mt-3"
                 bookingId={booking.id}
-                role="RENTER"
-                targetName={booking.machine.owner.name}
+                role="OWNER"
+                targetName={booking.renter.name}
               />
             </>
           )}
         </Card>
-      )}
-
-      {showOwnerInvite && (
-        <Card className="bg-primary-50 border-primary-100">
-          <h2 className="text-sm font-semibold text-neutral-900">
-            Alguma máquina parada na sua propriedade?
-          </h2>
-          <p className="mt-1 text-sm text-neutral-600">
-            Agora que você já sabe como é alugar por aqui, que tal anunciar um equipamento seu e
-            começar a ganhar com o tempo em que ele fica parado?
-          </p>
-          <Link href="/maquinas/nova" className="mt-3 inline-block">
-            <Button variant="secondary">Anunciar uma máquina</Button>
-          </Link>
-        </Card>
-      )}
-
-      <Link
-        href={`/catalogo/${booking.machine.slug}`}
-        className="text-sm font-medium text-neutral-700 underline hover:text-neutral-900"
-      >
-        Ver anúncio da máquina
-      </Link>
-
-      {isBookingCancellableByRenter(booking.status) && (
-        <CancelBookingButton
-          bookingId={booking.id}
-          role="RENTER"
-          refundOutcome={resolveCancellationRefund(booking.status, booking.startDate, "RENTER")}
-        />
       )}
     </div>
   );

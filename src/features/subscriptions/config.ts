@@ -6,7 +6,7 @@ export const PREMIUM_PERIOD_DAYS = 30;
 
 // Comissão sobre operações (Context.md §9.7): "o percentual de comissão pode ser reduzido para
 // parceiros com Plano Premium ativo". A comissão em si (Fase 7) ainda não é calculada em nenhum
-// lugar do fluxo de reserva — esta regra fica pronta e testada, mas getEffectiveCommissionRate
+// lugar do fluxo de aluguel — esta regra fica pronta e testada, mas getEffectiveCommissionRate
 // (lib/commission.ts) não é chamada por nenhum serviço ainda.
 export const BASE_COMMISSION_RATE = 0.12;
 export const PREMIUM_COMMISSION_RATE = 0.08;

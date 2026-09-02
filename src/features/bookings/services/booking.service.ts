@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getOwnedProperty } from "@/features/properties/services/property.service";
-import { ACTIVE_BOOKING_STATUSES } from "@/features/machines/services/machine.service";
+import { activeBookingStatusFilter } from "@/features/machines/services/machine.service";
 import { calculateDistanceKm } from "@/lib/geo/distance";
 import { calculateLogisticsCost, type LogisticsCostResult } from "@/features/logistics/lib/pricing";
 import { calculateOperationSupportCost } from "@/features/support/lib/pricing";
@@ -42,8 +42,8 @@ export async function getBookingForRenter(renterId: string, bookingId: string) {
       destinationProperty: true,
       statusHistory: { orderBy: { createdAt: "asc" } },
       payments: { orderBy: { createdAt: "desc" } },
-      // Só a própria avaliação do locatário para esta reserva (Context.md §9.5: uma avaliação por
-      // participante e por reserva) — usada para decidir entre mostrar o formulário ou o resultado
+      // Só a própria avaliação do locatário para este aluguel (Context.md §9.5: uma avaliação por
+      // participante e por aluguel) — usada para decidir entre mostrar o formulário ou o resultado
       // já enviado.
       reviews: { where: { authorId: renterId } },
     },
@@ -52,22 +52,12 @@ export async function getBookingForRenter(renterId: string, bookingId: string) {
   return booking;
 }
 
-// Conta reservas que ainda ocupam o calendário (mesma lista usada para bloquear remoção de
+// Conta aluguéis que ainda ocupam o calendário (mesmo filtro usado para bloquear remoção de
 // máquina e checar sobreposição) — proxy para "precisa de atenção do locatário": aguardando
-// aprovação, aprovada mas sem pagamento, em transporte/uso etc. Estados finais (CANCELLED,
-// REJECTED, COMPLETED) não contam.
+// pagamento, em transporte/uso etc. Estados finais (CANCELLED, COMPLETED) não contam.
 export function countOpenBookingsByRenter(renterId: string) {
   return prisma.booking.count({
-    where: { renterId, status: { in: [...ACTIVE_BOOKING_STATUSES] } },
-  });
-}
-
-// Equivalente do lado do proprietário: solicitações aguardando decisão (aprovar/recusar), a
-// pendência mais urgente do painel do proprietário — usado tanto pelo indicador no cabeçalho
-// (mesmo padrão de countOpenBookingsByRenter) quanto pela home logada.
-export function countPendingBookingsForOwner(ownerId: string) {
-  return prisma.booking.count({
-    where: { machine: { ownerId }, status: "AWAITING_APPROVAL" },
+    where: { renterId, ...activeBookingStatusFilter() },
   });
 }
 
@@ -90,12 +80,11 @@ export interface BookingQuote {
   logisticsCost: LogisticsCostResult;
   operationSupportIncluded: boolean;
   totals: ReturnType<typeof calculateBookingTotals>;
-  initialStatus: "APPROVED" | "AWAITING_APPROVAL";
 }
 
 // Toda a validação de negócio e o cálculo de valores (Context.md §8.8 passos 4–6: verificar
 // disponibilidade, selecionar logística, calcular custos) vivem aqui — reaproveitado tanto pela
-// prévia de preço (sem gravar nada) quanto pela criação real da reserva, para nunca haver dois
+// prévia de preço (sem gravar nada) quanto pela criação real do aluguel, para nunca haver dois
 // lugares calculando o mesmo total de formas diferentes.
 export async function buildBookingQuote(
   renterId: string,
@@ -119,7 +108,7 @@ export async function buildBookingQuote(
   }
 
   // Mesma checagem de sobreposição usada pelos bloqueios manuais do proprietário
-  // (machine-availability.service.ts), somada às reservas já em andamento — nunca confiando só
+  // (machine-availability.service.ts), somada aos aluguéis já em andamento — nunca confiando só
   // em uma das duas fontes.
   const [overlappingBlock, overlappingBooking] = await Promise.all([
     prisma.machineAvailability.findFirst({
@@ -132,7 +121,7 @@ export async function buildBookingQuote(
     prisma.booking.findFirst({
       where: {
         machineId,
-        status: { in: [...ACTIVE_BOOKING_STATUSES] },
+        ...activeBookingStatusFilter(),
         startDate: { lt: input.endDate },
         endDate: { gt: input.startDate },
       },
@@ -167,10 +156,6 @@ export async function buildBookingQuote(
     operationSupportValueInCents,
   });
 
-  // Reserva instantânea pula a aprovação manual do proprietário (Context.md §8.8) — a decisão é
-  // do anúncio (`machine.instantBooking`), nunca escolhida pelo locatário na hora de reservar.
-  const initialStatus = machine.instantBooking ? "APPROVED" : "AWAITING_APPROVAL";
-
   return {
     machine,
     destinationProperty,
@@ -178,7 +163,6 @@ export async function buildBookingQuote(
     logisticsCost,
     operationSupportIncluded: input.operationSupportIncluded,
     totals,
-    initialStatus,
   };
 }
 
@@ -194,7 +178,8 @@ export async function createBookingRequest(
   const quote = await buildBookingQuote(renterId, machineId, input);
   if (typeof quote === "string") return quote;
 
-  const { machine, totals, logisticsCost, operationSupportIncluded, initialStatus } = quote;
+  const { machine, totals, logisticsCost, operationSupportIncluded } = quote;
+  const initialStatus = "AWAITING_PAYMENT" as const;
 
   return prisma.$transaction(async (tx) => {
     const booking = await tx.booking.create({
@@ -219,11 +204,11 @@ export async function createBookingRequest(
         previousStatus: null,
         nextStatus: initialStatus,
         changedById: renterId,
-        notes: "Solicitação de reserva criada.",
+        notes: "Aluguel solicitado, aguardando pagamento.",
       },
     });
 
-    // Retrato do cálculo logístico no momento da reserva (Context.md §8.11/§17) — já nasce
+    // Retrato do cálculo logístico no momento do aluguel (Context.md §8.11/§17) — já nasce
     // ACCEPTED porque, nesta etapa, não existe um fluxo separado de escolha entre cotações.
     await tx.logisticsQuote.create({
       data: {
@@ -244,7 +229,7 @@ export async function createBookingRequest(
   });
 }
 
-// Espelha listBookingsByRenter, mas filtrando pela máquina em vez do locatário — a mesma reserva
+// Espelha listBookingsByRenter, mas filtrando pela máquina em vez do locatário — o mesmo aluguel
 // aparece nas duas listas (uma para cada lado da relação), nunca uma tabela própria de "pedidos".
 export function listBookingsForOwner(ownerId: string) {
   return prisma.booking.findMany({
@@ -267,8 +252,8 @@ export async function getBookingForOwner(ownerId: string, bookingId: string) {
       destinationProperty: true,
       renter: { select: { id: true, name: true, email: true } },
       statusHistory: { orderBy: { createdAt: "asc" } },
-      // Só a própria avaliação do proprietário para esta reserva (Context.md §9.5: uma avaliação
-      // por participante e por reserva) — usada para decidir entre mostrar o formulário ou o
+      // Só a própria avaliação do proprietário para este aluguel (Context.md §9.5: uma avaliação
+      // por participante e por aluguel) — usada para decidir entre mostrar o formulário ou o
       // resultado já enviado.
       reviews: { where: { authorId: ownerId } },
     },
@@ -277,51 +262,17 @@ export async function getBookingForOwner(ownerId: string, bookingId: string) {
   return booking;
 }
 
-export type BookingDecisionResult = "APPROVED" | "REJECTED" | "NOT_FOUND" | "NOT_PENDING";
-
-// Única transição possível pelo proprietário nesta etapa da Fase 4 (Context.md §8.8/§8.9):
-// AWAITING_APPROVAL → APPROVED/REJECTED, sempre com histórico. Reserva instantânea nunca passa
-// por aqui (nasce direto em APPROVED), então não há "reaprovar" uma reserva já decidida.
-export async function decideBookingRequest(
-  ownerId: string,
-  bookingId: string,
-  decision: "APPROVED" | "REJECTED",
-  reason?: string,
-): Promise<BookingDecisionResult> {
-  const booking = await prisma.booking.findUnique({
-    where: { id: bookingId },
-    include: { machine: true },
-  });
-  if (!booking || booking.machine.ownerId !== ownerId) return "NOT_FOUND";
-  if (booking.status !== "AWAITING_APPROVAL") return "NOT_PENDING";
-
-  await prisma.$transaction(async (tx) => {
-    await tx.booking.update({ where: { id: bookingId }, data: { status: decision } });
-    await tx.bookingStatusHistory.create({
-      data: {
-        bookingId,
-        previousStatus: booking.status,
-        nextStatus: decision,
-        changedById: ownerId,
-        notes:
-          reason?.trim() ||
-          (decision === "APPROVED" ? "Aprovada pelo proprietário." : "Recusada pelo proprietário."),
-      },
-    });
-  });
-
-  return decision;
-}
-
 export type CancelBookingResult =
   | { status: "CANCELLED"; refund: ReturnType<typeof resolveCancellationRefund> }
   | "NOT_FOUND"
   | "NOT_CANCELLABLE";
 
-// Ponto único para cancelar uma reserva, tanto pelo locatário quanto pelo proprietário (Context.md
-// §9.4) — o papel de quem está cancelando é descoberto a partir da própria reserva (nunca recebido
+// Ponto único para cancelar um aluguel, tanto pelo locatário quanto pelo proprietário (Context.md
+// §9.4) — o papel de quem está cancelando é descoberto a partir do próprio aluguel (nunca recebido
 // do cliente), e cada papel tem sua janela permitida e política de estorno (isBookingCancellableBy*
-// / resolveCancellationRefund, ambas em lib/cancellation.ts, nunca percentuais soltos aqui).
+// / resolveCancellationRefund, ambas em lib/cancellation.ts, nunca percentuais soltos aqui). Não há
+// mais uma decisão de aprovar/recusar separada do cancelamento: o proprietário pode cancelar a
+// qualquer momento antes do pagamento, sem precisar de um motivo formal de recusa.
 export async function cancelBooking(userId: string, bookingId: string): Promise<CancelBookingResult> {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
@@ -384,7 +335,7 @@ export type AdvanceFulfillmentResult =
 // Ponto único para as transições pós-pagamento (Context.md §8.9): agendamento/transporte/entrega,
 // uso e devolução. getNextFulfillmentAction (lib/fulfillment.ts) é a única fonte de verdade sobre
 // qual é a próxima ação válida e de quem — aqui só verificamos que o usuário logado é de fato esse
-// responsável (proprietário da máquina ou locatário da reserva) antes de aplicar a transição.
+// responsável (proprietário da máquina ou locatário do aluguel) antes de aplicar a transição.
 export async function advanceBookingFulfillment(
   userId: string,
   bookingId: string,

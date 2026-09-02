@@ -44,10 +44,10 @@ export function BookingListCard({ booking }: { booking: BookingWithMachine }) {
         </p>
         <p className="text-primary-700 text-sm font-medium">{formatBRL(booking.totalValueInCents)}</p>
         <Link
-          href={`/reservas/${booking.id}`}
+          href={`/alugueis/${booking.id}`}
           className="mt-1 text-sm font-medium text-neutral-700 underline hover:text-neutral-900"
         >
-          Ver detalhes da reserva
+          Ver detalhes do aluguel
         </Link>
       </div>
     </Card>

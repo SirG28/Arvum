@@ -17,16 +17,16 @@ function formatDateTime(date: Date) {
   return date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
-// Lista de andamento compartilhada por /reservas/[id] (locatário) e /reservas/recebidas/[id]
+// Lista de andamento compartilhada por /alugueis/[id] (locatário) e /alugueis/recebidos/[id]
 // (proprietário) — os dois mostravam exatamente o mesmo `<ol>`. Extraído aqui também para
 // carregar a lógica de destaque (MOTION.md, Etapa 5): se esta página acabou de ser recarregada
 // por causa de uma ação do próprio usuário (ver timeline-highlight.ts), a última entrada — sempre
 // a mais recente, `statusHistory` vem ordenado por `createdAt asc` — ganha um breve destaque, em
-// vez de animar em toda visita à reserva (o que seria decorativo, não funcional).
+// vez de animar em toda visita ao aluguel (o que seria decorativo, não funcional).
 export function BookingStatusTimeline({ bookingId, statusHistory }: BookingStatusTimelineProps) {
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
-  // `router.refresh()` (usado por todas as ações de reserva) não desmonta este componente — só
+  // `router.refresh()` (usado por todas as ações de aluguel) não desmonta este componente — só
   // atualiza `statusHistory` com props novas. Por isso a dependência é o tamanho da lista, não
   // "só na montagem": é o crescimento da lista que sinaliza uma nova transição para conferir,
   // tanto na primeira renderização quanto depois de um refresh.

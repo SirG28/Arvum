@@ -19,7 +19,7 @@ function formatDate(date: Date) {
 }
 
 // Registra a intenção (Context.md §19 — LGPD) sem apagar nada automaticamente: parte do histórico
-// financeiro/de reservas pode precisar ser retida por obrigação legal (§9.1), então a exclusão de
+// financeiro/de aluguéis pode precisar ser retida por obrigação legal (§9.1), então a exclusão de
 // fato depende de triagem manual, ainda sem painel administrativo para isso (Fase 6).
 export function DataDeletionRequestButton({ requestedAt }: DataDeletionRequestButtonProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -57,7 +57,7 @@ export function DataDeletionRequestButton({ requestedAt }: DataDeletionRequestBu
       <ConfirmationDialog
         open={confirmOpen}
         title="Solicitar exclusão dos seus dados?"
-        description="Vamos registrar seu pedido e analisar o que pode ser removido — parte do histórico financeiro e de reservas pode precisar ser mantida por obrigação legal. Isso não desativa sua conta automaticamente."
+        description="Vamos registrar seu pedido e analisar o que pode ser removido — parte do histórico financeiro e de aluguéis pode precisar ser mantida por obrigação legal. Isso não desativa sua conta automaticamente."
         confirmLabel="Sim, solicitar exclusão"
         cancelLabel="Voltar"
         tone="danger"

@@ -9,17 +9,15 @@ import { USER_ICON_PATHS } from "@/components/ui/UserIcon";
 // através da fronteira RSC, não dados simples como este array — por isso um Server Component
 // (app/page.tsx) não conseguiria importar PROFILE_ITEMS diretamente de ProfileMenu.tsx.
 //
-// "Solicitações recebidas" fica fora desta lista de propósito: por ser urgente (aprovar/recusar
-// tem prazo real), ganhou atalho fixo no cabeçalho (OwnerRequestsIndicator.tsx), no mesmo nível de
-// "Minhas reservas" (ReservationsIndicator.tsx) — nenhuma das duas jamais esteve aqui dentro,
-// então não é uma remoção nova, é manter a mesma regra: o que é urgente vive no cabeçalho, o resto
-// vive neste menu.
+// "Meus aluguéis" fica fora desta lista de propósito: ganhou atalho fixo no cabeçalho
+// (RentalsIndicator.tsx), que já mostra a contagem de aluguéis em aberto — não é uma remoção
+// nova, é manter a mesma regra: o que é urgente vive no cabeçalho, o resto vive neste menu.
 //
-// "Minhas máquinas" também fica fora desta lista de propósito (diferente de "Solicitações
-// recebidas", isso É uma remoção — havia um item aqui antes): agora centralizada dentro de
-// "Painel do proprietário" (/painel-do-proprietario), que reúne o que é exclusivo de quem anuncia
-// máquinas (atalho para /maquinas, solicitações recebidas, Plano Premium) num único lugar, em vez
-// de espalhar pelo menu genérico que mistura papéis de locatário e proprietário.
+// "Minhas máquinas" também fica fora desta lista de propósito (isso É uma remoção — havia um item
+// aqui antes): agora centralizada dentro de "Painel do proprietário" (/painel-do-proprietario),
+// que reúne o que é exclusivo de quem anuncia máquinas (atalho para /maquinas, aluguéis recebidos,
+// Plano Premium) num único lugar, em vez de espalhar pelo menu genérico que mistura papéis de
+// locatário e proprietário.
 export const PROFILE_ITEMS = [
   {
     href: "/perfil",
@@ -40,9 +38,9 @@ export const PROFILE_ITEMS = [
   {
     href: "/painel-do-proprietario",
     label: "Painel do proprietário",
-    // Mesmo traçado do ícone usado em OwnerRequestsIndicator.tsx (documento com check) — a
+    // Mesmo traçado do ícone usado no atalho de "Aluguéis recebidos" (documento com check) — a
     // Arvum não tem um ícone próprio de "painel", e reaproveitar um traçado já familiar de
-    // "solicitações/gestão" evita introduzir um terceiro desenho para o mesmo tipo de conceito.
+    // "gestão" evita introduzir um terceiro desenho para o mesmo tipo de conceito.
     icon: (
       <>
         <rect x="4" y="6" width="16" height="14" rx="2" />

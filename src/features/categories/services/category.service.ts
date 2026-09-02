@@ -8,7 +8,7 @@ export async function listActiveCategories() {
 }
 
 // "Mais procuradas" para a home: sem uma métrica de busca dedicada, aproxima demanda por
-// reservas feitas (peso maior) e, como desempate para categorias ainda sem histórico de reserva,
+// aluguéis feitos (peso maior) e, como desempate para categorias ainda sem histórico de aluguel,
 // pelo número de máquinas ativas anunciadas (proxy de oferta/procura).
 export async function listTopCategories(limit: number) {
   const [categories, machines, bookings] = await Promise.all([

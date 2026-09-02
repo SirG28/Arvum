@@ -54,9 +54,6 @@ enum MachineAvailabilityType {
 
 enum BookingStatus {
   DRAFT
-  AWAITING_APPROVAL
-  APPROVED
-  REJECTED
   AWAITING_PAYMENT
   PAYMENT_CONFIRMED
   TRANSPORT_SCHEDULED
@@ -217,7 +214,6 @@ model Machine {
   depositInCents            Int?
   minimumRentalDays         Int              @default(1)
   maximumRentalDays         Int?
-  instantBooking            Boolean          @default(false)
   deliveryRadiusKm          Float?
   deliveryPricePerKmInCents Int?
   deliveryBaseFeeInCents    Int?

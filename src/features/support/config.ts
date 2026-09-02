@@ -1,4 +1,4 @@
-// Arvum Suporte de Operação (Context.md §8.21/§9.7): serviço opcional contratado por reserva,
+// Arvum Suporte de Operação (Context.md §8.21/§9.7): serviço opcional contratado por aluguel,
 // preço fixo centralizado aqui — mesmo padrão de src/features/logistics/config.ts. Nunca espalhar
 // esse valor pelos componentes de interface.
 export const OPERATION_SUPPORT_PRICE_IN_CENTS = 4990;

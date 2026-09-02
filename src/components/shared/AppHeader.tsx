@@ -5,8 +5,7 @@ import { Logo } from "./Logo";
 import { AppNav } from "./AppNav";
 import { MobileNavDrawer } from "./MobileNavDrawer";
 import { ProfileMenu } from "./ProfileMenu";
-import { ReservationsIndicator } from "./ReservationsIndicator";
-import { OwnerRequestsIndicator } from "./OwnerRequestsIndicator";
+import { RentalsIndicator } from "./RentalsIndicator";
 
 export function AppHeader() {
   return (
@@ -19,8 +18,7 @@ export function AppHeader() {
           <AppNav />
         </div>
         <div className="flex items-center gap-2">
-          <ReservationsIndicator />
-          <OwnerRequestsIndicator />
+          <RentalsIndicator />
           <MobileNavDrawer />
           <ProfileMenu />
         </div>

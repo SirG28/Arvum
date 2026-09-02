@@ -3,19 +3,19 @@ export const metadata = { title: "Política de Privacidade" };
 const SECTIONS = [
   {
     title: "1. Quais dados coletamos",
-    body: "Nome, e-mail, telefone, CPF/CNPJ (quando informado), foto de perfil (opcional), endereços de propriedades cadastradas, dados de máquinas anunciadas, histórico de reservas, mensagens trocadas em uma reserva e avaliações. Não coletamos dados de cartão de crédito — o pagamento nesta versão é inteiramente simulado.",
+    body: "Nome, e-mail, telefone, CPF/CNPJ (quando informado), foto de perfil (opcional), endereços de propriedades cadastradas, dados de máquinas anunciadas, histórico de aluguéis, mensagens trocadas em um aluguel e avaliações. Não coletamos dados de cartão de crédito — o pagamento nesta versão é inteiramente simulado.",
   },
   {
     title: "2. Para que usamos esses dados",
-    body: "Para viabilizar o cadastro e o login, exibir anúncios e calcular distância estimada até cada máquina, processar solicitações de reserva, calcular o valor da locação e da logística, permitir a comunicação entre locatário e proprietário durante uma reserva, e possibilitar avaliações após a conclusão. Nunca vendemos dados pessoais a terceiros.",
+    body: "Para viabilizar o cadastro e o login, exibir anúncios e calcular distância estimada até cada máquina, processar solicitações de aluguel, calcular o valor da locação e da logística, permitir a comunicação entre locatário e proprietário durante um aluguel, e possibilitar avaliações após a conclusão. Nunca vendemos dados pessoais a terceiros.",
   },
   {
     title: "3. Com quem compartilhamos",
-    body: "O endereço exato de uma propriedade só é revelado ao locatário depois que a reserva é confirmada — antes disso, é exibida apenas a localização aproximada (cidade/UF e distância estimada). Nome e contato do locatário e do proprietário ficam visíveis um ao outro somente após uma solicitação de reserva ser criada, para viabilizar a comunicação necessária à locação.",
+    body: "O endereço exato de uma propriedade só é revelado ao locatário depois que o pagamento é confirmado — antes disso, é exibida apenas a localização aproximada (cidade/UF e distância estimada). Nome e contato do locatário e do proprietário ficam visíveis um ao outro somente após uma solicitação de aluguel ser criada, para viabilizar a comunicação necessária à locação.",
   },
   {
     title: "4. Por quanto tempo guardamos",
-    body: "Dados de reservas concluídas e pagamentos são mantidos mesmo após a desativação de uma conta, para cumprir eventual obrigação de retenção fiscal e financeira. Ao solicitar a exclusão de dados (Configurações > Privacidade), avaliamos o que pode ser removido de fato e o que precisa ser retido por obrigação legal — nesse caso, os dados retidos são usados apenas para essa finalidade.",
+    body: "Dados de aluguéis concluídos e pagamentos são mantidos mesmo após a desativação de uma conta, para cumprir eventual obrigação de retenção fiscal e financeira. Ao solicitar a exclusão de dados (Configurações > Privacidade), avaliamos o que pode ser removido de fato e o que precisa ser retido por obrigação legal — nesse caso, os dados retidos são usados apenas para essa finalidade.",
   },
   {
     title: "5. Seus direitos (LGPD)",

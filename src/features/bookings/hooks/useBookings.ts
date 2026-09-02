@@ -29,18 +29,16 @@ export function useCreateBookingRequest(machineId: string) {
       return data;
     },
     onSuccess: () => {
-      // Nova reserva sempre nasce em status "aberto" (AWAITING_APPROVAL/APPROVED) — os indicadores
-      // do header precisam refletir isso sem esperar o usuário recarregar a página. Quando nasce
-      // AWAITING_APPROVAL, o proprietário também ganha uma nova pendência.
+      // Todo aluguel nasce em AWAITING_PAYMENT, já ocupando o calendário — o indicador do header
+      // precisa refletir isso sem esperar o usuário recarregar a página.
       queryClient.invalidateQueries({ queryKey: ["bookings", "open-count"] });
-      queryClient.invalidateQueries({ queryKey: ["bookings", "owner-pending-count"] });
-      showToast("success", "Solicitação de reserva enviada com sucesso!");
+      showToast("success", "Aluguel solicitado com sucesso!");
     },
   });
 }
 
-// Prévia de valores (sem criar reserva) — chamada automaticamente conforme o locatário preenche
-// o formulário, para mostrar locação + logística + total antes de "Solicitar reserva"
+// Prévia de valores (sem criar o aluguel) — chamada automaticamente conforme o locatário preenche
+// o formulário, para mostrar locação + logística + total antes de "Solicitar aluguel"
 // (Context.md §33: tudo que o usuário precisa saber deve ficar claro antes de confirmar).
 export function useBookingQuote(machineId: string) {
   return useMutation({
@@ -69,19 +67,18 @@ export function useCancelBooking(bookingId: string) {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["bookings", "open-count"] });
-      queryClient.invalidateQueries({ queryKey: ["bookings", "owner-pending-count"] });
       showToast(
         "success",
         data.refund === "FULL"
-          ? "Reserva cancelada e pagamento estornado integralmente (simulado)."
-          : "Reserva cancelada com sucesso.",
+          ? "Aluguel cancelado e pagamento estornado integralmente (simulado)."
+          : "Aluguel cancelado com sucesso.",
       );
     },
   });
 }
 
 // Ações de acompanhamento pós-pagamento (Context.md §8.9) — mesmo endpoint independente da ação,
-// já que advanceBookingFulfillment decide o que é válido a partir do status atual da reserva.
+// já que advanceBookingFulfillment decide o que é válido a partir do status atual do aluguel.
 export function useAdvanceFulfillment(bookingId: string) {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -97,35 +94,14 @@ export function useAdvanceFulfillment(bookingId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookings", "open-count"] });
-      showToast("success", "Andamento da reserva atualizado.");
+      showToast("success", "Andamento do aluguel atualizado.");
     },
   });
 }
 
-export function useDecideBooking(bookingId: string) {
-  const queryClient = useQueryClient();
-  const { showToast } = useToast();
-  return useMutation({
-    mutationFn: async (input: { decision: "APPROVED" | "REJECTED"; reason?: string }) => {
-      const response = await fetch(`/api/v1/bookings/${bookingId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      });
-      const { data } = (await parseErrorOrThrow(response)) as { data: { status: string } };
-      return data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["bookings", "open-count"] });
-      queryClient.invalidateQueries({ queryKey: ["bookings", "owner-pending-count"] });
-      showToast("success", data.status === "APPROVED" ? "Solicitação aprovada." : "Solicitação recusada.");
-    },
-  });
-}
-
-// Só a contagem (não a lista completa) — usada pelo indicador de "Minhas reservas" no header,
-// que precisa ficar disponível em toda página logada. A lista completa é sempre renderizada no
-// servidor por /reservas, sem passar por aqui.
+// Só a contagem (não a lista completa) — usada pelo indicador de "Meus aluguéis" no header, que
+// precisa ficar disponível em toda página logada. A lista completa é sempre renderizada no
+// servidor por /alugueis, sem passar por aqui.
 export function useOpenBookingsCount(enabled: boolean) {
   return useQuery({
     queryKey: ["bookings", "open-count"],
@@ -133,24 +109,6 @@ export function useOpenBookingsCount(enabled: boolean) {
       const response = await fetch("/api/v1/bookings/open-count");
       const { data } = (await parseErrorOrThrow(response)) as { data: { count: number } };
       return data.count;
-    },
-    enabled,
-  });
-}
-
-// Equivalente do lado do proprietário: solicitações aguardando decisão — mesmo padrão de
-// useOpenBookingsCount, para o indicador de "Solicitações recebidas" no header. hasMachines viaja
-// junto (mesma resposta) porque é o que decide se o indicador aparece — quem nunca anunciou nada
-// não tem por que ver esse atalho.
-export function useOwnerPendingCount(enabled: boolean) {
-  return useQuery({
-    queryKey: ["bookings", "owner-pending-count"],
-    queryFn: async () => {
-      const response = await fetch("/api/v1/bookings/owner-pending-count");
-      const { data } = (await parseErrorOrThrow(response)) as {
-        data: { count: number; hasMachines: boolean };
-      };
-      return data;
     },
     enabled,
   });

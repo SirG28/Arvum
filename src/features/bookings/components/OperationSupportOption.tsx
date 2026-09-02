@@ -11,7 +11,7 @@ interface OperationSupportOptionProps {
   registration: UseFormRegisterReturn;
 }
 
-// Add-on opcional por reserva (Context.md §8.21/§9.7) — nunca uma assinatura, e o texto nunca
+// Add-on opcional por aluguel (Context.md §8.21/§9.7) — nunca uma assinatura, e o texto nunca
 // sugere cobertura financeira contra danos (ver OPERATION_SUPPORT_INFO.disclaimer).
 export function OperationSupportOption({ registration }: OperationSupportOptionProps) {
   return (

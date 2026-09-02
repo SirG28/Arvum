@@ -24,21 +24,11 @@ export const bookingRequestSchema = z
     path: ["endDate"],
   })
   .refine((data) => data.startDate >= startOfToday(), {
-    message: "Não é possível reservar datas passadas.",
+    message: "Não é possível alugar datas passadas.",
     path: ["startDate"],
   });
 
 export type BookingRequestInput = z.infer<typeof bookingRequestSchema>;
-
-export const bookingDecisionSchema = z.object({
-  decision: z.enum(["APPROVED", "REJECTED"], {
-    required_error: "Selecione aprovar ou recusar.",
-    invalid_type_error: "Selecione aprovar ou recusar.",
-  }),
-  reason: z.string().trim().max(500, "Motivo muito longo.").optional(),
-});
-
-export type BookingDecisionInput = z.infer<typeof bookingDecisionSchema>;
 
 export const fulfillmentActionSchema = z.object({
   action: z.enum(

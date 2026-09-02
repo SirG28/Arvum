@@ -31,7 +31,7 @@ export function HomeHero({ userName, pendingCount }: HomeHeroProps) {
           </h1>
           <p className="max-w-xl text-base text-neutral-500">
             {isMember
-              ? "Bem-vindo(a) de volta à Arvum. Encontre a máquina que você precisa ou acompanhe suas reservas."
+              ? "Bem-vindo(a) de volta à Arvum. Encontre a máquina que você precisa ou acompanhe seus aluguéis."
               : "A Arvum conecta produtores rurais que precisam de máquinas agrícolas a proprietários com equipamentos disponíveis, com logística integrada de ponta a ponta."}
           </p>
         </div>
@@ -47,9 +47,9 @@ export function HomeHero({ userName, pendingCount }: HomeHeroProps) {
           </form>
 
           {isMember && pendingCount > 0 ? (
-            <Link href="/reservas">
+            <Link href="/alugueis">
               <Button variant="secondary">
-                Ver {pendingCount === 1 ? "pendência" : "pendências"} de reserva
+                Ver {pendingCount === 1 ? "aluguel em andamento" : "aluguéis em andamento"}
               </Button>
             </Link>
           ) : (

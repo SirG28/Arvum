@@ -7,7 +7,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-// Só participantes da reserva podem avaliar, e só depois de concluída (createReview verifica os
+// Só participantes do aluguel podem avaliar, e só depois de concluído (createReview verifica os
 // dois no servidor, nunca confiando em um papel enviado pelo cliente).
 export async function POST(request: Request, { params }: RouteParams) {
   const session = await auth();
@@ -25,17 +25,17 @@ export async function POST(request: Request, { params }: RouteParams) {
   const result = await createReview(session.user.id, id, parsed.data);
 
   if (result === "BOOKING_NOT_FOUND") {
-    return apiError("BOOKING_NOT_FOUND", "Reserva não encontrada.", 404);
+    return apiError("BOOKING_NOT_FOUND", "Aluguel não encontrado.", 404);
   }
   if (result === "BOOKING_NOT_COMPLETED") {
     return apiError(
       "BOOKING_NOT_COMPLETED",
-      "Só é possível avaliar depois que a reserva for concluída.",
+      "Só é possível avaliar depois que o aluguel for concluído.",
       409,
     );
   }
   if (result === "ALREADY_REVIEWED") {
-    return apiError("ALREADY_REVIEWED", "Você já avaliou esta reserva.", 409);
+    return apiError("ALREADY_REVIEWED", "Você já avaliou este aluguel.", 409);
   }
 
   return apiSuccess(result, { status: 201 });

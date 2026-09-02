@@ -58,7 +58,7 @@ export default async function PrivacySettingsPage() {
       <Card>
         <h2 className="text-sm font-semibold text-neutral-900">Desativar conta</h2>
         <p className="mt-1 text-sm text-neutral-500">
-          Sua conta fica inacessível até ser reativada; o histórico de reservas e avaliações é
+          Sua conta fica inacessível até ser reativada; o histórico de aluguéis e avaliações é
           mantido.
         </p>
         <div className="mt-4">

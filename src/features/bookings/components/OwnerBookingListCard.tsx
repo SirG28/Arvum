@@ -17,10 +17,10 @@ function formatDate(date: Date) {
   return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-// Espelha BookingListCard (visão do locatário), mas mostra quem solicitou em vez de aparecer só a
-// máquina, e aponta para /reservas/recebidas/[id] em vez de /reservas/[id] — telas de detalhe
-// distintas porque as ações disponíveis (aprovar/recusar vs. cancelar) dependem de qual lado da
-// reserva está logado.
+// Espelha BookingListCard (visão do locatário), mas mostra quem alugou em vez de aparecer só a
+// máquina, e aponta para /alugueis/recebidos/[id] em vez de /alugueis/[id] — telas de detalhe
+// distintas porque as ações disponíveis (cancelar como proprietário vs. como locatário) dependem
+// de qual lado do aluguel está logado.
 export function OwnerBookingListCard({ booking }: { booking: BookingWithDetails }) {
   const image = booking.machine.images[0];
 
@@ -46,16 +46,16 @@ export function OwnerBookingListCard({ booking }: { booking: BookingWithDetails 
             {BOOKING_STATUS_LABELS[booking.status]}
           </Badge>
         </div>
-        <p className="text-sm text-neutral-500">Solicitado por {booking.renter.name}</p>
+        <p className="text-sm text-neutral-500">Alugado por {booking.renter.name}</p>
         <p className="text-sm text-neutral-500">
           {formatDate(booking.startDate)} — {formatDate(booking.endDate)}
         </p>
         <p className="text-primary-700 text-sm font-medium">{formatBRL(booking.totalValueInCents)}</p>
         <Link
-          href={`/reservas/recebidas/${booking.id}`}
+          href={`/alugueis/recebidos/${booking.id}`}
           className="mt-1 text-sm font-medium text-neutral-700 underline hover:text-neutral-900"
         >
-          Ver detalhes da solicitação
+          Ver detalhes do aluguel
         </Link>
       </div>
     </Card>

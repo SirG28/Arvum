@@ -68,7 +68,7 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
   if (result === "HAS_ACTIVE_BOOKINGS") {
     return apiError(
       "MACHINE_HAS_ACTIVE_BOOKINGS",
-      "Não é possível remover: existem reservas ativas para esta máquina.",
+      "Não é possível remover: existem aluguéis ativos para esta máquina.",
       409,
     );
   }

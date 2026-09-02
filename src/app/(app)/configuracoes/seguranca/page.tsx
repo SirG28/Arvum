@@ -30,7 +30,7 @@ export default async function SecuritySettingsPage() {
       <Card>
         <h2 className="text-sm font-semibold text-neutral-900">E-mail</h2>
         <p className="mt-1 text-sm text-neutral-500">
-          Usado para entrar na Arvum e receber notificações sobre suas reservas e anúncios.
+          Usado para entrar na Arvum e receber notificações sobre seus aluguéis e anúncios.
         </p>
         <div className="mt-4">
           <ChangeEmailSection email={user.email} pendingEmail={user.pendingEmail} />

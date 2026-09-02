@@ -1,5 +1,6 @@
-import type { Machine, MachineStatus } from "@prisma/client";
+import type { Machine, MachineStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { BOOKING_HOLD_TTL_MINUTES } from "@/features/bookings/lib/hold";
 import { getOwnedProperty } from "@/features/properties/services/property.service";
 import { mockGeocodingProvider } from "@/lib/geo/geocoding";
 import { calculateDistanceKm, type GeoPoint } from "@/lib/geo/distance";
@@ -10,13 +11,10 @@ import { canTransitionMachineStatus } from "../lib/machine-status";
 import { toMachinePersistedData, type MachineFormOutput } from "../schemas/machine.schema";
 import { sortByPremiumFirst } from "../lib/premium-boost";
 
-// Reservas nestes status ainda impedem a remoção definitiva da máquina (§9.2) e contam como
-// ocupação real do calendário (bookings.service.ts reusa esta lista para checar sobreposição).
+// Aluguéis nestes status ainda impedem a remoção definitiva da máquina (§9.2) e contam como
+// ocupação real do calendário (booking.service.ts reusa esta lista para checar sobreposição).
 // CANCELLED e COMPLETED são estados finais e não bloqueiam.
 export const ACTIVE_BOOKING_STATUSES = [
-  "DRAFT",
-  "AWAITING_APPROVAL",
-  "APPROVED",
   "AWAITING_PAYMENT",
   "PAYMENT_CONFIRMED",
   "TRANSPORT_SCHEDULED",
@@ -25,6 +23,32 @@ export const ACTIVE_BOOKING_STATUSES = [
   "IN_USE",
   "AWAITING_RETURN",
 ] as const;
+
+// Mesma lista acima, exceto AWAITING_PAYMENT: um pedido nasce bloqueando a agenda para evitar dois
+// locatários pagando pelo mesmo período, mas esse bloqueio não pode durar para sempre se ninguém
+// pagar — por isso só conta como ativo dentro do prazo de BOOKING_HOLD_TTL_MINUTES (hold.ts). Sem
+// job em background: o corte é recalculado a cada consulta, nunca escrito no banco por um processo
+// separado.
+export function activeBookingStatusFilter(now: Date = new Date()): Prisma.BookingWhereInput {
+  const cutoff = new Date(now.getTime() - BOOKING_HOLD_TTL_MINUTES * 60_000);
+  return {
+    OR: [
+      {
+        status: {
+          in: [
+            "PAYMENT_CONFIRMED",
+            "TRANSPORT_SCHEDULED",
+            "IN_TRANSIT",
+            "DELIVERED",
+            "IN_USE",
+            "AWAITING_RETURN",
+          ],
+        },
+      },
+      { status: "AWAITING_PAYMENT", createdAt: { gte: cutoff } },
+    ],
+  };
+}
 
 export async function listMachinesByOwner(ownerId: string) {
   return prisma.machine.findMany({
@@ -38,12 +62,11 @@ export async function listMachinesByOwner(ownerId: string) {
   });
 }
 
-// Só para decidir se o indicador de "Solicitações recebidas" aparece no header (OwnerRequestsIndicator.tsx)
-// — mostrar esse atalho pra quem nunca anunciou nada é ruído permanente sem nenhuma utilidade,
-// já que essa conta nunca vai ter uma solicitação pra aprovar. Máquina em rascunho não conta: ainda
-// não foi publicada (nunca apareceu no catálogo), então não existe locatário que possa ter
-// solicitado nada para ela. findFirst (não count): só existência importa aqui, sem motivo pra
-// contar todas as linhas.
+// Só para decidir se o convite pra virar proprietário aparece no detalhe de um aluguel concluído
+// (alugueis/[id]/page.tsx) — mostrar esse convite pra quem já anuncia máquinas é ruído permanente
+// sem nenhuma utilidade. Máquina em rascunho não conta: ainda não foi publicada (nunca apareceu no
+// catálogo), então não existe locatário que possa ter alugado ela. findFirst (não count): só
+// existência importa aqui, sem motivo pra contar todas as linhas.
 export function hasOwnerMachines(ownerId: string) {
   return prisma.machine
     .findFirst({
@@ -157,7 +180,7 @@ export async function softDeleteMachine(
   if (!machine) return null;
 
   const activeBookings = await prisma.booking.count({
-    where: { machineId, status: { in: [...ACTIVE_BOOKING_STATUSES] } },
+    where: { machineId, ...activeBookingStatusFilter() },
   });
   if (activeBookings > 0) return "HAS_ACTIVE_BOOKINGS";
 
@@ -172,8 +195,8 @@ interface CatalogFilters {
   categorySlug?: string;
   search?: string;
   priceMaxInCents?: number;
-  // Período desejado pelo locatário: exclui máquinas com bloqueio manual sobreposto. Reservas
-  // (Fase 4) ainda não existem, então não há confirmação a considerar aqui além dos bloqueios.
+  // Período desejado pelo locatário: exclui máquinas com bloqueio manual sobreposto ou com um
+  // aluguel ativo sobreposto (activeBookingStatusFilter, abaixo).
   availableFrom?: Date;
   availableTo?: Date;
   // Localização informada pelo locatário ("onde será utilizada") — usada para calcular a
@@ -243,7 +266,7 @@ function buildActiveMachinesWhere(filters: CatalogFilters) {
           },
           bookings: {
             none: {
-              status: { in: [...ACTIVE_BOOKING_STATUSES] },
+              ...activeBookingStatusFilter(),
               startDate: { lt: filters.availableTo },
               endDate: { gt: filters.availableFrom },
             },

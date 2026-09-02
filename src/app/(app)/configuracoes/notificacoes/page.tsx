@@ -21,8 +21,7 @@ export default async function NotificationSettingsPage() {
       <Card>
         <h1 className="text-lg font-semibold text-neutral-900">Notificações</h1>
         <p className="mt-1 text-sm text-neutral-500">
-          Escolha como quer ser avisado sobre solicitações, pagamentos e o andamento das suas
-          reservas.
+          Escolha como quer ser avisado sobre pagamentos e o andamento dos seus aluguéis.
         </p>
         <div className="mt-6">
           <NotificationPreferencesForm notifyByEmail={settings.notifyByEmail} />

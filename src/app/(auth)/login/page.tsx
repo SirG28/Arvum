@@ -10,7 +10,7 @@ export default function LoginPage() {
     <Card className="p-6 sm:p-8">
       <h1 className="text-lg font-semibold text-neutral-900">Entrar na sua conta</h1>
       <p className="mt-1 text-sm text-neutral-500">
-        Acesse para reservar ou anunciar máquinas agrícolas.
+        Acesse para alugar ou anunciar máquinas agrícolas.
       </p>
       <div className="mt-6">
         <Suspense>

@@ -8,10 +8,7 @@ import { getCurrentUser } from "@/lib/session";
 import { listTopCategories } from "@/features/categories/services/category.service";
 import { listActiveMachines } from "@/features/machines/services/machine.service";
 import { listFavoriteMachineIds } from "@/features/favorites/services/favorite.service";
-import {
-  countOpenBookingsByRenter,
-  countPendingBookingsForOwner,
-} from "@/features/bookings/services/booking.service";
+import { countOpenBookingsByRenter } from "@/features/bookings/services/booking.service";
 import { HomeHero } from "@/features/home/components/HomeHero";
 import { HighlightBand, type HomeStats } from "@/features/home/components/HighlightBand";
 import { FeaturedCategories } from "@/features/home/components/FeaturedCategories";
@@ -28,7 +25,7 @@ const DASHBOARD_LINKS = [
   },
   {
     title: "Painel do proprietário",
-    description: "Máquinas, solicitações recebidas e o Plano Premium, tudo num só lugar.",
+    description: "Máquinas, aluguéis recebidos e o Plano Premium, tudo num só lugar.",
     href: "/painel-do-proprietario",
     icon: PROFILE_ITEMS.find((item) => item.href === "/painel-do-proprietario")!.icon,
   },
@@ -54,14 +51,12 @@ export default async function HomePage() {
     listActiveMachines({}, { pageSize: 6 }),
     user ? listFavoriteMachineIds(user.id) : Promise.resolve(new Set<string>()),
     user
-      ? Promise.all([countOpenBookingsByRenter(user.id), countPendingBookingsForOwner(user.id)]).then(
-          ([openBookings, pendingRequests]): HomeStats => ({ openBookings, pendingRequests }),
-        )
+      ? countOpenBookingsByRenter(user.id).then((openBookings): HomeStats => ({ openBookings }))
       : Promise.resolve(null),
   ]);
 
   const featuredMachines = activeMachinesPage.machines;
-  const pendingCount = stats ? stats.openBookings + stats.pendingRequests : 0;
+  const pendingCount = stats ? stats.openBookings : 0;
 
   return (
     <div className="flex min-h-screen flex-col bg-neutral-50">

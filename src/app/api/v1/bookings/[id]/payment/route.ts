@@ -7,7 +7,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-// Só o locatário da própria reserva pode pagá-la — verificado no servidor
+// Só o locatário do próprio aluguel pode pagá-lo — verificado no servidor
 // (confirmSimulatedPayment compara renterId com a sessão), nunca confiando no id vindo do cliente.
 export async function POST(request: Request, { params }: RouteParams) {
   const session = await auth();
@@ -25,12 +25,19 @@ export async function POST(request: Request, { params }: RouteParams) {
   const result = await confirmSimulatedPayment(session.user.id, id, parsed.data.method);
 
   if (result === "NOT_FOUND") {
-    return apiError("BOOKING_NOT_FOUND", "Reserva não encontrada.", 404);
+    return apiError("BOOKING_NOT_FOUND", "Aluguel não encontrado.", 404);
   }
-  if (result === "NOT_APPROVED") {
+  if (result === "NOT_AWAITING_PAYMENT") {
     return apiError(
-      "BOOKING_NOT_APPROVED",
-      "Esta reserva precisa estar aprovada pelo proprietário antes do pagamento.",
+      "BOOKING_NOT_AWAITING_PAYMENT",
+      "Este aluguel não está mais aguardando pagamento.",
+      409,
+    );
+  }
+  if (result === "EXPIRED") {
+    return apiError(
+      "BOOKING_HOLD_EXPIRED",
+      "O prazo para pagamento expirou. Solicite o aluguel novamente.",
       409,
     );
   }

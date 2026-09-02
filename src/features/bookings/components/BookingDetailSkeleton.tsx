@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Card } from "@/components/ui/Card";
 
-// Compartilhado por /reservas/[id]/loading.tsx (locatário) e /reservas/recebidas/[id]/loading.tsx
+// Compartilhado por /alugueis/[id]/loading.tsx (locatário) e /alugueis/recebidos/[id]/loading.tsx
 // (proprietário) — os dois detalhes seguem a mesma estrutura de cards (imagem+dados, valores,
 // andamento); a diferença de conteúdo entre os dois papéis não importa para um placeholder.
 export function BookingDetailSkeleton({ label }: { label: string }) {

@@ -13,7 +13,7 @@ export default auth((req) => {
     // o perfil público de outro usuário, visível sem estar logado, como o catálogo.
     req.nextUrl.pathname === "/perfil" ||
     req.nextUrl.pathname.startsWith("/favoritos") ||
-    req.nextUrl.pathname.startsWith("/reservas") ||
+    req.nextUrl.pathname.startsWith("/alugueis") ||
     req.nextUrl.pathname.startsWith("/configuracoes") ||
     // Só barra anônimo aqui — o papel (ADMIN) só é conferido de verdade na própria página
     // (getCurrentUser, runtime Node), porque a sessão do middleware (Edge, auth.config.ts sem os
@@ -33,7 +33,7 @@ export const config = {
     "/maquinas/:path*",
     "/perfil/:path*",
     "/favoritos/:path*",
-    "/reservas/:path*",
+    "/alugueis/:path*",
     "/configuracoes/:path*",
     "/admin/:path*",
   ],

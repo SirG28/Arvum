@@ -19,7 +19,7 @@ function formatBRL(cents: number) {
 }
 
 // Composição transparente do valor da locação (Context.md §8.12) — usada tanto na prévia antes de
-// confirmar a reserva quanto no detalhe da reserva já criada, para os dois lugares sempre
+// confirmar o aluguel quanto no detalhe do aluguel já criado, para os dois lugares sempre
 // mostrarem os valores exatamente da mesma forma.
 export function PriceBreakdown({
   rentalValueInCents,

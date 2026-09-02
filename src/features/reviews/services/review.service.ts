@@ -8,9 +8,9 @@ export type CreateReviewResult =
   | "BOOKING_NOT_COMPLETED"
   | "ALREADY_REVIEWED";
 
-// Só participantes de uma reserva concluída podem avaliar, e cada lado avalia o outro uma única
-// vez por reserva (Context.md §8.14/§9.5). O papel de quem avalia é descoberto a partir da
-// própria reserva (locatário ou proprietário da máquina), nunca recebido do cliente.
+// Só participantes de um aluguel concluído podem avaliar, e cada lado avalia o outro uma única
+// vez por aluguel (Context.md §8.14/§9.5). O papel de quem avalia é descoberto a partir do
+// próprio aluguel (locatário ou proprietário da máquina), nunca recebido do cliente.
 export async function createReview(
   authorId: string,
   bookingId: string,
@@ -98,7 +98,7 @@ export async function getUserReviewSummary(userId: string) {
 // ReviewsSection.tsx, reaproveitado da página de detalhe da máquina. Diferente de lá, aqui as
 // avaliações misturam os dois papéis da conta (Context.md §8.1: não há separação entre locatário e
 // proprietário) — quem lê a lista precisa saber se foi avaliado como dono da máquina alugada ou
-// como quem alugou, por isso "role" é derivado comparando o dono da máquina da reserva com quem
+// como quem alugou, por isso "role" é derivado comparando o dono da máquina do aluguel com quem
 // recebeu a avaliação (mesma regra usada para decidir targetUserId em createReview).
 export async function getUserReviews(userId: string, limit = 5) {
   const reviews = await prisma.review.findMany({

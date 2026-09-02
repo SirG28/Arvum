@@ -23,7 +23,7 @@ export interface FulfillmentActionInfo {
 
 // Única fonte de verdade de "qual é a próxima ação e de quem" (Context.md §8.9: cada transição
 // possui regra e responsável) — usada tanto para validar a transição no servidor quanto para
-// decidir, na interface, qual botão mostrar a cada lado da reserva. Sem dependência do Prisma
+// decidir, na interface, qual botão mostrar a cada lado do aluguel. Sem dependência do Prisma
 // client, para poder ser testada isoladamente e importada por componentes client.
 export function getNextFulfillmentAction(
   status: BookingStatus,
@@ -70,7 +70,7 @@ export function getNextFulfillmentAction(
         action: "CONFIRM_RETURN",
         actor: "OWNER",
         label: "Confirmar devolução",
-        description: "Confirme quando receber a máquina de volta para concluir a reserva.",
+        description: "Confirme quando receber a máquina de volta para concluir o aluguel.",
       };
     default:
       return null;
@@ -84,7 +84,7 @@ interface FulfillmentStep {
 
 // Duas ações avançam dois estados de uma vez (mesma transação, dois registros de histórico): uma
 // entrega/retirada confirmada já significa "em uso" no mesmo instante, e uma devolução confirmada
-// já encerra a reserva — não há, no MVP, uma etapa intermediária que a plataforma consiga detectar
+// já encerra o aluguel — não há, no MVP, uma etapa intermediária que a plataforma consiga detectar
 // sozinha entre esses pares de estados (Context.md §27: escolher a alternativa mais simples e
 // registrar a decisão).
 export const FULFILLMENT_STEPS: Record<FulfillmentAction, readonly FulfillmentStep[]> = {
@@ -105,6 +105,6 @@ export const FULFILLMENT_STEPS: Record<FulfillmentAction, readonly FulfillmentSt
   ],
   CONFIRM_RETURN: [
     { nextStatus: "RETURNED", notes: "Devolução confirmada pelo proprietário." },
-    { nextStatus: "COMPLETED", notes: "Reserva concluída." },
+    { nextStatus: "COMPLETED", notes: "Aluguel concluído." },
   ],
 };

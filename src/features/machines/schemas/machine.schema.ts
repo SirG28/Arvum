@@ -71,7 +71,6 @@ export const machineSchema = z
       emptyToUndefined,
       z.coerce.number().int().min(1).optional(),
     ),
-    instantBooking: z.boolean().optional().default(false),
     deliveryRadiusKm: optionalPositiveNumber,
     // Preço de entrega (Context.md §8.10: "o proprietário define... preço por quilômetro; taxa
     // mínima"). Sem raio de entrega definido, a plataforma nunca oferece "entrega pelo
@@ -129,7 +128,6 @@ export function toMachinePersistedData(input: MachineFormOutput) {
     depositInCents: input.deposit ? toCents(input.deposit) : undefined,
     minimumRentalDays: input.minimumRentalDays,
     maximumRentalDays: input.maximumRentalDays,
-    instantBooking: input.instantBooking,
     deliveryRadiusKm: input.deliveryRadiusKm,
     deliveryPricePerKmInCents: input.deliveryPricePerKm ? toCents(input.deliveryPricePerKm) : undefined,
     deliveryBaseFeeInCents: input.deliveryBaseFee ? toCents(input.deliveryBaseFee) : undefined,

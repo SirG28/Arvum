@@ -2,9 +2,6 @@ import type { BookingStatus } from "@prisma/client";
 
 export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
   DRAFT: "Rascunho",
-  AWAITING_APPROVAL: "Aguardando aprovação do proprietário",
-  APPROVED: "Aprovada",
-  REJECTED: "Recusada",
   AWAITING_PAYMENT: "Aguardando pagamento",
   PAYMENT_CONFIRMED: "Pagamento confirmado",
   TRANSPORT_SCHEDULED: "Transporte agendado",
@@ -12,9 +9,9 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
   DELIVERED: "Entregue",
   IN_USE: "Em uso",
   AWAITING_RETURN: "Aguardando devolução",
-  RETURNED: "Devolvida",
-  COMPLETED: "Concluída",
-  CANCELLED: "Cancelada",
+  RETURNED: "Devolvido",
+  COMPLETED: "Concluído",
+  CANCELLED: "Cancelado",
   IN_DISPUTE: "Em disputa",
 };
 
@@ -23,9 +20,6 @@ export const BOOKING_STATUS_BADGE_TONE: Record<
   "neutral" | "success" | "warning" | "danger" | "info"
 > = {
   DRAFT: "neutral",
-  AWAITING_APPROVAL: "warning",
-  APPROVED: "info",
-  REJECTED: "danger",
   AWAITING_PAYMENT: "warning",
   PAYMENT_CONFIRMED: "success",
   TRANSPORT_SCHEDULED: "info",

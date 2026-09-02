@@ -22,8 +22,8 @@ interface CancelBookingButtonProps {
 function describeOutcome(role: "RENTER" | "OWNER", refundOutcome: CancellationRefundOutcome): string {
   if (refundOutcome === "NOT_APPLICABLE") {
     return role === "RENTER"
-      ? "Esta reserva ainda não foi paga, então o cancelamento não gera cobrança. A máquina volta a ficar disponível no período selecionado."
-      : "Esta reserva ainda não foi paga. O locatário será avisado do cancelamento e a máquina volta a ficar disponível no período selecionado.";
+      ? "Este aluguel ainda não foi pago, então o cancelamento não gera cobrança. A máquina volta a ficar disponível no período selecionado."
+      : "Este aluguel ainda não foi pago. O locatário será avisado do cancelamento e a máquina volta a ficar disponível no período selecionado.";
   }
   if (refundOutcome === "FULL") {
     return role === "RENTER"
@@ -56,13 +56,13 @@ export function CancelBookingButton({ bookingId, role, refundOutcome }: CancelBo
     <div className="flex flex-col gap-2">
       {error && <Alert tone="error" title={error} />}
       <Button variant="danger" className="self-start" onClick={() => setConfirmOpen(true)}>
-        Cancelar reserva
+        Cancelar aluguel
       </Button>
       <ConfirmationDialog
         open={confirmOpen}
-        title="Cancelar esta reserva?"
+        title="Cancelar este aluguel?"
         description={`${describeOutcome(role, refundOutcome)} Essa ação não pode ser desfeita.`}
-        confirmLabel="Sim, cancelar reserva"
+        confirmLabel="Sim, cancelar aluguel"
         cancelLabel="Voltar"
         tone="danger"
         isLoading={mutation.isPending}

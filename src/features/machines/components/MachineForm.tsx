@@ -65,7 +65,6 @@ const STEPS = [
       "deliveryRadiusKm",
       "deliveryPricePerKm",
       "deliveryBaseFee",
-      "instantBooking",
     ],
   },
 ] as const satisfies { label: string; fields: (keyof MachineFormInput)[] }[];
@@ -142,7 +141,6 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
           deposit: machine.depositInCents ? machine.depositInCents / 100 : undefined,
           minimumRentalDays: machine.minimumRentalDays,
           maximumRentalDays: machine.maximumRentalDays ?? undefined,
-          instantBooking: machine.instantBooking,
           deliveryRadiusKm: machine.deliveryRadiusKm ?? undefined,
           deliveryPricePerKm: machine.deliveryPricePerKmInCents
             ? machine.deliveryPricePerKmInCents / 100
@@ -406,15 +404,6 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
           </FormField>
         </div>
       )}
-
-      <label className="flex items-center gap-2 text-sm text-neutral-700">
-        <input
-          type="checkbox"
-          className="h-4 w-4 rounded border-neutral-300"
-          {...register("instantBooking")}
-        />
-        Permitir reserva instantânea (sem aprovação manual do proprietário)
-      </label>
     </div>
   );
 
@@ -547,11 +536,6 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
             value={reviewValues.deliveryRadiusKm ? `${reviewValues.deliveryRadiusKm} km` : undefined}
           />
         </dl>
-        <p className="text-sm text-neutral-700">
-          {reviewValues.instantBooking
-            ? "Reserva instantânea ativada"
-            : "Reserva sob aprovação do proprietário"}
-        </p>
       </div>
 
       <div className="flex flex-col gap-3 rounded-md border border-neutral-200 p-4">

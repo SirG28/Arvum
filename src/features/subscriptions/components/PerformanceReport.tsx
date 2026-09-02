@@ -11,7 +11,7 @@ function formatBRL(cents: number) {
 }
 
 // Benefício "relatórios de desempenho" do Plano Premium (Context.md §8.21) — só dados que já
-// existem (reservas e avaliações), sem contagem de visualizações (não há tracking de página no
+// existem (aluguéis e avaliações), sem contagem de visualizações (não há tracking de página no
 // projeto).
 export function PerformanceReport({ report }: PerformanceReportProps) {
   const statusEntries = Object.entries(report.bookingCountByStatus) as [
@@ -22,14 +22,14 @@ export function PerformanceReport({ report }: PerformanceReportProps) {
   return (
     <div className="flex flex-col gap-4 text-sm">
       <div className="flex justify-between border-b border-neutral-200 pb-2">
-        <span className="text-neutral-500">Receita total (reservas pagas)</span>
+        <span className="text-neutral-500">Receita total (aluguéis pagos)</span>
         <span className="font-medium text-neutral-900">{formatBRL(report.totalRevenueInCents)}</span>
       </div>
 
       <div>
-        <p className="text-neutral-500">Reservas por status</p>
+        <p className="text-neutral-500">Aluguéis por status</p>
         {statusEntries.length === 0 ? (
-          <p className="mt-1 text-neutral-400">Nenhuma reserva ainda.</p>
+          <p className="mt-1 text-neutral-400">Nenhum aluguel ainda.</p>
         ) : (
           <ul className="mt-1 flex flex-col gap-1">
             {statusEntries.map(([status, count]) => (

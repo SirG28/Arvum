@@ -119,7 +119,6 @@ interface MachineSpec {
   condition: MachineCondition;
   dailyPriceInCents: number;
   requiresOperator: boolean;
-  instantBooking: boolean;
   recommendedCrops: string[];
   // Entrega pelo proprietário (Context.md §8.10) — só algumas máquinas oferecem, para variar o
   // dado de demonstração; sem raio, a modalidade fica indisponível para essa máquina.
@@ -141,7 +140,6 @@ const MACHINES: MachineSpec[] = [
     condition: "GOOD",
     dailyPriceInCents: 45000,
     requiresOperator: false,
-    instantBooking: true,
     recommendedCrops: ["soja", "milho"],
     deliveryRadiusKm: 80,
     deliveryPricePerKmInCents: 220,
@@ -159,7 +157,6 @@ const MACHINES: MachineSpec[] = [
     condition: "EXCELLENT",
     dailyPriceInCents: 120000,
     requiresOperator: true,
-    instantBooking: false,
     recommendedCrops: ["soja", "algodão", "milho"],
     deliveryRadiusKm: 50,
   },
@@ -175,7 +172,6 @@ const MACHINES: MachineSpec[] = [
     condition: "GOOD",
     dailyPriceInCents: 280000,
     requiresOperator: true,
-    instantBooking: false,
     recommendedCrops: ["soja", "milho"],
     deliveryRadiusKm: 150,
     deliveryPricePerKmInCents: 450,
@@ -193,7 +189,6 @@ const MACHINES: MachineSpec[] = [
     condition: "GOOD",
     dailyPriceInCents: 60000,
     requiresOperator: false,
-    instantBooking: true,
     recommendedCrops: ["soja", "milho"],
   },
   {
@@ -207,7 +202,6 @@ const MACHINES: MachineSpec[] = [
     condition: "FAIR",
     dailyPriceInCents: 25000,
     requiresOperator: false,
-    instantBooking: true,
     recommendedCrops: ["soja", "milho", "algodão"],
   },
   {
@@ -221,7 +215,6 @@ const MACHINES: MachineSpec[] = [
     condition: "GOOD",
     dailyPriceInCents: 22000,
     requiresOperator: false,
-    instantBooking: true,
     recommendedCrops: ["soja", "milho", "cana-de-açúcar"],
     deliveryRadiusKm: 40,
     deliveryPricePerKmInCents: 180,
@@ -238,7 +231,6 @@ const MACHINES: MachineSpec[] = [
     condition: "EXCELLENT",
     dailyPriceInCents: 90000,
     requiresOperator: true,
-    instantBooking: false,
     recommendedCrops: ["soja", "milho", "algodão"],
   },
   {
@@ -252,7 +244,6 @@ const MACHINES: MachineSpec[] = [
     condition: "GOOD",
     dailyPriceInCents: 35000,
     requiresOperator: false,
-    instantBooking: true,
     recommendedCrops: ["soja", "milho", "café"],
   },
   {
@@ -267,7 +258,6 @@ const MACHINES: MachineSpec[] = [
     condition: "GOOD",
     dailyPriceInCents: 18000,
     requiresOperator: false,
-    instantBooking: true,
     recommendedCrops: ["pastagem"],
   },
   {
@@ -282,7 +272,6 @@ const MACHINES: MachineSpec[] = [
     condition: "FAIR",
     dailyPriceInCents: 150000,
     requiresOperator: true,
-    instantBooking: false,
     recommendedCrops: ["soja", "milho", "café", "cana-de-açúcar"],
   },
   {
@@ -297,7 +286,6 @@ const MACHINES: MachineSpec[] = [
     condition: "EXCELLENT",
     dailyPriceInCents: 30000,
     requiresOperator: false,
-    instantBooking: true,
     recommendedCrops: [],
   },
   {
@@ -311,7 +299,6 @@ const MACHINES: MachineSpec[] = [
     condition: "NEW",
     dailyPriceInCents: 65000,
     requiresOperator: false,
-    instantBooking: true,
     recommendedCrops: ["soja", "milho", "café"],
   },
   {
@@ -326,7 +313,6 @@ const MACHINES: MachineSpec[] = [
     condition: "NEEDS_MAINTENANCE",
     dailyPriceInCents: 200000,
     requiresOperator: true,
-    instantBooking: false,
     recommendedCrops: ["soja", "milho", "algodão"],
   },
   {
@@ -340,7 +326,6 @@ const MACHINES: MachineSpec[] = [
     condition: "GOOD",
     dailyPriceInCents: 40000,
     requiresOperator: false,
-    instantBooking: true,
     recommendedCrops: [],
     deliveryRadiusKm: 60,
   },
@@ -355,7 +340,6 @@ const MACHINES: MachineSpec[] = [
     condition: "GOOD",
     dailyPriceInCents: 55000,
     requiresOperator: false,
-    instantBooking: true,
     recommendedCrops: ["soja", "algodão"],
   },
   {
@@ -370,7 +354,6 @@ const MACHINES: MachineSpec[] = [
     condition: "GOOD",
     dailyPriceInCents: 15000,
     requiresOperator: false,
-    instantBooking: true,
     recommendedCrops: ["soja", "milho"],
   },
   {
@@ -385,7 +368,6 @@ const MACHINES: MachineSpec[] = [
     condition: "EXCELLENT",
     dailyPriceInCents: 12000,
     requiresOperator: false,
-    instantBooking: true,
     recommendedCrops: [],
   },
   {
@@ -400,7 +382,6 @@ const MACHINES: MachineSpec[] = [
     condition: "EXCELLENT",
     dailyPriceInCents: 20000,
     requiresOperator: false,
-    instantBooking: true,
     recommendedCrops: [],
   },
   {
@@ -415,7 +396,6 @@ const MACHINES: MachineSpec[] = [
     condition: "EXCELLENT",
     dailyPriceInCents: 18000,
     requiresOperator: false,
-    instantBooking: true,
     recommendedCrops: ["soja", "milho", "algodão", "sorgo", "feijão"],
   },
   {
@@ -430,7 +410,6 @@ const MACHINES: MachineSpec[] = [
     condition: "EXCELLENT",
     dailyPriceInCents: 10000,
     requiresOperator: false,
-    instantBooking: true,
     recommendedCrops: [],
   },
 ];
@@ -526,7 +505,6 @@ async function main() {
         condition: spec.condition,
         recommendedCrops: [...spec.recommendedCrops],
         requiresOperator: spec.requiresOperator,
-        instantBooking: spec.instantBooking,
         dailyPriceInCents: spec.dailyPriceInCents,
         deliveryRadiusKm: spec.deliveryRadiusKm,
         deliveryPricePerKmInCents: spec.deliveryPricePerKmInCents,
