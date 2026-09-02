@@ -84,7 +84,7 @@ especificação original mas nunca foi implementado.
 | ✅ `CatalogMachineCard` / `Card` (hover) | já tinha `transition-shadow`; somado leve `translateY` | — |
 | Resultados do catálogo ao filtrar | ❌ não aplicável — ver nota abaixo | — |
 | ✅ `PriceBreakdown` (prévia de valores no `BookingRequestForm`) | fade+slide ao aparecer pela primeira vez | — |
-| ✅ Acompanhamento de status da reserva (fulfillment) | destacar a transição do estado atual na timeline | — |
+| ✅ Acompanhamento de status do aluguel (fulfillment) | destacar a transição do estado atual na timeline | — |
 
 **Nota — catálogo ao filtrar**: o item original presumia um fetch client-side com estado de
 carregando para fazer crossfade. Na prática, `/catalogo` (`src/app/catalogo/page.tsx`) é um Server
@@ -106,7 +106,7 @@ a arquitetura de busca (fora do escopo de uma etapa de motion). Descartado, não
 2. ✅ **Overlays críticos** — `Modal`/`ConfirmationDialog` e `Toast` (detalhes abaixo).
 3. ✅ **Navegação** — `ProfileMenu`, `MobileNavDrawer`, `MenuIcon` (detalhes abaixo).
 4. ✅ **Reforços pontuais** — favoritar, alerts, price breakdown, catálogo (detalhes abaixo).
-5. ✅ **Destaque de transição de status** — timeline de acompanhamento da reserva (detalhes abaixo).
+5. ✅ **Destaque de transição de status** — timeline de acompanhamento do aluguel (detalhes abaixo).
 6. ✅ **Feedback de clique + skeleton de página** — `Skeleton` (detalhes abaixo).
 7. ⏳ **Componentes futuros** — `Drawer`, `Stepper` já nascem com motion.
 
@@ -179,7 +179,7 @@ de `animation`):
     montado entre recálculos (debounce a cada mudança de data/destino), a animação não repete a
     cada recálculo, só na primeira revelação.
   - `PriceBreakdown.tsx` em si **não** ganhou a classe — também é usado em páginas já totalmente
-    carregadas (`/reservas/[id]`, `/reservas/recebidas/[id]`), onde animar a cada carregamento de
+    carregadas (`/alugueis/[id]`, `/alugueis/recebidos/[id]`), onde animar a cada carregamento de
     página seria decorativo, não funcional (princípio 1 do MOTION.md).
 - `--animate-heart-pop` (`globals.css`) — "pop" de escala (1 → 1.25 → 1) em `duration-slow`, no
   [`FavoriteButton.tsx`](../src/features/favorites/components/FavoriteButton.tsx). Só aplicado ao
@@ -200,20 +200,21 @@ de `animation`):
 ### Etapa 5 — detalhamento
 
 O bloco "Andamento" (`<ol>` com o histórico de status) estava duplicado, idêntico, em
-`/reservas/[id]` e `/reservas/recebidas/[id]`. Extraído para
+`/alugueis/[id]` e `/alugueis/recebidos/[id]`. Extraído para
 [`BookingStatusTimeline.tsx`](../src/features/bookings/components/BookingStatusTimeline.tsx) —
 resolve a duplicação (`Context.md` §16/§32) e dá um lugar único para a lógica de destaque.
 
 **O problema arquitetural**: as duas páginas são Server Components — cada ação (pagar, avançar
-etapa, cancelar, aprovar/recusar) mora num componente cliente à parte
-(`FulfillmentActionButton`, `PaymentForm`, `CancelBookingButton`, `BookingDecisionActions`) que já
-chamava `router.refresh()` após mutar. Sem nenhum sinal adicional, `BookingStatusTimeline` não tem
-como saber se está sendo renderizado porque o usuário acabou de causar uma transição, ou porque só
-abriu a reserva para consultar — destacar a última entrada em toda visita seria decorativo, não
-funcional (princípio 1).
+etapa, cancelar) mora num componente cliente à parte (`FulfillmentActionButton`, `PaymentForm`,
+`CancelBookingButton`) que já chamava `router.refresh()` após mutar. Sem nenhum sinal adicional,
+`BookingStatusTimeline` não tem como saber se está sendo renderizado porque o usuário acabou de
+causar uma transição, ou porque só abriu o aluguel para consultar — destacar a última entrada em
+toda visita seria decorativo, não funcional (princípio 1). (Um quarto componente,
+`BookingDecisionActions`, também chamava esse padrão nesta época — foi removido depois, quando a
+etapa de aprovação manual do proprietário deixou de existir.)
 
 - [`timeline-highlight.ts`](../src/features/bookings/lib/timeline-highlight.ts): dois helpers de
-  `sessionStorage` — `markBookingJustAdvanced(bookingId)`, chamado pelos quatro componentes de ação
+  `sessionStorage` — `markBookingJustAdvanced(bookingId)`, chamado pelos componentes de ação
   logo antes do `router.refresh()`; `consumeBookingJustAdvanced(bookingId)`, lido (e apagado) uma
   vez pelo `BookingStatusTimeline` para decidir se destaca a última entrada.
 - `--animate-status-highlight` (`globals.css`) — um único `@keyframes` cobrindo entrada
@@ -230,10 +231,10 @@ funcional (princípio 1).
   `sessionStorage` e nada era destacado. Corrigido trocando a dependência para
   `[statusHistory.length, bookingId]` — o crescimento da lista, não a montagem, é o sinal certo de
   "há uma transição nova para conferir".
-- Verificação de ponta a ponta no navegador: login como locatário, reserva instantânea criada,
-  pagamento confirmado — a entrada "Pagamento confirmado" recebeu `animate-status-highlight` no
-  primeiro carregamento após a ação, e nenhuma entrada foi destacada numa segunda visita à mesma
-  reserva sem nenhuma ação nova (a marca é consumida uma única vez). `sessionStorage` inspecionado
+- Verificação de ponta a ponta no navegador: login como locatário, aluguel criado, pagamento
+  confirmado — a entrada "Pagamento confirmado" recebeu `animate-status-highlight` no primeiro
+  carregamento após a ação, e nenhuma entrada foi destacada numa segunda visita ao mesmo aluguel
+  sem nenhuma ação nova (a marca é consumida uma única vez). `sessionStorage` inspecionado
   diretamente para confirmar a marca sendo escrita e depois removida.
 
 ## Revisão geral (pós-Etapa 5)
@@ -365,10 +366,10 @@ cliente:
 
 - `src/app/catalogo/loading.tsx` e `src/app/catalogo/[slug]/loading.tsx` — formato aproximado da
   grade de cards e da página de detalhe.
-- `src/app/(app)/reservas/loading.tsx` e `.../reservas/recebidas/loading.tsx` — mesmo formato de
+- `src/app/(app)/alugueis/loading.tsx` e `.../alugueis/recebidos/loading.tsx` — mesmo formato de
   lista (`BookingListCard`/`OwnerBookingListCard` têm o mesmo layout), por isso reaproveitam um
   único [`BookingListSkeleton.tsx`](../src/features/bookings/components/BookingListSkeleton.tsx).
-- `src/app/(app)/reservas/[id]/loading.tsx` e `.../reservas/recebidas/[id]/loading.tsx` — mesma
+- `src/app/(app)/alugueis/[id]/loading.tsx` e `.../alugueis/recebidos/[id]/loading.tsx` — mesma
   lógica, reaproveitando
   [`BookingDetailSkeleton.tsx`](../src/features/bookings/components/BookingDetailSkeleton.tsx).
 
@@ -377,12 +378,12 @@ Cada skeleton fica dentro de um container com `role="status"`/`aria-label` e um 
 cinzas em si são `aria-hidden`, só decoram visualmente.
 
 **Escopo**: só as páginas que buscam dado no servidor antes de renderizar e que já existiam antes
-desta etapa (catálogo, detalhe da máquina, as duas listas e os dois detalhes de reserva) — não
+desta etapa (catálogo, detalhe da máquina, as duas listas e os dois detalhes de aluguel) — não
 `/propriedades`, `/maquinas`, `/favoritos`, etc., para não expandir o escopo além do que foi
 pedido. O mesmo padrão (`Skeleton` + `loading.tsx`) se estende a qualquer rota nova que precisar.
 
 Verificação: `npm run typecheck`, `npm run lint` e `npm run test` (121 testes) passam; navegação
-manual por catálogo, detalhe da máquina, `/reservas`, `/reservas/[id]` e `/reservas/recebidas`
+manual por catálogo, detalhe da máquina, `/alugueis`, `/alugueis/[id]` e `/alugueis/recebidos`
 confirmada sem erros de console em uma aba nova (uma aba antiga desta sessão, com muitas trocas de
 HMR acumuladas ao longo da conversa, mostrou erros de "hooks changed size" que não se repetem numa
 aba/carregamento frescos — artefato do ambiente de desenvolvimento, não bug de código).

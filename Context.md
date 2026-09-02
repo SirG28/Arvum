@@ -41,7 +41,7 @@ A plataforma não deve funcionar apenas como um catálogo ou classificado. Ela d
 
 - descoberta de equipamentos;
 - verificação de disponibilidade;
-- solicitação ou reserva;
+- solicitação ou aluguel;
 - definição do período;
 - localização;
 - logística;
@@ -163,7 +163,7 @@ Principais necessidades:
 - saber a distância;
 - entender as condições de uso;
 - organizar o transporte;
-- reservar para o período correto;
+- alugar para o período correto;
 - realizar pagamento com segurança;
 - acompanhar o status da locação;
 - avaliar a experiência.
@@ -179,8 +179,7 @@ Principais necessidades:
 - controlar disponibilidade;
 - definir valores;
 - selecionar opções logísticas;
-- analisar solicitações;
-- acompanhar reservas;
+- acompanhar aluguéis recebidos;
 - receber pagamentos;
 - avaliar locatários;
 - rentabilizar períodos de ociosidade.
@@ -202,7 +201,7 @@ Responsável por:
 - gerenciar usuários;
 - moderar anúncios;
 - verificar denúncias;
-- acompanhar reservas;
+- acompanhar aluguéis;
 - tratar disputas;
 - administrar categorias;
 - visualizar indicadores;
@@ -212,7 +211,7 @@ Responsável por:
 
 Transportador responsável pelo deslocamento do equipamento.
 
-No MVP, essa participação pode ser representada por uma opção logística cadastrada na reserva, sem exigir um painel completo independente.
+No MVP, essa participação pode ser representada por uma opção logística cadastrada no aluguel, sem exigir um painel completo independente.
 
 ---
 
@@ -239,7 +238,7 @@ Não pressuponha que todos os produtores conhecem termos digitais como “checko
 Prefira expressões como:
 
 - solicitar aluguel;
-- minhas reservas;
+- meus aluguéis;
 - máquinas disponíveis;
 - custo de transporte;
 - período de uso;
@@ -261,7 +260,7 @@ O MVP deve validar se usuários conseguem:
 7. informar o período desejado;
 8. escolher uma opção logística;
 9. visualizar a composição do preço;
-10. solicitar ou confirmar uma reserva;
+10. solicitar ou confirmar um aluguel;
 11. acompanhar o status;
 12. concluir a locação;
 13. avaliar a outra parte.
@@ -403,8 +402,8 @@ Regras:
 - somente anúncios ativos aparecem na busca;
 - máquinas sem disponibilidade no período selecionado não devem aparecer como disponíveis;
 - anúncios incompletos não podem ser publicados;
-- uma máquina não pode aceitar reservas conflitantes;
-- alterações que afetem uma reserva confirmada devem ser controladas;
+- uma máquina não pode aceitar aluguéis conflitantes;
+- alterações que afetem um aluguel confirmado devem ser controladas;
 - a exclusão lógica deve ser preferida à remoção definitiva de registros importantes.
 
 ## 8.5 Busca de máquinas
@@ -465,9 +464,9 @@ A página de detalhes deve apresentar:
 - informações sobre operador;
 - avaliações;
 - dados públicos do proprietário;
-- ação para iniciar uma reserva.
+- ação para iniciar um aluguel.
 
-Não exibir o endereço exato do proprietário publicamente antes de uma reserva confirmada.
+Não exibir o endereço exato do proprietário publicamente antes de um aluguel confirmado.
 
 ## 8.7 Disponibilidade
 
@@ -478,18 +477,20 @@ O proprietário poderá:
 - liberar períodos;
 - bloquear datas;
 - definir indisponibilidade;
-- visualizar reservas;
+- visualizar aluguéis;
 - configurar antecedência mínima;
 - configurar duração mínima;
 - configurar duração máxima.
 
-Uma reserva deve bloquear o intervalo correspondente após confirmação.
+Um pedido de aluguel já bloqueia o intervalo correspondente desde a criação (aguardando
+pagamento), não só após a confirmação — evita dois locatários pagando pelo mesmo período.
 
-Solicitações pendentes podem gerar um bloqueio temporário configurável.
+Pedidos pendentes de pagamento geram um bloqueio temporário configurável (prazo de expiração): se
+o locatário não pagar dentro do prazo, o período volta a ficar disponível.
 
-O sistema deve impedir sobreposição de reservas confirmadas.
+O sistema deve impedir sobreposição de aluguéis ativos.
 
-## 8.8 Reserva
+## 8.8 Aluguel
 
 Fluxo básico:
 
@@ -500,28 +501,22 @@ Fluxo básico:
 5. usuário seleciona logística;
 6. sistema calcula custos;
 7. usuário revisa dados;
-8. usuário envia a solicitação;
-9. proprietário aceita ou recusa, quando a aprovação manual estiver habilitada;
-10. pagamento é confirmado ou simulado;
-11. reserva passa para o próximo status.
+8. usuário envia o pedido;
+9. pagamento é confirmado ou simulado;
+10. aluguel passa para o próximo status.
 
-Tipos de confirmação:
+Não existe aprovação manual do proprietário: as condições do próprio anúncio (preço, prazos,
+disponibilidade, raio de entrega) são a única barreira para o pedido ser possível. O pedido já
+nasce ocupando a agenda (aguardando pagamento) — se o locatário não pagar dentro do prazo, o
+período volta a ficar disponível para outros locatários.
 
-- reserva instantânea;
-- solicitação sujeita à aprovação.
-
-O proprietário define o tipo por anúncio.
-
-## 8.9 Estados da reserva
+## 8.9 Estados do aluguel
 
 Utilizar uma máquina de estados clara.
 
 Estados sugeridos:
 
 - rascunho;
-- aguardando aprovação;
-- aprovada;
-- recusada;
 - aguardando pagamento;
 - pagamento confirmado;
 - transporte agendado;
@@ -651,7 +646,7 @@ Estados sugeridos:
 - estornado;
 - parcialmente estornado.
 
-A reserva só deve ser confirmada conforme a regra de pagamento definida.
+O aluguel só deve ser confirmado conforme a regra de pagamento definida.
 
 ## 8.14 Avaliações
 
@@ -663,7 +658,7 @@ Após a conclusão:
 - comentário opcional;
 - possibilidade de denúncia;
 - apenas participantes de uma locação concluída podem avaliar;
-- cada parte realiza uma avaliação por reserva;
+- cada parte realiza uma avaliação por aluguel;
 - avaliações não podem ser anônimas para a plataforma.
 
 Separar, quando possível:
@@ -676,11 +671,11 @@ Separar, quando possível:
 
 ## 8.15 Comunicação
 
-No MVP, criar uma área de mensagens por reserva ou uma simulação estruturada.
+No MVP, criar uma área de mensagens por aluguel ou uma simulação estruturada.
 
 Regras:
 
-- conversas associadas a uma reserva;
+- conversas associadas a um aluguel;
 - registro de data e hora;
 - participantes autorizados;
 - histórico preservado;
@@ -701,15 +696,13 @@ Criar estrutura para:
 Eventos iniciais:
 
 - solicitação recebida;
-- solicitação aceita;
-- solicitação recusada;
 - pagamento aprovado;
 - pagamento recusado;
 - transporte agendado;
 - início próximo;
-- reserva iniciada;
+- aluguel iniciado;
 - devolução próxima;
-- reserva concluída;
+- aluguel concluído;
 - cancelamento;
 - nova mensagem;
 - nova avaliação.
@@ -724,10 +717,10 @@ Evitar duplicidade de favoritos para o mesmo usuário e máquina.
 
 Apresentar:
 
-- próximas reservas;
-- reservas em andamento;
+- próximos aluguéis;
+- aluguéis em andamento;
 - histórico;
-- solicitações pendentes;
+- aguardando pagamento;
 - favoritos;
 - mensagens;
 - avaliações pendentes;
@@ -740,8 +733,8 @@ Apresentar:
 - máquinas cadastradas;
 - anúncios ativos;
 - calendário;
-- solicitações recebidas;
-- reservas futuras;
+- aluguéis recebidos;
+- aluguéis futuros;
 - locações em andamento;
 - histórico;
 - receita estimada;
@@ -757,7 +750,7 @@ Permitir:
 - visualizar anúncios;
 - aprovar ou recusar anúncios;
 - administrar categorias;
-- visualizar reservas;
+- visualizar aluguéis;
 - analisar denúncias;
 - suspender usuários;
 - moderar avaliações;
@@ -791,7 +784,7 @@ A plataforma adota um **modelo de monetização híbrido**, com três formas de 
   adicional sem aumento significativo dos custos operacionais.
 
 Além dessas três entradas, o **Arvum Suporte de Operação** é um serviço opcional contratado durante
-a reserva, oferecendo atendimento prioritário e mediação de imprevistos durante a locação. É um
+o aluguel, oferecendo atendimento prioritário e mediação de imprevistos durante a locação. É um
 serviço de suporte operacional — não um seguro — e não contempla cobertura financeira contra danos.
 
 **Inserção na jornada do usuário:**
@@ -799,7 +792,7 @@ serviço de suporte operacional — não um seguro — e não contempla cobertur
 - Na busca: parceiros Premium aparecem em destaque, com o selo de parceiro verificado; anúncios
   patrocinados ocupam posições privilegiadas, sempre identificados de forma transparente, preservando
   a confiança nos resultados orgânicos.
-- Durante a reserva: o locatário escolhe a máquina e, se desejar, adiciona operador, transporte e o
+- Durante o aluguel: o locatário escolhe a máquina e, se desejar, adiciona operador, transporte e o
   Arvum Suporte de Operação; antes da confirmação, é apresentado um resumo completo detalhando todos
   os serviços e valores.
 - Na confirmação da contratação: após o pagamento, a plataforma realiza automaticamente a divisão dos
@@ -826,9 +819,9 @@ estrutural proporcional.
 - O e-mail deve ser único.
 - CPF ou CNPJ devem ser únicos quando exigidos.
 - Uma conta pode alugar e disponibilizar máquinas.
-- Usuários suspensos não podem criar novas reservas ou anúncios.
+- Usuários suspensos não podem criar novos aluguéis ou anúncios.
 - Dados sensíveis devem possuir acesso restrito.
-- A exclusão da conta não deve destruir o histórico financeiro ou de reservas quando houver obrigação de retenção.
+- A exclusão da conta não deve destruir o histórico financeiro ou de aluguéis quando houver obrigação de retenção.
 
 ## 9.2 Máquinas
 
@@ -837,18 +830,20 @@ estrutural proporcional.
 - Uma máquina pertence a uma categoria principal.
 - Uma máquina pode possuir diferentes períodos disponíveis.
 - Uma máquina não pode estar simultaneamente disponível e arquivada.
-- Uma máquina com reserva ativa não pode ser removida definitivamente.
+- Uma máquina com aluguel ativo não pode ser removida definitivamente.
 - Mudanças relevantes devem gerar registro no histórico.
 
-## 9.3 Reservas
+## 9.3 Aluguéis
 
 - A data final deve ser posterior à data inicial.
 - Não aceitar datas passadas.
 - Respeitar duração mínima e máxima.
-- Não permitir conflito com reservas confirmadas.
+- Não permitir conflito com aluguéis confirmados.
+- Sem aprovação manual do proprietário — as condições do anúncio (preço, prazos, disponibilidade,
+  raio de entrega) são a única barreira para o pedido ser possível.
 - Recalcular valores quando período, endereço ou logística forem alterados.
 - Preservar um retrato dos preços no momento da confirmação.
-- Alterações futuras no anúncio não podem mudar retroativamente o valor de uma reserva confirmada.
+- Alterações futuras no anúncio não podem mudar retroativamente o valor de um aluguel confirmado.
 - Registrar quem executou cada ação.
 
 ## 9.4 Cancelamento
@@ -857,11 +852,13 @@ Criar política configurável.
 
 Modelo inicial recomendado:
 
-- antes da aprovação: cancelamento sem cobrança;
-- depois da aprovação e antes do pagamento: cancelamento sem cobrança;
+- antes do pagamento: cancelamento sem cobrança, pelo locatário ou pelo proprietário;
 - após pagamento: cobrança ou estorno conforme antecedência;
 - cancelamento pelo proprietário: estorno integral ao locatário;
 - situações excepcionais: encaminhar para disputa.
+
+Não existe uma etapa de aprovação separada do cancelamento — o proprietário cancela pela mesma
+ação a qualquer momento antes do transporte ser organizado, mesmo antes do pagamento.
 
 Não deixar percentuais fixos espalhados pelo código.
 
@@ -869,8 +866,8 @@ Centralizar políticas em configurações ou serviço próprio.
 
 ## 9.5 Avaliações
 
-- Somente após reserva concluída.
-- Uma avaliação por participante e por reserva.
+- Somente após aluguel concluído.
+- Uma avaliação por participante e por aluguel.
 - Não permitir que o usuário avalie a si mesmo.
 - Comentários denunciados podem ser ocultados pela moderação.
 - A nota média deve ser recalculada de maneira consistente.
@@ -890,10 +887,10 @@ Centralizar políticas em configurações ou serviço próprio.
   redução deve ficar centralizada em serviço próprio, nunca espalhada pelo fluxo de pagamento.
 - Anúncios patrocinados devem sempre exibir identificação visual de "patrocinado" — nunca podem ser
   apresentados como resultado orgânico da busca.
-- O Arvum Suporte de Operação é contratado por reserva (não por assinatura) e não é seguro — a
+- O Arvum Suporte de Operação é contratado por aluguel (não por assinatura) e não é seguro — a
   interface não pode sugerir cobertura financeira contra danos.
 - A assinatura Premium é mensal e recorrente, e pode ser cancelada pelo parceiro a qualquer momento;
-  o cancelamento não afeta reservas já em andamento nem reduz retroativamente benefícios já
+  o cancelamento não afeta aluguéis já em andamento nem reduz retroativamente benefícios já
   utilizados no período pago.
 
 ---
@@ -921,7 +918,7 @@ Centralizar políticas em configurações ou serviço próprio.
 7. Conferir especificações e avaliações.
 8. Iniciar solicitação.
 
-## 10.3 Fluxo de reserva
+## 10.3 Fluxo de aluguel
 
 1. Selecionar período.
 2. Selecionar propriedade de destino.
@@ -929,10 +926,9 @@ Centralizar políticas em configurações ou serviço próprio.
 4. Visualizar estimativa.
 5. Adicionar observações.
 6. Revisar condições.
-7. Confirmar solicitação.
-8. Aguardar aprovação ou seguir para pagamento.
-9. Receber confirmação.
-10. Acompanhar status.
+7. Confirmar pedido — segue direto para pagamento, sem aprovação manual do proprietário.
+8. Receber confirmação.
+9. Acompanhar status.
 
 ## 10.4 Fluxo para anunciar uma máquina
 
@@ -953,7 +949,7 @@ Centralizar políticas em configurações ou serviço próprio.
 
 1. Confirmar devolução.
 2. Registrar possíveis ocorrências.
-3. Encerrar reserva.
+3. Encerrar aluguel.
 4. Liberar pagamento ao proprietário, quando aplicável.
 5. Solicitar avaliações.
 6. Atualizar histórico.
@@ -989,7 +985,7 @@ Em dispositivos móveis:
 
 - Início;
 - Buscar;
-- Reservas;
+- Aluguéis;
 - Anúncios ou Minhas máquinas;
 - Perfil.
 
@@ -1395,7 +1391,6 @@ Criar entidades equivalentes às seguintes.
 - depositInCents;
 - minimumRentalDays;
 - maximumRentalDays;
-- instantBooking;
 - deliveryRadiusKm;
 - status;
 - createdAt;
@@ -1532,7 +1527,7 @@ Criar entidades equivalentes às seguintes.
 - createdAt;
 - updatedAt.
 
-A comissão retida por reserva (§8.21/§9.7) já é representada por `Booking.serviceFeeInCents`
+A comissão retida por aluguel (§8.21/§9.7) já é representada por `Booking.serviceFeeInCents`
 (§8.12) — as duas entidades acima cobrem apenas as fontes de receita recorrente (assinatura e
 anúncios), que ainda não existem no modelo de dados.
 
@@ -1541,7 +1536,7 @@ Adicionar restrição única para:
 - e-mail;
 - documento, quando aplicável;
 - favorito por usuário e máquina;
-- avaliação por autor e reserva.
+- avaliação por autor e aluguel.
 
 Criar índices para:
 
@@ -1551,7 +1546,7 @@ Criar índices para:
 - período;
 - proprietário;
 - locatário;
-- datas de reserva.
+- datas de aluguel.
 
 ---
 
@@ -1678,8 +1673,7 @@ Cobrir:
 - autenticação;
 - cadastro de máquina;
 - busca;
-- criação de reserva;
-- aprovação;
+- criação de aluguel;
 - pagamento simulado;
 - conclusão;
 - avaliação.
@@ -1707,7 +1701,7 @@ Cenários obrigatórios:
 3. Buscar trator.
 4. Selecionar período.
 5. Escolher entrega.
-6. Solicitar reserva.
+6. Solicitar aluguel.
 7. Realizar pagamento simulado.
 8. Acompanhar status.
 9. Concluir.
@@ -1720,22 +1714,21 @@ Cenários obrigatórios:
 3. Cadastrar máquina.
 4. Definir preço e disponibilidade.
 5. Publicar.
-6. Receber solicitação.
-7. Aceitar.
-8. Atualizar status.
+6. Receber solicitação já paga.
+7. Atualizar status.
 9. Confirmar devolução.
 10. Avaliar o locatário.
 
 ### Cenário 3 — Conflito
 
-1. Criar uma reserva confirmada.
-2. Tentar reservar a mesma máquina em datas conflitantes.
-3. Impedir a nova reserva.
+1. Criar um aluguel confirmado.
+2. Tentar alugar a mesma máquina em datas conflitantes.
+3. Impedir o novo aluguel.
 4. Apresentar mensagem clara.
 
 ### Cenário 4 — Cancelamento
 
-1. Criar reserva.
+1. Criar aluguel.
 2. Confirmar pagamento.
 3. Solicitar cancelamento.
 4. Aplicar a política correta.
@@ -1757,7 +1750,7 @@ Incluir:
 - máquinas em diferentes cidades e estados;
 - avaliações;
 - favoritos;
-- reservas em diferentes estados;
+- aluguéis em diferentes estados;
 - opções logísticas;
 - períodos indisponíveis;
 - parceiros com Plano Premium ativo (§8.21);
@@ -1897,7 +1890,7 @@ Esses itens devem aparecer apenas no roadmap ou em interfaces abstratas quando n
 
 ## Fase 4 — Transação
 
-- reservas;
+- aluguéis;
 - cálculo de valores;
 - logística;
 - pagamento simulado;
@@ -1923,7 +1916,7 @@ Esses itens devem aparecer apenas no roadmap ou em interfaces abstratas quando n
 ## Fase 7 — Monetização avançada (§8.21/§9.7)
 
 - comissão sobre operações (8%–12%, já habilitada via `taxaServico`/`serviceFeeInCents` na Fase 4);
-- Arvum Suporte de Operação (add-on opcional na reserva);
+- Arvum Suporte de Operação (add-on opcional no aluguel);
 - Plano Premium para parceiros (assinatura mensal, destaque, selo verificado, redução de comissão,
   relatórios de desempenho);
 - anúncios patrocinados (posições de destaque na busca, sempre identificados).
@@ -2017,11 +2010,10 @@ O projeto será considerado funcional quando:
 - a disponibilidade for respeitada;
 - o valor for calculado;
 - uma modalidade logística puder ser selecionada;
-- a reserva puder ser criada;
-- o proprietário puder aprovar ou recusar;
+- o aluguel puder ser criado;
 - o pagamento simulado puder ser registrado;
 - o status puder ser acompanhado;
-- a reserva puder ser concluída;
+- o aluguel puder ser concluído;
 - os participantes puderem se avaliar;
 - a interface funcionar em dispositivos móveis e desktop;
 - as principais regras existirem no servidor;
@@ -2088,7 +2080,7 @@ Caso o repositório esteja vazio, inicialize o projeto de forma organizada, crie
 - Não armazenar senhas sem hash.
 - Não colocar segredos no código.
 - Não depender somente do front-end para validar regras.
-- Não permitir reservas conflitantes.
+- Não permitir aluguéis conflitantes.
 - Não esconder taxas do usuário.
 - Não expor endereço exato publicamente.
 - Não usar valores monetários de maneira insegura.
@@ -2109,7 +2101,7 @@ Desenvolva o produto gradualmente, entregando fluxos completos e testáveis.
 
 Priorize primeiro o caminho principal:
 
-**cadastro → propriedade → cadastro da máquina → busca → detalhes → logística → reserva → pagamento simulado → acompanhamento → conclusão → avaliação.**
+**cadastro → propriedade → cadastro da máquina → busca → detalhes → logística → aluguel → pagamento simulado → acompanhamento → conclusão → avaliação.**
 
 Sempre preserve:
 

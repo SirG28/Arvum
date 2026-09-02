@@ -5,7 +5,7 @@ rurais, máquinas agrícolas ociosas e logística — transformando equipamento 
 
 Projeto acadêmico da FIAP (Web Design — Startup One). Marketplace que conecta produtores rurais que
 precisam alugar máquinas agrícolas a proprietários com equipamentos ociosos, com logística
-integrada, cálculo transparente de preço, reservas com calendário de disponibilidade, pagamento
+integrada, cálculo transparente de preço, aluguéis com calendário de disponibilidade, pagamento
 simulado e avaliações bilaterais.
 
 Integrantes:
@@ -36,11 +36,13 @@ Roadmap completo em [`ARCHITECTURE.md`](./ARCHITECTURE.md#roadmap). Implementado
   geocodificação simulado, sem API externa), e o catálogo aceita "onde você vai usar" (cidade/UF)
   para exibir, ordenar e filtrar por raio máximo a distância estimada até cada máquina — persistida
   também na página de detalhe.
-- Solicitação de reserva (mínima): a partir da página de detalhe, o locatário escolhe propriedade
+- Solicitação de aluguel (mínima): a partir da página de detalhe, o locatário escolhe propriedade
   de destino, período e modalidade logística; o servidor valida disponibilidade (sem sobrepor
-  bloqueios manuais ou outras reservas ativas), duração mín/máx do anúncio e calcula o valor da
-  locação, criando a reserva já aprovada (anúncios com reserva instantânea) ou aguardando aprovação
-  do proprietário. O catálogo também deixou de listar máquinas com reserva ativa no período
+  bloqueios manuais ou outros aluguéis ativos), duração mín/máx do anúncio e calcula o valor da
+  locação, criando o aluguel direto em "aguardando pagamento" — sem aprovação manual do
+  proprietário, as condições do próprio anúncio são a única barreira. O pedido já ocupa a agenda
+  por um prazo limitado (30 min); se o locatário não pagar dentro desse prazo, o período volta a
+  ficar disponível. O catálogo também deixou de listar máquinas com aluguel ativo no período
   buscado.
 - Cálculo logístico: custo real calculado para as 3 modalidades (retirada pelo locatário, entrega
   pelo proprietário, transporte por parceiro simulado), usando a distância entre a propriedade da
@@ -48,25 +50,26 @@ Roadmap completo em [`ARCHITECTURE.md`](./ARCHITECTURE.md#roadmap). Implementado
   anúncio; sem configuração própria, ou para transporte por parceiro, vale o padrão da plataforma.
   Entrega fora do raio de atendimento é recusada. Todo valor é rotulado como estimativa.
 - Prévia de valores antes de solicitar: assim que destino, período e modalidade estão
-  preenchidos, o formulário de reserva mostra locação + logística + total (ou o motivo de não
-  poder calcular, ex.: fora do raio de entrega) antes do botão "Solicitar reserva".
+  preenchidos, o formulário de aluguel mostra locação + logística + total (ou o motivo de não
+  poder calcular, ex.: fora do raio de entrega) antes do botão "Solicitar aluguel" — que já leva
+  direto para a tela de pagamento, sem etapa intermediária de espera.
 - Feedback de sucesso reforçado com notificação (toast), além da confirmação já exibida na tela.
-- Aprovação/recusa da solicitação pelo proprietário (`/reservas/recebidas`), com motivo opcional
-  registrado no andamento da reserva.
 - Pagamento simulado: o locatário confirma o pagamento (cartão ou Pix, ambos simulados) assim que
-  a reserva é aprovada; nenhum dado de cartão é coletado.
-- Acompanhamento de status até a conclusão: depois do pagamento confirmado, cada lado da reserva
+  o aluguel é criado; nenhum dado de cartão é coletado.
+- Acompanhamento de status até a conclusão: depois do pagamento confirmado, cada lado do aluguel
   vê um botão de "próxima etapa" (agendar transporte, iniciar transporte, confirmar entrega/
   retirada, sinalizar devolução, confirmar devolução), sempre restrito a quem é responsável por
   aquela ação no anúncio (proprietário ou locatário) — nunca uma alteração livre de status.
   Retirada pelo locatário pula o rastreio de transporte; entrega pelo proprietário e transporte
   por parceiro passam por agendamento e trânsito antes da entrega.
-- Cancelamento pelo locatário ou pelo proprietário, com política de estorno centralizada: sem
-  cobrança antes do pagamento, estorno integral se o proprietário cancelar, e estorno integral ou
-  não (conforme antecedência até o início do período) se o locatário cancelar depois do pagamento
-  confirmado — sempre explicado antes de confirmar o cancelamento.
-- Avaliações: depois que uma reserva é concluída, locatário e proprietário avaliam um ao outro uma
-  única vez por reserva (nota geral de 1 a 5 + aspectos opcionais — estado do equipamento,
+- Cancelamento pelo locatário ou pelo proprietário — a qualquer momento antes do transporte
+  organizado, mesmo antes do pagamento, sem uma etapa de aprovação separada —, com política de
+  estorno centralizada: sem cobrança antes do pagamento, estorno integral se o proprietário
+  cancelar, e estorno integral ou não (conforme antecedência até o início do período) se o
+  locatário cancelar depois do pagamento confirmado — sempre explicado antes de confirmar o
+  cancelamento.
+- Avaliações: depois que um aluguel é concluído, locatário e proprietário avaliam um ao outro uma
+  única vez por aluguel (nota geral de 1 a 5 + aspectos opcionais — estado do equipamento,
   comunicação, pontualidade e experiência logística para o locatário; comunicação e pontualidade
   para o proprietário — e comentário opcional). A página de cada máquina mostra a nota média e as
   avaliações recebidas do locatário (nunca a avaliação que o proprietário fez do locatário); o

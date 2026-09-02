@@ -10,7 +10,7 @@ src/
   app/                     # rotas (App Router) — casca fina, sem regra de negócio
     (auth)/login, (auth)/cadastro
     (app)/propriedades, (app)/perfil, (app)/maquinas, (app)/favoritos,
-      (app)/reservas, (app)/configuracoes
+      (app)/alugueis, (app)/configuracoes
     catalogo/, catalogo/[slug]/          # público, fora do (app)
     api/auth/[...nextauth]/route.ts
     api/v1/properties/route.ts, [id]/route.ts
@@ -32,9 +32,9 @@ src/
     categories/             # services (leitura), types
     machines/               # schemas, lib (slug, status), services, hooks, components
     favorites/               # services, hooks, components (FavoriteButton, FavoriteMachineCard)
-    bookings/                 # schemas, lib (pricing, cancellation, fulfillment, status-labels),
+    bookings/                 # schemas, lib (pricing, cancellation, fulfillment, hold, status-labels),
                                #   services, hooks, components (BookingRequestForm,
-                               #   BookingDecisionActions, CancelBookingButton, FulfillmentActionButton)
+                               #   CancelBookingButton, FulfillmentActionButton)
     logistics/                # config (preços padrão), lib (cálculo logístico, fator do equipamento)
     payments/                 # schemas, lib (labels), services, hooks, components (PaymentForm)
     reviews/                  # schemas, lib (nota média), services, hooks, components
@@ -73,13 +73,13 @@ completo, `search`, `bookings`, `logistics`, `payments`, `reviews`, `notificatio
 | Monetização                          | Modelo híbrido — comissão (8%–12%) + assinatura Premium + anúncios patrocinados | Apenas comissão, ou apenas assinatura fixa | Comissão garante receita desde a primeira transação (sem exigir mensalidade obrigatória do locatário); assinatura Premium e anúncios passam a representar parcela crescente do faturamento à medida que a base de usuários aumenta, sem depender de uma única fonte (`Context.md` §8.21). |
 | Preço de entrega por máquina, mas transporte por parceiro é config. global | `Machine.deliveryPricePerKmInCents`/`deliveryBaseFeeInCents` (opcionais, definidos pelo proprietário); `PARTNER_TRANSPORT` usa `src/features/logistics/config.ts` | Preço de entrega também global | `Context.md` §8.10 diz explicitamente que o proprietário define preço por km e taxa mínima de entrega — fiel à especificação. Já "transporte por parceiro" não tem parceiro real integrado, então não há quem definir um preço por máquina; fica em configuração de plataforma, substituível depois por uma tabela de transportadoras (`Context.md` §8.11). |
 | Fator do equipamento não usa a categoria | `calculateEquipmentFactor` (`src/features/logistics/lib/equipment-factor.ts`) usa peso, maior dimensão e `requiresOperator` | Fator por categoria (ex.: mapa fixo `categoria → fator`) | `Context.md` §8.3 exige que categorias sejam administráveis pelo painel, não fixas no código; basear o fator logístico em um mapa `slug → número` engessaria a regra a categorias que podem mudar. Peso/dimensões/operador são campos numéricos sempre presentes no anúncio. |
-| Nota pública da máquina só conta avaliação do locatário | `getMachineReviews`/`getAverageRatingsByMachineIds` (`src/features/reviews`) filtram `targetUserId = ownerId` | Somar todas as avaliações da reserva (locatário + proprietário) na nota da máquina | A avaliação do proprietário é sobre o locatário (pessoa), não sobre o equipamento — misturá-la na nota pública do anúncio inflaria/distorceria a nota com algo que não é sobre a máquina. Sem um campo próprio de "papel" no `Review`, o `targetUserId` (sempre o proprietário quando quem avalia é o locatário, pois `CANNOT_BOOK_OWN_MACHINE` impede o proprietário de alugar a própria máquina) já identifica isso sem alterar o schema. |
+| Nota pública da máquina só conta avaliação do locatário | `getMachineReviews`/`getAverageRatingsByMachineIds` (`src/features/reviews`) filtram `targetUserId = ownerId` | Somar todas as avaliações do aluguel (locatário + proprietário) na nota da máquina | A avaliação do proprietário é sobre o locatário (pessoa), não sobre o equipamento — misturá-la na nota pública do anúncio inflaria/distorceria a nota com algo que não é sobre a máquina. Sem um campo próprio de "papel" no `Review`, o `targetUserId` (sempre o proprietário quando quem avalia é o locatário, pois `CANNOT_BOOK_OWN_MACHINE` impede o proprietário de alugar a própria máquina) já identifica isso sem alterar o schema. |
 | Nota média calculada em memória, não `groupBy` puro no catálogo | `getAverageRatingsByMachineIds` busca as avaliações e agrupa em JS (`src/features/reviews/services/review.service.ts`) | `prisma.review.groupBy` direto | O filtro "só avaliação do locatário" (linha acima) compara `targetUserId` com o `ownerId` de cada máquina — dois campos de tabelas diferentes, algo que `groupBy`/`where` do Prisma não expressam em uma única consulta sem SQL bruto. Mesmo padrão já adotado para distância (cálculo em app, não SQL geoespacial) — volume do MVP não justifica a complexidade extra. |
-| Painel do proprietário é um hub enxuto, não o `Context.md` §8.19 inteiro | `/painel-do-proprietario` reúne só atalhos para o que já existe (Minhas máquinas, Solicitações recebidas) + Plano Premium | Calendário, receita agregada, alertas e pendências de cadastro numa única tela | O escopo completo do §8.19 reconstruiria o que já funciona em páginas próprias sem necessidade imediata; o hub existe para dar um lar ao Plano Premium (preocupação exclusiva de quem anuncia, que não cabia no menu de perfil genérico misturado com locatário) e ao que mais vier do roadmap de parceiro. `Property` fica fora de propósito: não é exclusivo de proprietário (locatário também cadastra, como destino de entrega). |
+| Painel do proprietário é um hub enxuto, não o `Context.md` §8.19 inteiro | `/painel-do-proprietario` reúne só atalhos para o que já existe (Minhas máquinas, Aluguéis recebidos) + Plano Premium | Calendário, receita agregada, alertas e pendências de cadastro numa única tela | O escopo completo do §8.19 reconstruiria o que já funciona em páginas próprias sem necessidade imediata; o hub existe para dar um lar ao Plano Premium (preocupação exclusiva de quem anuncia, que não cabia no menu de perfil genérico misturado com locatário) e ao que mais vier do roadmap de parceiro. `Property` fica fora de propósito: não é exclusivo de proprietário (locatário também cadastra, como destino de entrega). |
 
 ## Valores monetários e datas
 
-Todos os campos financeiros são `Int` (centavos inteiros) — nunca `Float`. Datas de reserva serão
+Todos os campos financeiros são `Int` (centavos inteiros) — nunca `Float`. Datas de aluguel serão
 sempre validadas no servidor (a partir da Fase 4 — Transação); a UI nunca é a única fonte de verdade
 para regras de negócio.
 
@@ -104,16 +104,18 @@ para regras de negócio.
 3. ✅ **Descoberta** — filtros completos no catálogo (preço, marca, cultura, finalidade,
    necessidade de operador, período), favoritos, e localização/distância estimada (geocodificação
    simulada + Haversine).
-4. ✅ **Transação** — concluída. Solicitação de reserva mínima, cálculo logístico (retirada,
-   entrega pelo proprietário, transporte por parceiro simulado), composição de preço (prévia e
-   retrato congelado), aprovação/recusa do proprietário, pagamento simulado, acompanhamento de
-   status até a conclusão (transporte, entrega/retirada, uso, devolução) e cancelamento — pelo
-   locatário ou pelo proprietário, com política de estorno centralizada.
+4. ✅ **Transação** — concluída. Solicitação de aluguel mínima (sem aprovação manual do
+   proprietário — as condições do próprio anúncio são a única barreira), cálculo logístico
+   (retirada, entrega pelo proprietário, transporte por parceiro simulado), composição de preço
+   (prévia e retrato congelado), pagamento simulado, acompanhamento de status até a conclusão
+   (transporte, entrega/retirada, uso, devolução) e cancelamento — pelo locatário ou pelo
+   proprietário, a qualquer momento antes do transporte organizado, com política de estorno
+   centralizada.
 5. 🚧 **Confiança** — avaliações concluídas; notificações, mensagens e moderação seguem.
 6. **Administração e qualidade** — painel admin, indicadores, testes, acessibilidade, segurança, documentação, deploy.
 7. 🚧 **Monetização avançada** (`Context.md` §8.21/§9.7) — comissão sobre operações (8%–12%, já
    habilitada via `serviceFeeInCents` na Fase 4, cálculo ainda não implementado); ✅ Arvum Suporte
-   de Operação (add-on opcional na reserva, `src/features/support/`, antecipado desta fase); ✅ Plano
+   de Operação (add-on opcional no aluguel, `src/features/support/`, antecipado desta fase); ✅ Plano
    Premium para parceiros (assinatura mensal, destaque, selo verificado, relatórios de desempenho,
    `src/features/subscriptions/`, model `Subscription`, também antecipado — redução de comissão
    pronta em `getEffectiveCommissionRate` mas ainda não conectada ao cálculo da comissão); falta
@@ -130,17 +132,17 @@ O schema (`Booking`, `BookingStatusHistory`, `LogisticsQuote`, `Payment`) já ex
 (vazio). Nenhuma rota, serviço ou tela desses módulos existe ainda. Quebrando em etapas funcionais
 incrementais (`Context.md` §27/§33 — uma etapa completa e testável por vez, começando pela menor):
 
-1. ✅ **Solicitação de reserva (mínimo)** — a partir da página de detalhe da máquina, o locatário
+1. ✅ **Solicitação de aluguel (mínimo)** — a partir da página de detalhe da máquina, o locatário
    escolhe propriedade de destino e período; o servidor valida (data final > inicial, sem datas
-   passadas, duração mín/máx do anúncio, sem sobreposição com `Booking` já confirmado/pendente ou
-   `MachineAvailability` manual) e cria o `Booking` (`AWAITING_APPROVAL`, ou direto `APPROVED` se
-   `instantBooking`), com `BookingStatusHistory` desde a criação. Valor da locação já calculado
-   (dias × diária + caução); logística e taxa de serviço ainda em zero — cálculo real chega na
-   próxima etapa.
+   passadas, duração mín/máx do anúncio, sem sobreposição com `Booking` já ativo ou
+   `MachineAvailability` manual) e cria o `Booking` direto em `AWAITING_PAYMENT` — sem decisão
+   manual do proprietário, as condições do próprio anúncio são a única barreira —, com
+   `BookingStatusHistory` desde a criação. Valor da locação já calculado (dias × diária + caução);
+   logística e taxa de serviço ainda em zero — cálculo real chega na próxima etapa.
 2. ✅ **Cálculo logístico** — serviço desacoplado (`src/features/logistics`, fórmula do
    `Context.md` §8.11: `taxaBase + distanciaKm × valorPorKm × fatorDoEquipamento`), reaproveitando
    `src/lib/geo` (distância entre a propriedade da máquina e a de destino) para gerar um
-   `LogisticsQuote` por reserva nas 3 modalidades. Retirada pelo locatário nunca tem custo; entrega
+   `LogisticsQuote` por aluguel nas 3 modalidades. Retirada pelo locatário nunca tem custo; entrega
    pelo proprietário usa o preço que ele configurou no anúncio (ou o padrão da plataforma, se não
    configurou) e é recusada (`DELIVERY_OUT_OF_RANGE`) fora do raio de atendimento; transporte por
    parceiro usa sempre a configuração simulada da plataforma (sem parceiro real integrado). Todo
@@ -148,22 +150,29 @@ incrementais (`Context.md` §27/§33 — uma etapa completa e testável por vez,
    Haversine sobre coordenadas geocodificadas de forma simulada, nunca uma rota real.
 3. ✅ **Composição de preço** — tela de revisão antes de confirmar (`PriceBreakdown`): valor do
    período + logística + taxa de serviço + caução − descontos = total, com retrato dos preços
-   congelado na confirmação (alterações futuras no anúncio não afetam reserva já confirmada).
-4. ✅ **Aprovação do proprietário** — painel em `/reservas/recebidas` (lista) e
-   `/reservas/recebidas/[id]` (detalhe) para aceitar/recusar solicitações pendentes
-   (`AWAITING_APPROVAL → APPROVED/REJECTED`), com motivo opcional registrado no
-   `BookingStatusHistory`; só o proprietário da máquina decide, verificado no servidor
-   (`getBookingForOwner`/`decideBookingRequest`). Notificação (Fase 5) fica para depois — hoje o
-   locatário só vê a decisão ao abrir `/reservas/[id]`.
-5. ✅ **Pagamento simulado** — botão "Confirmar pagamento" em `/reservas/[id]` quando a reserva está
-   `APPROVED`; cria um `Payment` (`src/features/payments`) sempre `APPROVED` (gateway simulado
-   determinístico, mesmo padrão dos demais adaptadores simulados do projeto — nunca falha) e avança
-   `APPROVED → AWAITING_PAYMENT → PAYMENT_CONFIRMED` na mesma transação, com histórico das duas
-   transições. Só o locatário da própria reserva paga, verificado no servidor
+   congelado na confirmação (alterações futuras no anúncio não afetam aluguel já confirmado).
+4. ❌ **Removido — Aprovação do proprietário**: existiu uma etapa de aceitar/recusar solicitações
+   pendentes (`AWAITING_APPROVAL → APPROVED/REJECTED`) em `/reservas/recebidas`, decidida por
+   `machine.instantBooking`. Foi removida por completo a pedido do proprietário: as condições do
+   próprio anúncio (preço, prazos, disponibilidade, raio de entrega) passaram a ser a única
+   barreira para um pedido ser possível, sem decisão manual extra. O campo `Machine.instantBooking`
+   saiu do schema, e `decideBookingRequest`/`BookingDecisionActions`/`OwnerRequestsIndicator`
+   deixaram de existir. O que sobrou do "recusar antes de decidir" foi absorvido pelo cancelamento
+   unificado do item 7 abaixo — o proprietário cancela em vez de recusar, em qualquer momento antes
+   do transporte organizado.
+5. ✅ **Pagamento simulado** — botão "Confirmar pagamento" em `/alugueis/[id]` quando o aluguel está
+   `AWAITING_PAYMENT` (estado inicial de todo aluguel, desde o item 1); cria um `Payment`
+   (`src/features/payments`) sempre `APPROVED` (gateway simulado determinístico, mesmo padrão dos
+   demais adaptadores simulados do projeto — nunca falha) e avança `AWAITING_PAYMENT →
+   PAYMENT_CONFIRMED` numa única transação. Um aluguel só ocupa a agenda (`activeBookingStatusFilter`,
+   `src/features/machines/services/machine.service.ts`) dentro de `BOOKING_HOLD_TTL_MINUTES` (30
+   minutos, `src/features/bookings/lib/hold.ts`) a partir da criação — sem job em background: se o
+   locatário tentar pagar depois de expirado, o aluguel é cancelado nessa mesma chamada
+   (`409 BOOKING_HOLD_EXPIRED`). Só o locatário do próprio aluguel paga, verificado no servidor
    (`confirmSimulatedPayment`). Nenhum dado de cartão é coletado ou armazenado — só a forma de
    pagamento escolhida (cartão/Pix, ambos simulados).
-6. ✅ **Acompanhamento de status** — um único botão de "próxima etapa" em `/reservas/[id]`
-   (locatário) e `/reservas/recebidas/[id]` (proprietário), decidido por
+6. ✅ **Acompanhamento de status** — um único botão de "próxima etapa" em `/alugueis/[id]`
+   (locatário) e `/alugueis/recebidos/[id]` (proprietário), decidido por
    `getNextFulfillmentAction` (`src/features/bookings/lib/fulfillment.ts`): única fonte de verdade
    sobre qual é a próxima transição válida e de quem, usada tanto pela tela (qual botão mostrar)
    quanto pelo servidor (`advanceBookingFulfillment`, que verifica se o usuário logado é de fato o
@@ -173,20 +182,22 @@ incrementais (`Context.md` §27/§33 — uma etapa completa e testável por vez,
    `→ RETURNED → COMPLETED` (proprietário confirma a devolução). Entrega pelo proprietário e
    transporte por parceiro passam antes por `TRANSPORT_SCHEDULED → IN_TRANSIT` (proprietário).
    Duas transições avançam dois estados na mesma ação (mesma transação, dois registros de
-   histórico): confirmar entrega/retirada já implica "em uso", e confirmar devolução já encerra a
-   reserva — no MVP não há como a plataforma detectar sozinha uma etapa intermediária entre esses
+   histórico): confirmar entrega/retirada já implica "em uso", e confirmar devolução já encerra o
+   aluguel — no MVP não há como a plataforma detectar sozinha uma etapa intermediária entre esses
    pares de estados.
 7. ✅ **Cancelamento** — `cancelBooking` (`src/features/bookings/services/booking.service.ts`)
-   serve tanto o locatário quanto o proprietário; o papel é descoberto a partir da própria reserva,
-   nunca recebido do cliente. Política centralizada em `src/features/bookings/lib/cancellation.ts`
-   (`Context.md` §9.4), nunca percentuais soltos no serviço: sem cobrança antes do pagamento
-   confirmado (nada foi cobrado ainda); estorno integral quando quem cancela é o proprietário;
-   estorno integral ou nenhum, conforme a antecedência até o início do período
-   (`CANCELLATION_POLICY.minDaysBeforeStartForFullRefund`, hoje 3 dias), quando é o locatário
-   cancelando depois do pagamento confirmado. Cancelamento self-service termina em
+   serve tanto o locatário quanto o proprietário; o papel é descoberto a partir do próprio aluguel,
+   nunca recebido do cliente. Sem etapa de aprovação separada (ver item 4), o proprietário cancela
+   pela mesma função em qualquer momento antes do transporte organizado, mesmo antes do pagamento —
+   não existe mais "recusar" como ação distinta. Política centralizada em
+   `src/features/bookings/lib/cancellation.ts` (`Context.md` §9.4), nunca percentuais soltos no
+   serviço: sem cobrança antes do pagamento confirmado (nada foi cobrado ainda); estorno integral
+   quando quem cancela é o proprietário; estorno integral ou nenhum, conforme a antecedência até o
+   início do período (`CANCELLATION_POLICY.minDaysBeforeStartForFullRefund`, hoje 3 dias), quando é
+   o locatário cancelando depois do pagamento confirmado. Cancelamento self-service termina em
    `PAYMENT_CONFIRMED` — a partir de `TRANSPORT_SCHEDULED` (transporte já organizado) não é mais
    oferecido, situação que o `Context.md` §9.4 trata como excepcional (disputa, fora do escopo do
-   MVP). O estorno é simulado: o `Payment` aprovado da reserva muda para `REFUNDED` na mesma
+   MVP). O estorno é simulado: o `Payment` aprovado do aluguel muda para `REFUNDED` na mesma
    transação que cancela o `Booking`.
 
 Cada etapa acima foi entregue como um fluxo completo e testável (schema já existia → serviço +
@@ -198,15 +209,15 @@ COMPLETED` existir de fato, o que agora acontece via o fluxo de acompanhamento a
 
 O schema (`Review`) já existia desde a Etapa 1 (vazio). Etapas funcionais incrementais:
 
-1. ✅ **Avaliações** — só participantes de uma reserva `COMPLETED` avaliam, uma vez cada
+1. ✅ **Avaliações** — só participantes de um aluguel `COMPLETED` avaliam, uma vez cada
    (`createReview`, `src/features/reviews/services/review.service.ts`; papel descoberto a partir
-   da própria reserva, nunca recebido do cliente — mesmo padrão de `cancelBooking`). Nota geral
+   do próprio aluguel, nunca recebido do cliente — mesmo padrão de `cancelBooking`). Nota geral
    obrigatória (1–5); aspectos opcionais variam por papel — locatário avalia estado do
    equipamento, comunicação, pontualidade e experiência logística (sobre o proprietário/máquina);
    proprietário avalia só comunicação e pontualidade (sobre o locatário) — nunca pede ao
    proprietário nota de "estado do equipamento" do próprio anúncio. Formulário
-   (`ReviewForm`) aparece em `/reservas/[id]` e `/reservas/recebidas/[id]` quando a reserva está
-   concluída e o usuário ainda não avaliou; após enviar, a mesma seção mostra a avaliação já
+   (`ReviewForm`) aparece em `/alugueis/[id]` e `/alugueis/recebidos/[id]` quando o aluguel está
+   concluído e o usuário ainda não avaliou; após enviar, a mesma seção mostra a avaliação já
    registrada. A página pública de cada máquina (`/catalogo/[slug]`) e os cards do catálogo
    mostram a nota média e, no detalhe, a lista de avaliações — sempre só as do locatário sobre
    aquela máquina (nunca a avaliação que o proprietário fez do locatário, que não é sobre o
