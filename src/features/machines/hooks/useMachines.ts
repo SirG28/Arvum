@@ -1,20 +1,21 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { MachineStatus } from "@prisma/client";
+import type { Machine, MachineStatus } from "@prisma/client";
 import type { MachineFormOutput } from "../schemas/machine.schema";
 import { parseErrorOrThrow } from "./fetch-json";
 
 export function useCreateMachine() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: MachineFormOutput) => {
+    mutationFn: async (input: MachineFormOutput & { images?: string[] }) => {
       const response = await fetch("/api/v1/machines", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       });
-      return parseErrorOrThrow(response);
+      const { data } = (await parseErrorOrThrow(response)) as { data: Machine };
+      return data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["machines"] }),
   });

@@ -61,9 +61,14 @@ export async function getOwnerHighestDailyPriceInCents(ownerId: string) {
 
 export type CreateMachineResult = Machine | "PROPERTY_NOT_OWNED";
 
+// `imageUrls` vem do assistente de criação (MachineForm.tsx, etapa "Fotos") — data URLs já
+// redimensionados no navegador, não uma URL colada manualmente. O create aninhado do Prisma grava
+// máquina e imagens numa única operação atômica, sem precisar de um `$transaction` explícito nem
+// de um machineId prévio (que ainda não existiria neste ponto).
 export async function createMachine(
   ownerId: string,
   input: MachineFormOutput,
+  imageUrls: string[] = [],
 ): Promise<CreateMachineResult> {
   const property = await getOwnedProperty(ownerId, input.propertyId);
   if (!property) return "PROPERTY_NOT_OWNED";
@@ -73,6 +78,10 @@ export async function createMachine(
       ...toMachinePersistedData(input),
       ownerId,
       slug: generateMachineSlug(input.title),
+      images:
+        imageUrls.length > 0
+          ? { create: imageUrls.map((url, position) => ({ url, position })) }
+          : undefined,
     },
   });
 }

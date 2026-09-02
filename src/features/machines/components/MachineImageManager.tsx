@@ -1,18 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import type { MachineImage } from "@prisma/client";
-import { machineImageSchema, type MachineImageInput } from "../schemas/machine-image.schema";
+import { resizeImageToDataUrl } from "../lib/image-file";
 import { useAddMachineImage, useRemoveMachineImage } from "../hooks/useMachineImages";
 import { Button } from "@/components/ui/Button";
 import { PlusIcon } from "@/components/ui/PlusIcon";
 import { IconButton } from "@/components/ui/IconButton";
 import { TrashIcon } from "@/components/ui/TrashIcon";
-import { Input } from "@/components/ui/Input";
-import { FormField } from "@/components/ui/FormField";
 import { Alert } from "@/components/ui/Alert";
 import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 
@@ -24,27 +20,36 @@ interface MachineImageManagerProps {
 export function MachineImageManager({ machineId, images }: MachineImageManagerProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   // Id da imagem com remoção pendente de confirmação — nunca mais de uma por vez, então um único
   // ConfirmationDialog (abaixo) atende qualquer miniatura da grade.
   const [pendingRemovalId, setPendingRemovalId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const addMutation = useAddMachineImage(machineId);
   const removeMutation = useRemoveMachineImage(machineId);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<MachineImageInput>({ resolver: zodResolver(machineImageSchema) });
+  // Sem provedor de storage configurado neste projeto (Context.md/BUSINESS_RULES.md) — a imagem
+  // escolhida no seletor nativo do sistema (arquivos do computador ou galeria/câmera do celular)
+  // vira um data URL já redimensionado (resizeImageToDataUrl) e é enviada como MachineImage.url,
+  // o mesmo campo que antes recebia uma URL colada manualmente. Some o campo de texto alternativo
+  // manual: o alt já cai de volta pro nome do anúncio em todo lugar que renderiza a imagem.
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    // Limpa o valor do input já aqui — sem isso, escolher o mesmo arquivo de novo (ex.: depois de
+    // corrigir um erro) não dispara um novo evento "change".
+    event.target.value = "";
+    if (!file) return;
 
-  async function onSubmit(data: MachineImageInput) {
     setError(null);
+    setIsProcessing(true);
     try {
-      await addMutation.mutateAsync(data);
-      reset();
+      const dataUrl = await resizeImageToDataUrl(file);
+      await addMutation.mutateAsync({ url: dataUrl });
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro inesperado.");
+      setError(err instanceof Error ? err.message : "Não foi possível adicionar a imagem.");
+    } finally {
+      setIsProcessing(false);
     }
   }
 
@@ -71,7 +76,7 @@ export function MachineImageManager({ machineId, images }: MachineImageManagerPr
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {images.map((image) => (
             <div key={image.id} className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element -- URL arbitrária informada pelo proprietário, sem provedor de imagem configurado */}
+              {/* eslint-disable-next-line @next/next/no-img-element -- imagem enviada pelo proprietário, sem provedor de storage/otimização configurado */}
               <img
                 src={image.url}
                 alt={image.altText ?? ""}
@@ -101,24 +106,22 @@ export function MachineImageManager({ machineId, images }: MachineImageManagerPr
         onCancel={() => setPendingRemovalId(null)}
       />
 
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-3 sm:flex-row sm:items-end"
-        noValidate
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="sr-only"
+      />
+      <Button
+        type="button"
+        isLoading={isProcessing}
+        onClick={() => fileInputRef.current?.click()}
+        className="self-start"
       >
-        <div className="flex-1">
-          <FormField label="URL da imagem" required error={errors.url?.message}>
-            <Input placeholder="https://..." {...register("url")} />
-          </FormField>
-        </div>
-        <FormField label="Texto alternativo" helpText="Opcional" error={errors.altText?.message}>
-          <Input {...register("altText")} />
-        </FormField>
-        <Button type="submit" isLoading={isSubmitting}>
-          <PlusIcon />
-          Adicionar imagem
-        </Button>
-      </form>
+        <PlusIcon />
+        Adicionar imagem
+      </Button>
     </div>
   );
 }

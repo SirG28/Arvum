@@ -48,7 +48,7 @@ export default async function EditMachinePage({ params }: EditMachinePageProps) 
         </div>
       </Card>
 
-      <Card>
+      <Card id="imagens" className="scroll-mt-6">
         <h2 className="text-lg font-semibold text-neutral-900">Imagens</h2>
         <div className="mt-6">
           <MachineImageManager machineId={machine.id} images={machine.images} />
