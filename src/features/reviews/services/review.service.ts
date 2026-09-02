@@ -117,6 +117,63 @@ export async function getUserReviews(userId: string, limit = 5) {
   }));
 }
 
+export type ReportReviewResult = "OK" | "REVIEW_NOT_FOUND" | "CANNOT_REPORT_OWN_REVIEW" | "ALREADY_MODERATED";
+
+// Qualquer usuário autenticado pode denunciar uma avaliação alheia (Context.md §9.5: "comentários
+// denunciados podem ser ocultados pela moderação") — nunca a própria (createReview já impede
+// autoavaliação, aqui é a mesma garantia do outro lado). Uma avaliação já denunciada ou já oculta
+// não é denunciada de novo — evita fila de moderação com entradas duplicadas da mesma avaliação.
+export async function reportReview(
+  userId: string,
+  reviewId: string,
+  reason?: string,
+): Promise<ReportReviewResult> {
+  const review = await prisma.review.findUnique({ where: { id: reviewId } });
+  if (!review) return "REVIEW_NOT_FOUND";
+  if (review.authorId === userId) return "CANNOT_REPORT_OWN_REVIEW";
+  if (review.status !== "PUBLISHED") return "ALREADY_MODERATED";
+
+  await prisma.review.update({
+    where: { id: reviewId },
+    data: { status: "REPORTED", reportReason: reason || null },
+  });
+  return "OK";
+}
+
+// Fila de moderação (Fase 6) — só avaliações denunciadas, nunca a base inteira de avaliações
+// publicadas (isso seria o catálogo de avaliações, não uma fila de trabalho).
+export async function listReportedReviews() {
+  return prisma.review.findMany({
+    where: { status: "REPORTED" },
+    include: {
+      author: { select: { id: true, name: true } },
+      targetUser: { select: { id: true, name: true } },
+      machine: { select: { id: true, title: true, slug: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+}
+
+export type ModerateReviewResult = "OK" | "REVIEW_NOT_FOUND" | "NOT_REPORTED";
+
+// Única forma de sair da fila de denúncias: ocultar (HIDDEN, para de contar na nota média e some
+// da máquina/perfil) ou manter (volta a PUBLISHED, descartando a denúncia como improcedente) —
+// nunca uma terceira opção que deixe a avaliação presa em REPORTED indefinidamente.
+export async function moderateReview(
+  reviewId: string,
+  decision: "HIDE" | "RESTORE",
+): Promise<ModerateReviewResult> {
+  const review = await prisma.review.findUnique({ where: { id: reviewId } });
+  if (!review) return "REVIEW_NOT_FOUND";
+  if (review.status !== "REPORTED") return "NOT_REPORTED";
+
+  await prisma.review.update({
+    where: { id: reviewId },
+    data: { status: decision === "HIDE" ? "HIDDEN" : "PUBLISHED", reportReason: null },
+  });
+  return "OK";
+}
+
 // Nota média de várias máquinas de uma vez (catálogo) — uma única consulta em vez de N, mesmo
 // cuidado de desempenho já aplicado ao restante da busca (Context.md §23). Mesma regra de
 // getMachineReviews: só conta quem avaliou como locatário (target = proprietário da máquina).

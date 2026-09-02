@@ -10,6 +10,7 @@ import { SignOutIcon } from "@/components/ui/SignOutIcon";
 import { MenuIcon } from "@/components/ui/MenuIcon";
 import { NAV_ITEMS } from "./AppNav";
 import { PROFILE_ITEMS } from "./ProfileMenu";
+import { ADMIN_MODERATION_ITEM } from "./profileItems";
 
 // Mesmo par ícone+rótulo e mesmo espaçamento (px-4 py-2.5) do dropdown desktop (ProfileMenu) —
 // o cartão é o mesmo componente visual nas duas telas, só ganha o item "Início" a mais no mobile.
@@ -145,7 +146,10 @@ export function MobileNavDrawer() {
 
           {session?.user && (
             <div className="border-t border-neutral-200 py-1">
-              {PROFILE_ITEMS.map((item) => (
+              {(session.user.role === "ADMIN"
+                ? [...PROFILE_ITEMS, ADMIN_MODERATION_ITEM]
+                : PROFILE_ITEMS
+              ).map((item) => (
                 <DrawerLink
                   key={item.href}
                   href={item.href}

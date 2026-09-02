@@ -12,10 +12,12 @@ import { BookingRequestForm } from "@/features/bookings/components/BookingReques
 import { ReviewsSection } from "@/features/reviews/components/ReviewsSection";
 import { Rating } from "@/components/ui/Rating";
 import { Badge } from "@/components/ui/Badge";
+import { VerifiedPartnerBadge } from "@/components/shared/VerifiedPartnerBadge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Alert } from "@/components/ui/Alert";
 import { BackLink } from "@/components/ui/BackLink";
+import { WhatsAppSupportLink } from "@/components/shared/WhatsAppSupportLink";
 
 const CONDITION_LABELS: Record<string, string> = {
   NEW: "Nova",
@@ -162,14 +164,12 @@ export default async function MachineDetailPage({ params, searchParams }: Machin
               Caução: {formatBRL(machine.depositInCents)}
             </p>
           ) : null}
-          <p className="mt-1 flex items-center gap-2 text-xs text-neutral-500">
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-neutral-500">
             Anunciado por{" "}
             <Link href={`/perfil/${machine.owner.id}`} className="font-medium text-neutral-700 hover:underline">
               {machine.owner.name}
             </Link>
-            {isPremiumActive(machine.owner.subscription) && (
-              <Badge tone="success">Parceiro verificado</Badge>
-            )}
+            {isPremiumActive(machine.owner.subscription) && <VerifiedPartnerBadge />}
           </p>
 
           <div className="mt-4">
@@ -185,11 +185,24 @@ export default async function MachineDetailPage({ params, searchParams }: Machin
               <BookingRequestForm machineId={machine.id} properties={renterProperties} />
             )}
           </div>
+
+          {!isOwner && (
+            <WhatsAppSupportLink
+              message={`Olá! Tenho uma dúvida sobre reservar "${machine.title}" na Arvum.`}
+              label="Dúvidas antes de reservar? Fale com a Arvum"
+              className="mt-4"
+            />
+          )}
         </Card>
       </div>
 
       <Card id="avaliacoes" className="scroll-mt-6">
-        <ReviewsSection averageRating={averageRating} count={reviewCount} reviews={reviews} />
+        <ReviewsSection
+          averageRating={averageRating}
+          count={reviewCount}
+          reviews={reviews}
+          currentUserId={user?.id}
+        />
       </Card>
     </div>
   );

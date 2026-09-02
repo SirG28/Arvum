@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getSubscriptionByOwner } from "@/features/subscriptions/services/subscription.service";
 import { getOwnerPerformanceReport } from "@/features/subscriptions/services/report.service";
+import { getOwnerHighestDailyPriceInCents } from "@/features/machines/services/machine.service";
 import { isPremiumActive } from "@/features/subscriptions/lib/subscription-status";
 import { Card } from "@/components/ui/Card";
 import { SubscriptionCard } from "@/features/subscriptions/components/SubscriptionCard";
@@ -55,7 +56,10 @@ export default async function OwnerDashboardPage() {
 
   const subscription = await getSubscriptionByOwner(user.id);
   const active = isPremiumActive(subscription);
-  const report = active ? await getOwnerPerformanceReport(user.id) : null;
+  const [report, highestDailyPriceInCents] = await Promise.all([
+    active ? getOwnerPerformanceReport(user.id) : Promise.resolve(null),
+    active ? Promise.resolve(null) : getOwnerHighestDailyPriceInCents(user.id),
+  ]);
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
@@ -100,7 +104,7 @@ export default async function OwnerDashboardPage() {
           desempenho.
         </p>
         <div className="mt-4">
-          <SubscriptionCard subscription={subscription} />
+          <SubscriptionCard subscription={subscription} highestDailyPriceInCents={highestDailyPriceInCents} />
         </div>
       </Card>
 

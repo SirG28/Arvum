@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
 import { FormField } from "@/components/ui/FormField";
 import { Alert } from "@/components/ui/Alert";
+import { cn } from "@/lib/cn";
 
 const CONDITION_LABELS: Record<string, string> = {
   NEW: "Nova",
@@ -25,6 +26,45 @@ const CONDITION_LABELS: Record<string, string> = {
   FAIR: "Regular",
   NEEDS_MAINTENANCE: "Precisa de manutenção",
 };
+
+// Só a criação passa pelo assistente em etapas — quem está editando já preencheu tudo antes e
+// quer revisar/ajustar um campo pontual, não navegar por um wizard de novo (Arvum Playbook §04:
+// a fricção do formulário longo é maior no primeiro/segundo anúncio, não na edição).
+const STEPS = [
+  {
+    label: "Dados básicos",
+    fields: [
+      "title",
+      "propertyId",
+      "categoryId",
+      "brand",
+      "model",
+      "manufactureYear",
+      "description",
+      "purpose",
+      "recommendedCrops",
+    ],
+  },
+  {
+    label: "Características técnicas",
+    fields: ["condition", "weight", "width", "height", "length", "requiresOperator"],
+  },
+  {
+    label: "Preço e disponibilidade",
+    fields: [
+      "dailyPrice",
+      "hourlyPrice",
+      "minimumPrice",
+      "deposit",
+      "minimumRentalDays",
+      "maximumRentalDays",
+      "deliveryRadiusKm",
+      "deliveryPricePerKm",
+      "deliveryBaseFee",
+      "instantBooking",
+    ],
+  },
+] as const satisfies { label: string; fields: (keyof MachineFormInput)[] }[];
 
 interface MachineFormProps {
   machine?: Machine;
@@ -36,11 +76,15 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const isEditing = Boolean(machine);
+  const [step, setStep] = useState(0);
+  const isFirstRender = useRef(true);
+  const topRef = useRef<HTMLDivElement>(null);
 
   const {
     register,
     handleSubmit,
     watch,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<MachineFormInput>({
     resolver: zodResolver(machineSchema),
@@ -87,6 +131,23 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
   const createMutation = useCreateMachine();
   const updateMutation = useUpdateMachine(machine?.id ?? "");
 
+  // Rola de volta ao topo do cartão a cada troca de etapa — sem isso, quem clicou "Avançar" no
+  // fim da tela ficaria olhando para o mesmo lugar enquanto os campos da nova etapa aparecem
+  // acima, fora da área visível.
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    topRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
+  }, [step]);
+
+  async function handleNext() {
+    const valid = await trigger(STEPS[step]!.fields);
+    if (valid) setStep((current) => current + 1);
+  }
+
   // O zodResolver já entrega os dados transformados/validados (recommendedCrops como array,
   // preços como number etc.) apesar do tipo estático de `register`/defaultValues ser o shape
   // bruto do formulário — react-hook-form não expõe um terceiro genérico compatível com esta
@@ -107,10 +168,8 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
     }
   }
 
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
-      {submitError && <Alert tone="error" title={submitError} />}
-
+  const stepBasico = (
+    <div className="flex flex-col gap-4">
       <FormField label="Nome do anúncio" required error={errors.title?.message}>
         <Input placeholder="Ex.: Trator Massey Ferguson 275" {...register("title")} />
       </FormField>
@@ -169,7 +228,11 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
           <Input placeholder="Ex.: soja, milho" {...register("recommendedCrops")} />
         </FormField>
       </div>
+    </div>
+  );
 
+  const stepTecnico = (
+    <div className="flex flex-col gap-4">
       <FormField label="Condição do equipamento" required error={errors.condition?.message}>
         <Select {...register("condition")}>
           <option value="">Selecione</option>
@@ -204,7 +267,11 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
         />
         Requer operador
       </label>
+    </div>
+  );
 
+  const stepPreco = (
+    <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-4">
         <FormField label="Diária (R$)" required error={errors.dailyPrice?.message}>
           <Input type="number" step="0.01" {...register("dailyPrice")} />
@@ -275,10 +342,66 @@ export function MachineForm({ machine, properties, categories }: MachineFormProp
         />
         Permitir reserva instantânea (sem aprovação manual do proprietário)
       </label>
+    </div>
+  );
 
-      <Button type="submit" isLoading={isSubmitting}>
-        {isEditing ? "Salvar alterações" : "Cadastrar máquina"}
-      </Button>
+  const stepContent = [stepBasico, stepTecnico, stepPreco];
+  const isLastStep = step === STEPS.length - 1;
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+      <div ref={topRef} className="scroll-mt-6" />
+
+      {submitError && <Alert tone="error" title={submitError} />}
+
+      {!isEditing && (
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-1.5">
+            {STEPS.map((s, index) => (
+              <div
+                key={s.label}
+                className={cn(
+                  "h-1 flex-1 rounded-full transition-colors duration-base",
+                  index <= step ? "bg-primary-600" : "bg-neutral-200",
+                )}
+              />
+            ))}
+          </div>
+          <p className="text-xs text-neutral-500">
+            Passo {step + 1} de {STEPS.length} — {STEPS[step]!.label}
+          </p>
+        </div>
+      )}
+
+      {isEditing ? (
+        <div className="flex flex-col gap-6">
+          {stepContent.map((content, index) => (
+            <div key={STEPS[index]!.label} className="flex flex-col gap-4">
+              <h2 className="text-sm font-semibold text-neutral-900">{STEPS[index]!.label}</h2>
+              {content}
+            </div>
+          ))}
+        </div>
+      ) : (
+        stepContent[step]
+      )}
+
+      <div className="flex gap-3">
+        {!isEditing && step > 0 && (
+          <Button type="button" variant="secondary" onClick={() => setStep((current) => current - 1)}>
+            Voltar
+          </Button>
+        )}
+        {!isEditing && !isLastStep ? (
+          <Button type="button" onClick={handleNext}>
+            Avançar
+          </Button>
+        ) : (
+          <Button type="submit" isLoading={isSubmitting}>
+            {isEditing ? "Salvar alterações" : "Cadastrar máquina"}
+          </Button>
+        )}
+      </div>
     </form>
   );
 }

@@ -62,7 +62,12 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
       </Card>
 
       <Card>
-        <ReviewsSection averageRating={null} count={reviewCount} reviews={reviews} />
+        <ReviewsSection
+          averageRating={null}
+          count={reviewCount}
+          reviews={reviews}
+          currentUserId={currentUser?.id}
+        />
       </Card>
     </div>
   );

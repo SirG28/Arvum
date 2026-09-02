@@ -366,6 +366,9 @@ model Review {
   logisticsRating        Int?
   comment                String?
   status                 ReviewStatus @default(PUBLISHED)
+  // Preenchido por quem denuncia (opcional); limpo quando a moderação decide (Fase 6) — não é um
+  // histórico de denúncias, só o motivo da denúncia em aberto no momento.
+  reportReason           String?
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
 

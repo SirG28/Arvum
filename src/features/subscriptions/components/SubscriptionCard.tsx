@@ -12,6 +12,10 @@ import { PREMIUM_BENEFITS, PREMIUM_PRICE_IN_CENTS } from "../config";
 
 interface SubscriptionCardProps {
   subscription: Pick<Subscription, "status" | "currentPeriodEnd"> | null;
+  // Maior diária já anunciada pelo proprietário — só passado quando ele ainda não é Premium
+  // (page.tsx não busca isso de quem já assina). Vira a prova de ROI concreta abaixo, em vez de
+  // só a lista genérica de benefícios (Arvum Playbook §04).
+  highestDailyPriceInCents?: number | null;
 }
 
 function formatBRL(cents: number) {
@@ -22,7 +26,7 @@ function formatDate(date: Date) {
   return date.toLocaleDateString("pt-BR", { dateStyle: "long" });
 }
 
-export function SubscriptionCard({ subscription }: SubscriptionCardProps) {
+export function SubscriptionCard({ subscription, highestDailyPriceInCents }: SubscriptionCardProps) {
   const router = useRouter();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +34,10 @@ export function SubscriptionCard({ subscription }: SubscriptionCardProps) {
   const cancelMutation = useCancelSubscription();
 
   const active = isPremiumActive(subscription);
+  const roiDays =
+    !active && highestDailyPriceInCents
+      ? Math.max(1, Math.ceil(PREMIUM_PRICE_IN_CENTS / highestDailyPriceInCents))
+      : null;
 
   async function handleSubscribe() {
     setError(null);
@@ -68,6 +76,22 @@ export function SubscriptionCard({ subscription }: SubscriptionCardProps) {
         />
       ) : (
         <Alert tone="info" title="Você ainda não tem o Plano Premium" />
+      )}
+
+      {roiDays !== null && highestDailyPriceInCents && (
+        <p className="text-sm text-neutral-600">
+          {roiDays === 1 ? (
+            <>
+              Uma diária da sua máquina de maior valor ({formatBRL(highestDailyPriceInCents)}) já
+              cobre o plano inteiro.
+            </>
+          ) : (
+            <>
+              {roiDays} diárias da sua máquina de maior valor ({formatBRL(highestDailyPriceInCents)}
+              /dia) já cobrem o plano inteiro — uma locação a mais no mês costuma bastar.
+            </>
+          )}
+        </p>
       )}
 
       <ul className="list-disc pl-6 text-sm text-neutral-600">

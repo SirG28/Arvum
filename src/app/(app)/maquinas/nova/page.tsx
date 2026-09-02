@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { BackLink } from "@/components/ui/BackLink";
 import { MachineForm } from "@/features/machines/components/MachineForm";
+import { WhatsAppSupportLink } from "@/components/shared/WhatsAppSupportLink";
 
 export const metadata = { title: "Nova máquina" };
 
@@ -45,6 +46,11 @@ export default async function NewMachinePage() {
           Preencha os dados do equipamento. Você poderá adicionar imagens e disponibilidade depois
           de salvar.
         </p>
+        <WhatsAppSupportLink
+          message="Olá! Estou cadastrando uma máquina na Arvum e preciso de ajuda."
+          label="Dúvidas para preencher? Fale com a Arvum no WhatsApp"
+          className="mt-3"
+        />
         <div className="mt-6">
           <MachineForm properties={properties} categories={categories} />
         </div>

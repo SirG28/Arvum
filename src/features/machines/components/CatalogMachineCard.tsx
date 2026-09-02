@@ -3,7 +3,9 @@ import type { Machine, MachineCategory, MachineImage, Property } from "@prisma/c
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Rating } from "@/components/ui/Rating";
+import { LazyImage } from "@/components/ui/LazyImage";
 import { FavoriteButton } from "@/features/favorites/components/FavoriteButton";
+import { VerifiedPartnerBadge } from "@/components/shared/VerifiedPartnerBadge";
 
 export type CatalogMachine = Machine & {
   category: MachineCategory;
@@ -50,12 +52,7 @@ export function CatalogMachineCard({
       >
         <div className="aspect-video w-full overflow-hidden rounded-md bg-neutral-100">
           {image ? (
-            // eslint-disable-next-line @next/next/no-img-element -- URL arbitrária informada pelo proprietário, sem provedor de imagem configurado
-            <img
-              src={image.url}
-              alt={image.altText ?? machine.title}
-              className="h-full w-full object-cover"
-            />
+            <LazyImage src={image.url} alt={image.altText ?? machine.title} className="h-full w-full" />
           ) : (
             <div className="flex h-full items-center justify-center text-xs text-neutral-400">
               Sem imagem
@@ -64,8 +61,10 @@ export function CatalogMachineCard({
         </div>
         <div>
           <div className="flex flex-col items-start gap-1">
-            <h3 className="text-sm font-semibold text-neutral-900">{machine.title}</h3>
-            {machine.ownerHasPremium && <Badge tone="success">Parceiro verificado</Badge>}
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-sm font-semibold text-neutral-900">{machine.title}</h3>
+              {machine.ownerHasPremium && <VerifiedPartnerBadge iconOnly />}
+            </div>
             {machine.requiresOperator && <Badge tone="info">Com operador</Badge>}
           </div>
           <p className="text-sm text-neutral-500">

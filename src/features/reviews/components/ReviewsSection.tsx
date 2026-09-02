@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Rating } from "@/components/ui/Rating";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ReportReviewButton } from "./ReportReviewButton";
 
 const ROLE_LABELS = { OWNER: "Como proprietário", RENTER: "Como locatário" } as const;
 
@@ -19,13 +20,17 @@ interface ReviewsSectionProps {
     // proprietário" (locatários avaliando o dono).
     role?: "OWNER" | "RENTER";
   }>;
+  // Undefined para visitante anônimo — sem conta não há o que denunciar (mesmo padrão de
+  // FavoriteButton, mas aqui a ação nem aparece, em vez de virar link de login: denunciar é raro
+  // e não é o tipo de ação que vale empurrar quem só está navegando a criar conta).
+  currentUserId?: string;
 }
 
 function formatDate(date: Date) {
   return new Date(date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-export function ReviewsSection({ averageRating, count, reviews }: ReviewsSectionProps) {
+export function ReviewsSection({ averageRating, count, reviews, currentUserId }: ReviewsSectionProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -63,6 +68,9 @@ export function ReviewsSection({ averageRating, count, reviews }: ReviewsSection
               </div>
               <Rating value={review.rating} size="sm" className="mt-1" />
               {review.comment && <p className="mt-2 text-sm text-neutral-700">{review.comment}</p>}
+              {currentUserId && currentUserId !== review.author.id && (
+                <ReportReviewButton reviewId={review.id} />
+              )}
             </li>
           ))}
         </ul>

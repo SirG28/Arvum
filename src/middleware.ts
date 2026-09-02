@@ -14,7 +14,11 @@ export default auth((req) => {
     req.nextUrl.pathname === "/perfil" ||
     req.nextUrl.pathname.startsWith("/favoritos") ||
     req.nextUrl.pathname.startsWith("/reservas") ||
-    req.nextUrl.pathname.startsWith("/configuracoes");
+    req.nextUrl.pathname.startsWith("/configuracoes") ||
+    // Só barra anônimo aqui — o papel (ADMIN) só é conferido de verdade na própria página
+    // (getCurrentUser, runtime Node), porque a sessão do middleware (Edge, auth.config.ts sem os
+    // callbacks jwt/session) não carrega o campo "role".
+    req.nextUrl.pathname.startsWith("/admin");
 
   if (isProtected && !isLoggedIn) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
@@ -31,5 +35,6 @@ export const config = {
     "/favoritos/:path*",
     "/reservas/:path*",
     "/configuracoes/:path*",
+    "/admin/:path*",
   ],
 };

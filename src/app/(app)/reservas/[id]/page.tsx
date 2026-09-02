@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getBookingForRenter } from "@/features/bookings/services/booking.service";
+import { hasOwnerMachines } from "@/features/machines/services/machine.service";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { BackLink } from "@/components/ui/BackLink";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_BADGE_TONE } from "@/features/bookings/lib/status-labels";
 import { LOGISTICS_MODE_LABELS } from "@/features/bookings/lib/logistics-labels";
@@ -41,6 +43,10 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
   if (!booking) notFound();
 
   const image = booking.machine.images[0];
+  // Só oferece o convite pra virar proprietário a quem ainda não anunciou nada — pra quem já
+  // anuncia máquinas, isso é ruído permanente sem utilidade (mesmo critério de
+  // OwnerRequestsIndicator.tsx).
+  const showOwnerInvite = booking.status === "COMPLETED" && !(await hasOwnerMachines(user.id));
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
@@ -188,6 +194,21 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
               />
             </>
           )}
+        </Card>
+      )}
+
+      {showOwnerInvite && (
+        <Card className="bg-primary-50 border-primary-100">
+          <h2 className="text-sm font-semibold text-neutral-900">
+            Alguma máquina parada na sua propriedade?
+          </h2>
+          <p className="mt-1 text-sm text-neutral-600">
+            Agora que você já sabe como é alugar por aqui, que tal anunciar um equipamento seu e
+            começar a ganhar com o tempo em que ele fica parado?
+          </p>
+          <Link href="/maquinas/nova" className="mt-3 inline-block">
+            <Button variant="secondary">Anunciar uma máquina</Button>
+          </Link>
         </Card>
       )}
 

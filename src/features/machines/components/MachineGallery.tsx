@@ -1,4 +1,5 @@
 import type { MachineImage } from "@prisma/client";
+import { LazyImage } from "@/components/ui/LazyImage";
 
 export function MachineGallery({ images, title }: { images: MachineImage[]; title: string }) {
   if (images.length === 0) {
@@ -14,21 +15,20 @@ export function MachineGallery({ images, title }: { images: MachineImage[]; titl
 
   return (
     <div className="flex flex-col gap-2">
-      {/* eslint-disable-next-line @next/next/no-img-element -- URL arbitrária informada pelo proprietário */}
-      <img
+      <LazyImage
         src={first.url}
         alt={first.altText ?? title}
-        className="aspect-video w-full rounded-lg border border-neutral-200 object-cover"
+        eager
+        className="aspect-video w-full rounded-lg border border-neutral-200"
       />
       {rest.length > 0 && (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {rest.map((image) => (
-            // eslint-disable-next-line @next/next/no-img-element -- URL arbitrária informada pelo proprietário
-            <img
+            <LazyImage
               key={image.id}
               src={image.url}
               alt={image.altText ?? title}
-              className="aspect-square w-full rounded-md border border-neutral-200 object-cover"
+              className="aspect-square w-full rounded-md border border-neutral-200"
             />
           ))}
         </div>

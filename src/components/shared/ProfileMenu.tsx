@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
 import { useMountTransition } from "@/hooks/useMountTransition";
 import { SignOutIcon } from "@/components/ui/SignOutIcon";
 import { USER_ICON_PATHS } from "@/components/ui/UserIcon";
-import { PROFILE_ITEMS } from "./profileItems";
+import { PROFILE_ITEMS, ADMIN_MODERATION_ITEM } from "./profileItems";
 
 // Reexportado para não quebrar quem já importa PROFILE_ITEMS a partir daqui (ex.: MobileNavDrawer)
 // — a lista em si vive em profileItems.tsx (módulo sem "use client", importável por Server
@@ -70,6 +70,9 @@ export function ProfileMenu() {
 
   if (!session?.user) return null;
 
+  const items =
+    session.user.role === "ADMIN" ? [...PROFILE_ITEMS, ADMIN_MODERATION_ITEM] : PROFILE_ITEMS;
+
   return (
     <div ref={containerRef} className="relative hidden sm:block">
       <button
@@ -106,7 +109,7 @@ export function ProfileMenu() {
           </div>
 
           <div className="flex flex-col py-1">
-            {PROFILE_ITEMS.map((item) => {
+            {items.map((item) => {
               const isActive = pathname?.startsWith(item.href);
               return (
                 <Link

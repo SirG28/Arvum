@@ -1,8 +1,8 @@
 import Link from "next/link";
 import type { User } from "@prisma/client";
 import { Avatar } from "@/components/ui/Avatar";
-import { Badge } from "@/components/ui/Badge";
 import { Rating } from "@/components/ui/Rating";
+import { VerifiedPartnerBadge } from "@/components/shared/VerifiedPartnerBadge";
 import { Button } from "@/components/ui/Button";
 import { PencilIcon } from "@/components/ui/PencilIcon";
 
@@ -30,7 +30,7 @@ export function ProfileView({ user, averageRating, reviewCount, isVerifiedPartne
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-lg font-semibold text-neutral-900">{user.name}</h1>
-              {isVerifiedPartner && <Badge tone="success">Parceiro verificado</Badge>}
+              {isVerifiedPartner && <VerifiedPartnerBadge />}
             </div>
             <p className="mt-1 text-sm text-neutral-500">
               Na Arvum desde {formatMemberSince(user.createdAt)}

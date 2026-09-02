@@ -5,6 +5,7 @@ import { listActiveMachines } from "@/features/machines/services/machine.service
 import { listFavoriteMachineIds } from "@/features/favorites/services/favorite.service";
 import { parseCatalogFilters } from "@/features/machines/schemas/catalog-filters.schema";
 import { CatalogMachineCard } from "@/features/machines/components/CatalogMachineCard";
+import { CollapsibleFilters } from "@/features/machines/components/CollapsibleFilters";
 import { Input } from "@/components/ui/Input";
 import { RangeSlider } from "@/components/ui/RangeSlider";
 import { CityAutocomplete } from "@/components/ui/CityAutocomplete";
@@ -42,6 +43,17 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     filters.originCity && filters.originState
       ? { origemCidade: filters.originCity, origemUf: filters.originState }
       : undefined;
+
+  // Em mobile, o painel de filtros avançados só abre sozinho se a URL já trouxer um deles
+  // aplicado — quem chegou aqui com um link filtrado precisa ver o que está filtrando, não
+  // adivinhar atrás do botão "Mais filtros".
+  const hasAdvancedFilters = Boolean(
+    rawParams.precoMax ||
+      filters.originCity ||
+      filters.availableFrom ||
+      filters.availableTo ||
+      (rawParams.raioMax && Number(rawParams.raioMax) < 500),
+  );
 
   // Campos ocultos que preservam os demais filtros ao trocar de categoria pelos links de pílula.
   const hiddenFields: Record<string, string | undefined> = {
@@ -97,69 +109,71 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <Label htmlFor="precoMax">Preço máximo (R$/dia)</Label>
-            <div className="relative mt-1.5">
-              <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-neutral-500">
-                R$
-              </span>
-              <Input
-                id="precoMax"
-                name="precoMax"
-                type="number"
-                min={0}
-                step="0.01"
-                placeholder="Ex.: 500"
-                defaultValue={rawParams.precoMax}
-                className="pl-9"
+        <CollapsibleFilters defaultOpen={hasAdvancedFilters}>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <Label htmlFor="precoMax">Preço máximo (R$/dia)</Label>
+              <div className="relative mt-1.5">
+                <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-neutral-500">
+                  R$
+                </span>
+                <Input
+                  id="precoMax"
+                  name="precoMax"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="Ex.: 500"
+                  defaultValue={rawParams.precoMax}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <div>
+              <CityAutocomplete
+                cityFieldName="origemCidade"
+                stateFieldName="origemUf"
+                label="Onde você vai usar?"
+                defaultCity={filters.originCity}
+                defaultState={filters.originState}
               />
             </div>
-          </div>
-          <div>
-            <CityAutocomplete
-              cityFieldName="origemCidade"
-              stateFieldName="origemUf"
-              label="Onde você vai usar?"
-              defaultCity={filters.originCity}
-              defaultState={filters.originState}
-            />
-          </div>
-          <div>
-            <DateRangeFilterField
-              startFieldName="dataInicio"
-              endFieldName="dataFim"
-              label="Período"
-              defaultStartDate={toDateInputValue(filters.availableFrom)}
-              defaultEndDate={toDateInputValue(filters.availableTo)}
-            />
-          </div>
-          <div className="flex flex-col">
-            <Label htmlFor="raioMax">Raio máximo</Label>
-            <div className="flex flex-1 items-center">
-              <RangeSlider
-                id="raioMax"
-                name="raioMax"
-                min={0}
-                max={500}
-                step={10}
-                defaultValue={rawParams.raioMax ? Number(rawParams.raioMax) : 500}
-                unlimitedValue={500}
-                unit=" km"
-                className="w-full"
+            <div>
+              <DateRangeFilterField
+                startFieldName="dataInicio"
+                endFieldName="dataFim"
+                label="Período"
+                defaultStartDate={toDateInputValue(filters.availableFrom)}
+                defaultEndDate={toDateInputValue(filters.availableTo)}
               />
             </div>
+            <div className="flex flex-col">
+              <Label htmlFor="raioMax">Raio máximo</Label>
+              <div className="flex flex-1 items-center">
+                <RangeSlider
+                  id="raioMax"
+                  name="raioMax"
+                  min={0}
+                  max={500}
+                  step={10}
+                  defaultValue={rawParams.raioMax ? Number(rawParams.raioMax) : 500}
+                  unlimitedValue={500}
+                  unit=" km"
+                  className="w-full"
+                />
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="flex gap-3">
-          <Button type="submit">Aplicar filtros</Button>
-          <Link href="/catalogo">
-            <Button type="button" variant="secondary">
-              Limpar filtros
-            </Button>
-          </Link>
-        </div>
+          <div className="flex gap-3">
+            <Button type="submit">Aplicar filtros</Button>
+            <Link href="/catalogo">
+              <Button type="button" variant="secondary">
+                Limpar filtros
+              </Button>
+            </Link>
+          </div>
+        </CollapsibleFilters>
       </form>
 
       <div className="flex flex-wrap gap-2">

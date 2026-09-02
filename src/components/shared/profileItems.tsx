@@ -71,3 +71,20 @@ export const PROFILE_ITEMS = [
     ),
   },
 ] as const;
+
+// Item à parte, não misturado em PROFILE_ITEMS de propósito: é o único item do menu condicionado
+// ao papel da conta (ADMIN) — quem consome a lista (ProfileMenu, MobileNavDrawer) decide se
+// acrescenta com base em `session.user.role`, em vez deste módulo carregar lógica de sessão.
+export const ADMIN_MODERATION_ITEM = {
+  href: "/admin/moderacao",
+  label: "Moderação de avaliações",
+  // Escudo com um "check" pequeno — mesma metáfora de confiança/segurança do selo "Parceiro
+  // verificado" (Badge tone="success" no catálogo), aqui aplicada a quem audita, não a quem é
+  // auditado.
+  icon: (
+    <>
+      <path d="M12 3 4.5 6v6c0 4.2 3 7.4 7.5 9 4.5-1.6 7.5-4.8 7.5-9V6Z" />
+      <path d="m9 12 2 2 4-4" />
+    </>
+  ),
+} as const;

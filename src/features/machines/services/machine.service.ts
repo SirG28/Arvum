@@ -48,6 +48,17 @@ export function hasOwnerMachines(ownerId: string) {
     .then((machine) => machine !== null);
 }
 
+// Só para a chamada de ROI do Plano Premium (SubscriptionCard.tsx) a quem ainda não assina —
+// um único número (a maior diária já anunciada), nunca o relatório de desempenho completo, que é
+// benefício exclusivo de quem já é Premium (PREMIUM_BENEFITS, subscriptions/config.ts).
+export async function getOwnerHighestDailyPriceInCents(ownerId: string) {
+  const result = await prisma.machine.aggregate({
+    where: { ownerId, deletedAt: null },
+    _max: { dailyPriceInCents: true },
+  });
+  return result._max.dailyPriceInCents;
+}
+
 export type CreateMachineResult = Machine | "PROPERTY_NOT_OWNED";
 
 export async function createMachine(

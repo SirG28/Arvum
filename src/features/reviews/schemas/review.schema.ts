@@ -24,3 +24,20 @@ export const reviewRequestSchema = z.object({
 });
 
 export type ReviewRequestInput = z.infer<typeof reviewRequestSchema>;
+
+// Denúncia (Fase 6, Context.md §9.5): motivo é opcional — quem denuncia pode só sinalizar sem
+// justificar, a moderação decide de qualquer forma.
+export const reportReviewSchema = z.object({
+  reason: z.string().trim().max(500, "O motivo deve ter no máximo 500 caracteres.").optional(),
+});
+
+export type ReportReviewInput = z.infer<typeof reportReviewSchema>;
+
+export const moderateReviewSchema = z.object({
+  decision: z.enum(["HIDE", "RESTORE"], {
+    required_error: "Escolha uma decisão.",
+    invalid_type_error: "Escolha uma decisão.",
+  }),
+});
+
+export type ModerateReviewInput = z.infer<typeof moderateReviewSchema>;

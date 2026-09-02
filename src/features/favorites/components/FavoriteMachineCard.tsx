@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Machine, MachineCategory, MachineImage, Property } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { LazyImage } from "@/components/ui/LazyImage";
 import { STATUS_LABELS, STATUS_BADGE_TONE } from "@/features/machines/lib/status-labels";
 import { FavoriteButton } from "./FavoriteButton";
 
@@ -25,12 +26,7 @@ export function FavoriteMachineCard({ machine }: { machine: FavoritedMachine }) 
     <>
       <div className="aspect-video w-full overflow-hidden rounded-md bg-neutral-100">
         {image ? (
-          // eslint-disable-next-line @next/next/no-img-element -- URL arbitrária informada pelo proprietário, sem provedor de imagem configurado
-          <img
-            src={image.url}
-            alt={image.altText ?? machine.title}
-            className="h-full w-full object-cover"
-          />
+          <LazyImage src={image.url} alt={image.altText ?? machine.title} className="h-full w-full" />
         ) : (
           <div className="flex h-full items-center justify-center text-xs text-neutral-400">
             Sem imagem

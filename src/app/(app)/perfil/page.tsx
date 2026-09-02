@@ -78,7 +78,12 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
       </Card>
 
       <Card>
-        <ReviewsSection averageRating={null} count={reviewCount} reviews={reviews} />
+        <ReviewsSection
+          averageRating={null}
+          count={reviewCount}
+          reviews={reviews}
+          currentUserId={currentUser.id}
+        />
       </Card>
     </div>
   );
