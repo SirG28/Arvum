@@ -393,6 +393,86 @@ export async function listActiveMachinesByOwner(ownerId: string) {
   }));
 }
 
+// Carrega máquinas já ativas por uma lista de ids, na mesma ordem recebida — base compartilhada
+// por getMachinesByIds (cookie de "vistos recentemente") e listTopMachines ("mais procurados"),
+// reaproveitando exatamente o include/rating/premium já usado em listActiveMachinesByOwner (sem
+// distância, já que nenhuma das duas seções tem uma origem informada pelo usuário).
+async function hydrateMachinesByIds(orderedIds: string[]) {
+  if (orderedIds.length === 0) return [];
+
+  const machines = await prisma.machine.findMany({
+    where: { id: { in: orderedIds } },
+    include: {
+      category: true,
+      property: true,
+      images: { orderBy: { position: "asc" }, take: 1 },
+      owner: { select: { subscription: { select: { currentPeriodEnd: true } } } },
+    },
+  });
+  const byId = new Map(machines.map((machine) => [machine.id, machine]));
+
+  const ratings = await getAverageRatingsByMachineIds(
+    machines.map((machine) => ({ id: machine.id, ownerId: machine.ownerId })),
+  );
+
+  return orderedIds
+    .map((id) => byId.get(id))
+    .filter((machine): machine is NonNullable<typeof machine> => machine !== undefined)
+    .map((machine) => ({
+      ...machine,
+      distanceKm: null,
+      averageRating: ratings.get(machine.id)?.averageRating ?? null,
+      reviewCount: ratings.get(machine.id)?.count ?? 0,
+      ownerHasPremium: isPremiumActive(machine.owner.subscription),
+    }));
+}
+
+// "Vistos recentemente" da home — ids vêm do cookie gravado por RecordRecentlyViewed (client) na
+// página de detalhe. Filtra pra só as que continuam publicamente visíveis (uma máquina vista antes
+// pode ter sido pausada/removida desde então) antes de hidratar, preservando a ordem do cookie
+// (mais recente primeiro).
+export async function getMachinesByIds(ids: string[]) {
+  if (ids.length === 0) return [];
+
+  const activeMatches = await prisma.machine.findMany({
+    where: { id: { in: ids }, status: "ACTIVE", deletedAt: null },
+    select: { id: true },
+  });
+  const activeIdSet = new Set(activeMatches.map((machine) => machine.id));
+  const orderedActiveIds = ids.filter((id) => activeIdSet.has(id));
+
+  return hydrateMachinesByIds(orderedActiveIds);
+}
+
+// "Mais procurados" (máquinas) para a home — mesmo princípio de listTopCategories: sem uma
+// métrica de busca dedicada, aproxima demanda pelo número de aluguéis já feitos; como desempate
+// entre máquinas sem histórico de aluguel, usa o anúncio mais recente (mesma ordenação padrão de
+// listActiveMachines).
+export async function listTopMachines(limit: number) {
+  const [machines, bookings] = await Promise.all([
+    prisma.machine.findMany({
+      where: { status: "ACTIVE", deletedAt: null },
+      select: { id: true, createdAt: true },
+    }),
+    prisma.booking.findMany({ select: { machineId: true } }),
+  ]);
+
+  const bookingCountByMachine = new Map<string, number>();
+  for (const booking of bookings) {
+    bookingCountByMachine.set(booking.machineId, (bookingCountByMachine.get(booking.machineId) ?? 0) + 1);
+  }
+
+  const orderedIds = [...machines]
+    .sort((a, b) => {
+      const scoreDiff = (bookingCountByMachine.get(b.id) ?? 0) - (bookingCountByMachine.get(a.id) ?? 0);
+      return scoreDiff !== 0 ? scoreDiff : b.createdAt.getTime() - a.createdAt.getTime();
+    })
+    .slice(0, limit)
+    .map((machine) => machine.id);
+
+  return hydrateMachinesByIds(orderedIds);
+}
+
 export async function getPublicMachineBySlug(
   slug: string,
   origin?: { city: string; state: string },

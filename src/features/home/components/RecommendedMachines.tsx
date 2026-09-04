@@ -1,21 +1,19 @@
 import type { CatalogMachine } from "@/features/machines/components/CatalogMachineCard";
 import { MachineShelf } from "./MachineShelf";
 
-interface FeaturedMachinesProps {
+interface RecommendedMachinesProps {
   machines: CatalogMachine[];
   favoriteIds: Set<string>;
   isAuthenticated: boolean;
 }
 
-export function FeaturedMachines({ machines, favoriteIds, isAuthenticated }: FeaturedMachinesProps) {
+export function RecommendedMachines({ machines, favoriteIds, isAuthenticated }: RecommendedMachinesProps) {
   return (
     <MachineShelf
-      title="Máquinas em destaque"
+      title="Recomendados pra você"
       machines={machines}
       favoriteIds={favoriteIds}
       isAuthenticated={isAuthenticated}
-      viewAllHref="/catalogo"
-      viewAllLabel="Ver catálogo completo"
     />
   );
 }

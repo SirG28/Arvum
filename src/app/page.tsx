@@ -1,114 +1,130 @@
-import Link from "next/link";
+import { cookies } from "next/headers";
 import { AppHeader } from "@/components/shared/AppHeader";
 import { PublicHeader } from "@/components/shared/PublicHeader";
 import { Footer } from "@/components/shared/Footer";
-import { PROFILE_ITEMS } from "@/components/shared/profileItems";
-import { NAV_ITEMS } from "@/components/shared/navItems";
 import { getCurrentUser } from "@/lib/session";
-import { listTopCategories } from "@/features/categories/services/category.service";
-import { listActiveMachines } from "@/features/machines/services/machine.service";
-import { listFavoriteMachineIds } from "@/features/favorites/services/favorite.service";
-import { countOpenBookingsByRenter } from "@/features/bookings/services/booking.service";
-import { HomeHero } from "@/features/home/components/HomeHero";
-import { HighlightBand, type HomeStats } from "@/features/home/components/HighlightBand";
+import { listActiveCategories, listTopCategories } from "@/features/categories/services/category.service";
+import {
+  listActiveMachines,
+  listTopMachines,
+  getMachinesByIds,
+} from "@/features/machines/services/machine.service";
+import { listFavoriteMachineIds, listFavoritesByUser } from "@/features/favorites/services/favorite.service";
+import { RECENTLY_VIEWED_COOKIE_NAME, parseRecentlyViewedIds } from "@/features/machines/lib/recently-viewed";
+import { HowItWorks } from "@/features/home/components/HowItWorks";
 import { FeaturedCategories } from "@/features/home/components/FeaturedCategories";
+import { RecentlyViewed } from "@/features/home/components/RecentlyViewed";
+import { RecommendedMachines } from "@/features/home/components/RecommendedMachines";
+import { MostSearched } from "@/features/home/components/MostSearched";
 import { FeaturedMachines } from "@/features/home/components/FeaturedMachines";
+import { ValueProps } from "@/features/home/components/ValueProps";
 
-// Ícones reaproveitados de PROFILE_ITEMS/NAV_ITEMS (menu de perfil e menu hambúrguer) — mesmo
-// traçado nos dois lugares, nunca dois desenhos diferentes para o mesmo destino.
-const DASHBOARD_LINKS = [
-  {
-    title: "Minhas propriedades",
-    description: "Gerencie as propriedades cadastradas na sua conta.",
-    href: "/propriedades",
-    icon: PROFILE_ITEMS.find((item) => item.href === "/propriedades")!.icon,
-  },
-  {
-    title: "Painel do proprietário",
-    description: "Máquinas, aluguéis recebidos e o Plano Premium, tudo num só lugar.",
-    href: "/painel-do-proprietario",
-    icon: PROFILE_ITEMS.find((item) => item.href === "/painel-do-proprietario")!.icon,
-  },
-  {
-    title: "Catálogo",
-    description: "Veja as máquinas disponíveis de outros produtores.",
-    href: "/catalogo",
-    icon: NAV_ITEMS.find((item) => item.href === "/catalogo")!.icon,
-  },
-  {
-    title: "Meu perfil",
-    description: "Confira seus dados de conta.",
-    href: "/perfil",
-    icon: PROFILE_ITEMS.find((item) => item.href === "/perfil")!.icon,
-  },
-];
+const RECOMMENDATION_PAGE_SIZE = 6;
+
+function mostFrequentCategorySlug(categorySlugs: string[]): string | undefined {
+  const counts = new Map<string, number>();
+  for (const slug of categorySlugs) counts.set(slug, (counts.get(slug) ?? 0) + 1);
+
+  let best: string | undefined;
+  let bestCount = 0;
+  for (const [slug, count] of counts) {
+    if (count > bestCount) {
+      best = slug;
+      bestCount = count;
+    }
+  }
+  return best;
+}
 
 export default async function HomePage() {
   const user = await getCurrentUser();
+  const cookieStore = await cookies();
 
-  const [categories, activeMachinesPage, favoriteIds, stats] = await Promise.all([
-    listTopCategories(6),
-    listActiveMachines({}, { pageSize: 6 }),
-    user ? listFavoriteMachineIds(user.id) : Promise.resolve(new Set<string>()),
-    user
-      ? countOpenBookingsByRenter(user.id).then((openBookings): HomeStats => ({ openBookings }))
-      : Promise.resolve(null),
-  ]);
+  const recentIds = parseRecentlyViewedIds(cookieStore.get(RECENTLY_VIEWED_COOKIE_NAME)?.value);
+
+  const [allCategories, topCategories, activeMachinesPage, topMachines, favoriteIds, recentlyViewedMachines] =
+    await Promise.all([
+      listActiveCategories(),
+      listTopCategories(6),
+      listActiveMachines({}, { pageSize: 6 }),
+      listTopMachines(6),
+      user ? listFavoriteMachineIds(user.id) : Promise.resolve(new Set<string>()),
+      getMachinesByIds(recentIds),
+    ]);
 
   const featuredMachines = activeMachinesPage.machines;
-  const pendingCount = stats ? stats.openBookings : 0;
+
+  // Recomendação sem ML: pega a categoria mais frequente entre os vistos recentemente e, se não
+  // houver histórico de visualização, cai pros favoritos do usuário logado — sem nenhum dos dois
+  // sinais, a seção simplesmente não renderiza.
+  let recommendationCategorySlug: string | undefined;
+  if (recentlyViewedMachines.length > 0) {
+    recommendationCategorySlug = mostFrequentCategorySlug(
+      recentlyViewedMachines.map((machine) => machine.category.slug),
+    );
+  } else if (user) {
+    const favorites = await listFavoritesByUser(user.id);
+    recommendationCategorySlug = mostFrequentCategorySlug(
+      favorites.map((favorite) => favorite.machine.category.slug),
+    );
+  }
+
+  const excludedIds = new Set([
+    ...recentlyViewedMachines.map((machine) => machine.id),
+    ...featuredMachines.map((machine) => machine.id),
+  ]);
+
+  const recommendedMachines = recommendationCategorySlug
+    ? (
+        await listActiveMachines(
+          { categorySlug: recommendationCategorySlug },
+          { pageSize: RECOMMENDATION_PAGE_SIZE + excludedIds.size },
+        )
+      ).machines.filter((machine) => !excludedIds.has(machine.id)).slice(0, RECOMMENDATION_PAGE_SIZE)
+    : [];
 
   return (
     <div className="flex min-h-screen flex-col bg-neutral-50">
       {user ? <AppHeader /> : <PublicHeader />}
 
       <main className="flex-1 pb-10">
-        <HomeHero userName={user ? (user.name ?? null) : undefined} pendingCount={pendingCount} />
-        <HighlightBand stats={stats} />
+        <RecommendedMachines
+          machines={recommendedMachines}
+          favoriteIds={favoriteIds}
+          isAuthenticated={Boolean(user)}
+        />
 
-        {user && (
-          <section className="mx-auto max-w-5xl px-4 py-10">
-            <h2
-              className="text-xl font-semibold text-neutral-900"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              Acesso rápido
-            </h2>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              {DASHBOARD_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="rounded-lg border border-neutral-200 bg-white p-6 shadow-[var(--shadow-elevation-1)] transition-colors hover:border-primary-200 hover:bg-primary-50"
-                >
-                  <div className="mb-3 inline-flex rounded-md bg-primary-50 p-2 text-primary-600">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      strokeWidth={1.6}
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-5 w-5"
-                      aria-hidden="true"
-                    >
-                      {link.icon}
-                    </svg>
-                  </div>
-                  <h3 className="text-sm font-semibold text-neutral-900">{link.title}</h3>
-                  <p className="mt-1 text-sm text-neutral-500">{link.description}</p>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
+        <HowItWorks />
+        <FeaturedCategories categories={allCategories} />
 
-        <FeaturedCategories categories={categories} />
+        <RecentlyViewed
+          machines={recentlyViewedMachines}
+          favoriteIds={favoriteIds}
+          isAuthenticated={Boolean(user)}
+        />
+        <MostSearched
+          topCategories={topCategories}
+          topMachines={topMachines}
+          favoriteIds={favoriteIds}
+          isAuthenticated={Boolean(user)}
+        />
         <FeaturedMachines
           machines={featuredMachines}
           favoriteIds={favoriteIds}
           isAuthenticated={Boolean(user)}
         />
+
+        <section className="mx-auto max-w-5xl px-4 py-10">
+          <h2
+            className="text-xl font-semibold text-neutral-900"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Por que a Arvum
+          </h2>
+          <div className="mt-4">
+            <ValueProps />
+          </div>
+        </section>
       </main>
 
       <Footer />

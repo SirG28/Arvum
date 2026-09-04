@@ -7,6 +7,7 @@ import { listFavoriteMachineIds } from "@/features/favorites/services/favorite.s
 import { listPropertiesByOwner } from "@/features/properties/services/property.service";
 import { getMachineReviews } from "@/features/reviews/services/review.service";
 import { MachineGallery } from "@/features/machines/components/MachineGallery";
+import { RecordRecentlyViewed } from "@/features/machines/components/RecordRecentlyViewed";
 import { FavoriteButton } from "@/features/favorites/components/FavoriteButton";
 import { BookingRequestForm } from "@/features/bookings/components/BookingRequestForm";
 import { ReviewsSection } from "@/features/reviews/components/ReviewsSection";
@@ -65,6 +66,7 @@ export default async function MachineDetailPage({ params, searchParams }: Machin
 
   return (
     <div className="flex flex-col gap-6">
+      <RecordRecentlyViewed machineId={machine.id} />
       <BackLink href={backHref} label="Catálogo" />
 
       <div className="flex flex-col gap-6 lg:flex-row">

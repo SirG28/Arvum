@@ -1,36 +1,9 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/Button";
-import { Logo } from "./Logo";
+import { listActiveCategories } from "@/features/categories/services/category.service";
+import { PublicHeaderClient } from "./PublicHeaderClient";
 
-export function PublicHeader() {
-  return (
-    <header className="border-b border-neutral-200 bg-white">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-6">
-          <Link href="/">
-            <Logo size={36} />
-          </Link>
-          {/* Escondido em telas pequenas, mesmo padrão do AppNav (src/components/shared/AppNav.tsx)
-              — "Entrar"/"Criar conta" não cabem em ~375px ao lado do link. O catálogo continua
-              acessível pelo botão "Ver catálogo" da própria home pública. */}
-          <nav aria-label="Navegação principal" className="hidden sm:block">
-            <Link
-              href="/catalogo"
-              className="text-sm font-medium text-neutral-700 hover:text-primary-700"
-            >
-              Catálogo
-            </Link>
-          </nav>
-        </div>
-        <div className="flex gap-2 sm:gap-3">
-          <Link href="/cadastro">
-            <Button variant="secondary">Criar conta</Button>
-          </Link>
-          <Link href="/login">
-            <Button>Entrar</Button>
-          </Link>
-        </div>
-      </div>
-    </header>
-  );
+// Server Component só pra buscar as categorias — o layout em si (2 linhas, encolhe ao rolar) vive
+// em PublicHeaderClient.tsx ("use client", mesmo motivo documentado em AppHeaderClient.tsx).
+export async function PublicHeader() {
+  const categories = await listActiveCategories();
+  return <PublicHeaderClient categories={categories} />;
 }

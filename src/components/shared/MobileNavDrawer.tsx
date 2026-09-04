@@ -8,7 +8,6 @@ import { cn } from "@/lib/cn";
 import { useMountTransition } from "@/hooks/useMountTransition";
 import { SignOutIcon } from "@/components/ui/SignOutIcon";
 import { MenuIcon } from "@/components/ui/MenuIcon";
-import { NAV_ITEMS } from "./AppNav";
 import { PROFILE_ITEMS } from "./ProfileMenu";
 import { ADMIN_MODERATION_ITEM } from "./profileItems";
 
@@ -42,14 +41,18 @@ function DrawerLink({ href, label, icon, active }: { href: string; label: string
   );
 }
 
-// Menu hambúrguer só para mobile (sm:hidden) — em telas maiores o AppNav horizontal e o
-// ProfileMenu (dropdown do avatar) já cobrem a navegação. O cartão que abre aqui é o mesmo
-// desenho do ProfileMenu (cabeçalho com nome/e-mail, cantos arredondados, divisória antes de
-// "Sair da conta") — a única diferença de conteúdo é o item extra "Início", já que no mobile o
-// logo do cabeçalho é a única outra forma de voltar à página inicial.
+// Menu hambúrguer só para mobile (sm:hidden) — em telas maiores "Categorias"/"Dúvidas" vivem na
+// primeira linha do header (CategoriesMenu.tsx/WhatsAppSupportLink.tsx) e a busca Máquina · Onde ·
+// Quando fica na segunda linha (HeaderSearchDocked/HeaderSearchCompactPill); no mobile, esses dois
+// itens de navegação entram aqui em vez de disputar espaço com a logo/ações na primeira linha. O
+// cartão que abre aqui é o mesmo desenho do ProfileMenu (cabeçalho com nome/e-mail, cantos
+// arredondados, divisória antes de "Sair da conta") — a diferença de conteúdo é "Início",
+// "Catálogo" e "Dúvidas", já que no mobile o logo do cabeçalho é a única outra forma de voltar à
+// página inicial.
 export function MobileNavDrawer() {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const whatsappNumber = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP_NUMBER;
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -133,15 +136,41 @@ export function MobileNavDrawer() {
               }
               active={pathname === "/"}
             />
-            {NAV_ITEMS.map((item) => (
-              <DrawerLink
-                key={item.href}
-                href={item.href}
-                label={item.label}
-                icon={item.icon}
-                active={Boolean(pathname?.startsWith(item.href))}
-              />
-            ))}
+            <DrawerLink
+              href="/catalogo"
+              label="Categorias"
+              icon={
+                <>
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
+                </>
+              }
+              active={pathname === "/catalogo"}
+            />
+            {whatsappNumber && (
+              <a
+                href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Olá! Tenho uma dúvida sobre a Arvum.")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                role="menuitem"
+                className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  strokeWidth={1.6}
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4 shrink-0"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 16v-4M12 8h.01" />
+                </svg>
+                Dúvidas
+              </a>
+            )}
           </div>
 
           {session?.user && (
@@ -172,6 +201,25 @@ export function MobileNavDrawer() {
                 <SignOutIcon className="h-4 w-4 shrink-0" />
                 Sair da conta
               </button>
+            </div>
+          )}
+
+          {/* Deslogado: "Entrar" já fica visível na linha do header ao lado deste hambúrguer
+              (AppHeaderClient/PublicHeaderClient) — só "Criar conta" precisa de espaço aqui. */}
+          {!session?.user && (
+            <div className="border-t border-neutral-200 py-1">
+              <DrawerLink
+                href="/cadastro"
+                label="Criar conta"
+                icon={
+                  <>
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M19 8v6M22 11h-6" />
+                  </>
+                }
+                active={pathname === "/cadastro"}
+              />
             </div>
           )}
         </div>

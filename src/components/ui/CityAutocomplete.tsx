@@ -13,6 +13,11 @@ interface CityAutocompleteProps {
   defaultCity?: string;
   defaultState?: string;
   className?: string;
+  // Esconde o <Label> visível acima do campo — usado só pela busca do header (HeaderSearchWidget),
+  // onde o placeholder já identifica o campo (mesmo padrão da barra de busca da Localiza: "Onde
+  // você quer retirar o carro?" dentro do próprio campo, sem rótulo separado acima). O `label`
+  // continua obrigatório mesmo assim — vira o aria-label do input pra leitor de tela.
+  hideLabel?: boolean;
 }
 
 // Combobox de cidade que resolve a UF sozinho: digitando um nome que bate uma única cidade no
@@ -27,6 +32,7 @@ export function CityAutocomplete({
   defaultCity,
   defaultState,
   className,
+  hideLabel = false,
 }: CityAutocompleteProps) {
   const inputId = useId();
   const listboxId = useId();
@@ -85,7 +91,9 @@ export function CityAutocomplete({
 
   return (
     <div ref={containerRef} className={cn("relative", className)}>
-      <Label htmlFor={inputId}>{label}</Label>
+      <Label htmlFor={inputId} className={hideLabel ? "sr-only" : undefined}>
+        {label}
+      </Label>
       <input
         id={inputId}
         type="text"
@@ -109,7 +117,10 @@ export function CityAutocomplete({
         }}
         onFocus={() => query.trim().length >= 2 && setOpen(true)}
         onKeyDown={handleKeyDown}
-        className="mt-1.5 block w-full rounded-md border border-neutral-200 px-3 py-2 text-sm text-neutral-900 shadow-sm transition-colors placeholder:text-neutral-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 focus-visible:outline-none"
+        className={cn(
+          "block w-full rounded-md border border-neutral-200 px-3 py-2 text-sm text-neutral-900 shadow-sm transition-colors placeholder:text-neutral-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 focus-visible:outline-none",
+          hideLabel ? "mt-0" : "mt-1.5",
+        )}
       />
       {/* Só envia cidade/UF quando o município foi de fato resolvido (auto ou por seleção) — texto
           livre não reconhecido não é enviado, para não quebrar o cálculo de distância no backend. */}

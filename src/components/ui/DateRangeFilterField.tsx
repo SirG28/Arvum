@@ -10,6 +10,7 @@ interface DateRangeFilterFieldProps {
   defaultStartDate?: string;
   defaultEndDate?: string;
   className?: string;
+  hideLabel?: boolean;
 }
 
 // Adapta o DateRangePicker (controlado) para um form GET sem JS no submit — mantém o estado local
@@ -21,6 +22,7 @@ export function DateRangeFilterField({
   defaultStartDate,
   defaultEndDate,
   className,
+  hideLabel,
 }: DateRangeFilterFieldProps) {
   const [range, setRange] = useState<DateRange>({
     startDate: defaultStartDate ?? "",
@@ -29,7 +31,7 @@ export function DateRangeFilterField({
 
   return (
     <div className={className}>
-      <DateRangePicker label={label} value={range} onChange={setRange} />
+      <DateRangePicker label={label} value={range} onChange={setRange} hideLabel={hideLabel} />
       <input type="hidden" name={startFieldName} value={range.startDate} />
       <input type="hidden" name={endFieldName} value={range.endDate} />
     </div>

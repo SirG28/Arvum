@@ -19,6 +19,10 @@ interface DateRangePickerProps {
   minDate?: string;
   error?: string;
   className?: string;
+  // Esconde o <Label> visível — mesmo motivo/uso documentado em CityAutocomplete.tsx (busca do
+  // header). O trigger já mostra "Selecione o período" como texto até uma data ser escolhida, então
+  // a identificação do campo não depende do rótulo externo nesse caso.
+  hideLabel?: boolean;
 }
 
 const WEEKDAY_LABELS = ["D", "S", "T", "Q", "Q", "S", "S"];
@@ -55,7 +59,15 @@ function startOfToday(): Date {
 // Calendário de intervalo em um único campo: primeiro clique define a data inicial, o segundo
 // define a final (fecha sozinho); clicar antes da data inicial recomeça a seleção. Usado tanto no
 // filtro do catálogo (§ período de disponibilidade) quanto no formulário de aluguel do produto.
-export function DateRangePicker({ label, value, onChange, minDate, error, className }: DateRangePickerProps) {
+export function DateRangePicker({
+  label,
+  value,
+  onChange,
+  minDate,
+  error,
+  className,
+  hideLabel = false,
+}: DateRangePickerProps) {
   const inputId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -122,7 +134,9 @@ export function DateRangePicker({ label, value, onChange, minDate, error, classN
 
   return (
     <div ref={containerRef} className={cn("relative", className)}>
-      <Label htmlFor={inputId}>{label}</Label>
+      <Label htmlFor={inputId} className={hideLabel ? "sr-only" : undefined}>
+        {label}
+      </Label>
       <button
         id={inputId}
         type="button"
@@ -130,8 +144,9 @@ export function DateRangePicker({ label, value, onChange, minDate, error, classN
         aria-expanded={open}
         aria-haspopup="dialog"
         className={cn(
-          "mt-1.5 flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-left text-sm shadow-sm transition-colors",
+          "flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-left text-sm shadow-sm transition-colors",
           "focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 focus-visible:outline-none",
+          hideLabel ? "mt-0" : "mt-1.5",
           startDateObj ? "text-neutral-900" : "text-neutral-400",
           error ? "border-danger-500" : "border-neutral-200",
         )}
