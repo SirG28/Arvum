@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { useMountTransition } from "@/hooks/useMountTransition";
 import { CATEGORY_GROUPS } from "@/features/categories/lib/categoryGroups";
+import { ChevronDownIcon } from "@/components/ui/ChevronDownIcon";
 import { CategoryIcon } from "./CategoryIcon";
 
 export interface MachineCategoryPickerCategory {
@@ -88,21 +89,12 @@ export function MachineCategoryPicker({ categories, name, className }: MachineCa
         <span className={cn("truncate", selectedCategory ? "text-neutral-900" : "text-neutral-400")}>
           {selectedCategory?.name ?? "Tipo de máquina"}
         </span>
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          strokeWidth={1.8}
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        <ChevronDownIcon
           className={cn(
-            "h-3.5 w-3.5 shrink-0 text-neutral-500 transition-transform duration-fast",
+            "h-4 w-4 shrink-0 text-neutral-500 transition-transform duration-fast",
             open && "rotate-180",
           )}
-          aria-hidden="true"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
+        />
       </button>
 
       {rendered && (

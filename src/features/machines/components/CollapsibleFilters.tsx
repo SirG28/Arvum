@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { ChevronDownIcon } from "@/components/ui/ChevronDownIcon";
 
 interface CollapsibleFiltersProps {
   children: ReactNode;
@@ -26,18 +27,7 @@ export function CollapsibleFilters({ children, defaultOpen = false }: Collapsibl
         aria-controls="advanced-filters"
         className="inline-flex w-fit items-center gap-1.5 rounded-md border border-neutral-200 px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 sm:hidden"
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          strokeWidth={1.6}
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-          className={cn("h-4 w-4 shrink-0 transition-transform duration-fast", open && "rotate-180")}
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
+        <ChevronDownIcon className={cn("h-4 w-4 shrink-0 transition-transform duration-fast", open && "rotate-180")} />
         {open ? "Ocultar filtros" : "Mais filtros"}
       </button>
 
