@@ -41,9 +41,9 @@ function DrawerLink({ href, label, icon, active }: { href: string; label: string
   );
 }
 
-// Menu hambúrguer só para mobile (sm:hidden) — em telas maiores "Categorias"/"Dúvidas" vivem na
-// primeira linha do header (CategoriesMenu.tsx/WhatsAppSupportLink.tsx) e a busca Máquina · Onde ·
-// Quando fica na segunda linha (HeaderSearchDocked/HeaderSearchCompactPill); no mobile, esses dois
+// Menu hambúrguer só para mobile (sm:hidden) — em telas maiores "Catálogo"/"Dúvidas" vivem na
+// primeira linha do header (CatalogNavLink.tsx/WhatsAppSupportLink.tsx) e a busca Tipo de máquina ·
+// Onde · Quando fica na segunda linha (HeaderSearchDocked/HeaderSearchCompactPill); no mobile, esses dois
 // itens de navegação entram aqui em vez de disputar espaço com a logo/ações na primeira linha. O
 // cartão que abre aqui é o mesmo desenho do ProfileMenu (cabeçalho com nome/e-mail, cantos
 // arredondados, divisória antes de "Sair da conta") — a diferença de conteúdo é "Início",
@@ -138,7 +138,7 @@ export function MobileNavDrawer() {
             />
             <DrawerLink
               href="/catalogo"
-              label="Categorias"
+              label="Catálogo"
               icon={
                 <>
                   <circle cx="11" cy="11" r="8" />

@@ -1,6 +1,8 @@
 type LogoProps = {
   size?: number;
   showWordmark?: boolean;
+  /** "light" inverte pilares/wordmark para fundos escuros (Footer, Hero) mantendo o nó accent. */
+  variant?: "default" | "light";
   className?: string;
 };
 
@@ -8,7 +10,9 @@ type LogoProps = {
  * Marca "Elo": dois pilares (oferta e demanda) ligados por um nó — a Arvum como
  * ponto de encontro do marketplace, não mais uma folha/broto.
  */
-export function Logo({ size = 36, showWordmark = true, className }: LogoProps) {
+export function Logo({ size = 36, showWordmark = true, variant = "default", className }: LogoProps) {
+  const isLight = variant === "light";
+
   return (
     <span className={`inline-flex items-center gap-2.5 ${className ?? ""}`}>
       <svg
@@ -22,17 +26,17 @@ export function Logo({ size = 36, showWordmark = true, className }: LogoProps) {
       >
         <path
           d="M19,25 L29,30 L26,52 Q25,55 22,55 L19,55 Q16,55 15,52 Z"
-          fill="var(--color-primary-700)"
+          fill={isLight ? "var(--color-primary-200)" : "var(--color-primary-700)"}
         />
         <path
           d="M45,25 L35,30 L38,52 Q39,55 42,55 L45,55 Q48,55 49,52 Z"
-          fill="var(--color-primary-500)"
+          fill={isLight ? "var(--color-primary-50)" : "var(--color-primary-500)"}
         />
         <circle cx="32" cy="28" r="8.5" fill="var(--color-accent-500)" />
       </svg>
       {showWordmark && (
         <span
-          className="leading-none whitespace-nowrap text-xl font-bold tracking-tight text-primary-800"
+          className={`leading-none whitespace-nowrap text-xl font-bold tracking-tight ${isLight ? "text-white" : "text-primary-800"}`}
           style={{ fontFamily: "var(--font-display)" }}
         >
           arvum

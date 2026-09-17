@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { CatalogMachineCard, type CatalogMachine } from "@/features/machines/components/CatalogMachineCard";
+import { HomeMachineCarousel } from "./HomeMachineCarousel";
 
 interface MachineShelfProps {
   title: string;
@@ -10,10 +10,15 @@ interface MachineShelfProps {
   viewAllLabel?: string;
 }
 
-// Prateleira de máquinas genérica — FeaturedMachines, RecentlyViewed, RecommendedMachines e a
-// metade "máquinas" de MostSearched usam todas o mesmo título+grid, só mudando a lista e o rótulo;
-// reaproveitar aqui evita quatro cópias quase idênticas da mesma marcação. Sempre o mesmo
+// Prateleira de máquinas genérica — FeaturedMachines e RecentlyViewed usam o mesmo
+// título+carrossel, só mudando a lista e o rótulo; reaproveitar aqui evita cópias quase idênticas
+// da mesma marcação (a metade "máquinas" de MostSearched usa HomeMachineCarousel diretamente, sem
+// passar por este wrapper, porque lá o carrossel já vive dentro de uma <section> própria, junto
+// com os chips de categoria — o <section> deste componente duplicaria essa marcação). Sempre o mesmo
 // CatalogMachineCard usado em app/catalogo/page.tsx — nunca dois cards de máquina diferentes.
+//
+// Continua Server Component (favoriteIds.has(...) resolvido aqui, não no client) — só o carrossel
+// em si (HomeMachineCarousel) roda no cliente, recebendo os cartões já prontos como children.
 export function MachineShelf({
   title,
   machines,
@@ -25,30 +30,22 @@ export function MachineShelf({
   if (machines.length === 0) return null;
 
   return (
-    <section className="mx-auto max-w-5xl px-4 py-10">
-      <div className="flex items-baseline justify-between">
-        <h2
-          className="text-xl font-semibold text-neutral-900"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          {title}
-        </h2>
-        {viewAllHref && (
-          <Link href={viewAllHref} className="text-sm font-medium text-primary-700 hover:underline">
-            {viewAllLabel ?? "Ver todas"}
-          </Link>
-        )}
-      </div>
-      <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {machines.map((machine) => (
-          <CatalogMachineCard
-            key={machine.id}
-            machine={machine}
-            isFavorited={favoriteIds.has(machine.id)}
-            isAuthenticated={isAuthenticated}
-          />
-        ))}
-      </div>
+    <section className="mx-auto max-w-5xl px-4 py-20 sm:py-24">
+      <HomeMachineCarousel
+        title={title}
+        viewAllHref={viewAllHref}
+        viewAllLabel={viewAllLabel}
+        items={machines.map((machine) => ({
+          id: machine.id,
+          node: (
+            <CatalogMachineCard
+              machine={machine}
+              isFavorited={favoriteIds.has(machine.id)}
+              isAuthenticated={isAuthenticated}
+            />
+          ),
+        }))}
+      />
     </section>
   );
 }

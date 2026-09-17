@@ -126,7 +126,11 @@ export function CityAutocomplete({
           livre não reconhecido não é enviado, para não quebrar o cálculo de distância no backend. */}
       <input type="hidden" name={cityFieldName} value={resolved?.city ?? ""} />
       <input type="hidden" name={stateFieldName} value={resolved?.state ?? ""} />
-      {(resolved || exactMatches.length > 1) && (
+      {/* Some no header (`hideLabel`): ali os campos vivem numa fileira só, com a mesma altura
+          entre si (Tipo de máquina/Onde/Quando/Buscar) — esse texto extra abaixo só do campo de
+          cidade desalinhava essa fileira. No filtro completo do catálogo (`hideLabel` ausente,
+          formulário empilhado) continua aparecendo — lá é feedback útil, sem nada pra desalinhar. */}
+      {!hideLabel && (resolved || exactMatches.length > 1) && (
         <p className="mt-1 text-xs text-neutral-500">
           {resolved
             ? `Estado identificado: ${resolved.state}`

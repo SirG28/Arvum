@@ -1,3 +1,5 @@
+import { Card } from "@/components/ui/Card";
+
 const VALUE_PROPS = [
   {
     title: "Acesso",
@@ -69,16 +71,11 @@ export function ValueProps() {
   return (
     <div className="grid w-full gap-6 sm:grid-cols-3">
       {VALUE_PROPS.map((item) => (
-        <div
-          key={item.title}
-          className="rounded-lg border border-neutral-200 bg-white p-6 text-left shadow-[var(--shadow-elevation-1)]"
-        >
-          <div className="mb-3 inline-flex rounded-md bg-primary-50 p-2 text-primary-600">
-            {item.icon}
-          </div>
+        <Card key={item.title} hoverable className="p-6 text-left">
+          <div className="mb-3 inline-flex rounded-md bg-primary-50 p-2 text-primary-600">{item.icon}</div>
           <h2 className="text-sm font-semibold text-neutral-900">{item.title}</h2>
           <p className="mt-1 text-sm text-neutral-500">{item.description}</p>
-        </div>
+        </Card>
       ))}
     </div>
   );

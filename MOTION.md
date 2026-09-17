@@ -387,3 +387,105 @@ manual por catálogo, detalhe da máquina, `/alugueis`, `/alugueis/[id]` e `/alu
 confirmada sem erros de console em uma aba nova (uma aba antiga desta sessão, com muitas trocas de
 HMR acumuladas ao longo da conversa, mostrou erros de "hooks changed size" que não se repetem numa
 aba/carregamento frescos — artefato do ambiente de desenvolvimento, não bug de código).
+
+## Etapa 7 — Motion de marketing (landing)
+
+Exceção deliberada ao Princípio 1 ("funcional, não decorativo"), pedida explicitamente como parte
+de um redesign de identidade visual da home (queixa: interface "muito branca e monótona"). Até
+aqui, toda decisão deste documento (inclusive descartar o crossfade do catálogo, Etapa "prioridade
+média") tratou motion puramente decorativo como fora de escopo. A partir desta etapa isso deixa de
+valer **só para a página inicial** — o objetivo ali passa a incluir personalidade de marca, não
+apenas causa/efeito — enquanto o restante do app (fluxos de reserva, pagamento, formulários,
+overlays) continua sob o princípio original sem alteração.
+
+- `--animate-fade-up` (`globals.css`) — fade + slide vertical (16px) em `duration-slow`, mesmo
+  padrão de nomenclatura/token das etapas anteriores.
+- [`Reveal.tsx`](../src/components/shared/Reveal.tsx) — client component que observa a própria
+  posição na viewport (`IntersectionObserver`, `threshold: 0.15`) e aplica `animate-fade-up` uma
+  única vez ao entrar em tela, em vez de animar na montagem (diferente de `fade-slide-in`,
+  Etapa 4). Não usa `useMountTransition`: o elemento nunca desmonta, só ganha a classe de animação
+  — não há saída para coordenar.
+- Aplicado em `src/app/page.tsx` ao redor de `HowItWorks`, `FeaturedCategories`, `MostSearched` e
+  do bloco final "Por que a Arvum" — não em `RecommendedMachines`/`RecentlyViewed`/
+  `FeaturedMachines`, que já podem renderizar `null` (sem itens) e cujo conteúdo é
+  personalizado/transacional (leva a favoritar, alugar), não puramente de apresentação.
+- `Hero.tsx` (novo) não usa `Reveal` — está acima da dobra, visível já no primeiro paint; um
+  scroll-reveal ali só atrasaria a primeira impressão sem necessidade.
+- Continua respeitando `prefers-reduced-motion` pela regra global já existente (zera a duração da
+  animação) — nenhum tratamento adicional foi necessário no componente.
+
+## Etapa 8 — Personalidade no header (encolher ao rolar)
+
+Segunda exceção ao Princípio 1, dessa vez fora da home: pedido explícito pra dar mais vida à
+transição do header ao rolar, citando o header do Airbnb como referência, e pra recolher a busca no
+mobile por direção de scroll (esconde ao descer, volta ao subir).
+
+- `--ease-playful` (`globals.css`) — `cubic-bezier(0.34, 1.56, 0.64, 1)`, uma curva com leve
+  "overshoot" (passa um pouco do alvo antes de assentar). Só usada nas duas transições abaixo — o
+  resto do app (menus, modais, drawers) continua com `--ease-out`, que não quica, mais previsível
+  pra ação repetida o dia todo. Reforça o próprio parágrafo do Princípio 1 sobre motion decorativo:
+  aqui é decorativo de propósito, num lugar isolado, não uma mudança de filosofia geral.
+- Logo do header: `scale-90` (via `--ease-playful`, `duration-base`) quando `shrunk` (mesmo sinal
+  de posição que já existia) — só no desktop (`sm:`), mesmo tratamento sutil que o header do
+  Airbnb dá à própria logo ao encolher.
+- Crossfade da busca "docada" ⇄ 1ª linha (`fadeClasses`, `AppHeaderClient`/`PublicHeaderClient`):
+  ganhou um `scale` (95%→100%) junto do fade+slide que já existia, e trocou `duration-fast`/
+  `ease-out` por `duration-base`/`ease-playful` — o mesmo crossfade de antes, só com mais "vida".
+- `useHeaderScrollState.ts` reescrito pra emitir dois sinais a partir do mesmo listener de scroll
+  (um só `requestAnimationFrame` por frame, como antes): `shrunk` (o que já existia, por posição
+  com histerese) e `mobileCompact`, novo, por DIREÇÃO — desce e passa de `MOBILE_COMPACT_MIN_PX`,
+  esconde a busca; sobe (mais que `DIRECTION_THRESHOLD_PX`, mesmo raciocínio de zona-morta do
+  `shrunk`), ela volta. Diferente de `shrunk`: no mobile a busca nunca troca de linha (não sobra
+  espaço ao lado da logo/ações pra ela ir), então o sinal de posição sozinho não fazia sentido ali
+  — precisava saber a direção, não só "passou de X pixels".
+- A busca em si (mobile) anima via `max-height`+`opacity` (não `hidden`/`display:none`, que corta
+  sem transição) — `overflow-hidden` + `max-h-0` recolhe, `max-h-[220px]` (folga generosa acima da
+  altura real dos 3 campos + botão empilhados) revela. As classes `sm:max-h-none sm:opacity-100
+  sm:overflow-visible` cancelam esse comportamento em telas maiores, onde `mobileCompact` não deve
+  valer nada — só `shrunk` manda no desktop, exatamente como antes.
+- Resultado no mobile: rolar pra baixo deixa só logo + Aluguéis + menu hambúrguer (`AppHeaderClient`)
+  ou logo + Criar conta/Entrar + menu hambúrguer (`PublicHeaderClient`) — rolar pra cima traz a
+  busca de volta.
+- Continua respeitando `prefers-reduced-motion` pela regra global (zera duração de toda
+  `transition`/`animation`, incluindo as novas) — nenhum tratamento adicional necessário.
+
+**Bug encontrado durante a verificação**: `--duration-fast`/`--duration-base`/`--duration-slow`
+nunca geraram as classes `duration-fast`/`duration-base`/`duration-slow` de verdade.
+`@theme` mapeia automaticamente namespaces "abertos" (`--color-*`, `--animate-*`: qualquer chave
+nova já vira classe nova), mas `duration` não é um desses — é uma escala numérica fixa no core do
+Tailwind v4 (`duration-100`, `duration-200`...), e chaves não-numéricas nunca entraram nela sozinhas
+com só a declaração em `@theme`. A custom property existia (`--duration-fast: 120ms` aparecia em
+`:root`), então nada quebrava visualmente, mas a classe `duration-fast` nunca existiu — toda
+transição do app (~20 arquivos, todas as etapas deste documento) rodava no padrão do Tailwind pra
+`transition-[...]` (150ms), não nos 120/200/320ms aqui documentados. Descoberto ao verificar por que
+`--ease-playful` (que É um namespace aberto) media certo via `getComputedStyle`, mas
+`--duration-base` não. Corrigido com `@utility duration-fast/base/slow/highlight` em `globals.css`
+(o mecanismo do Tailwind v4 pra registrar um utilitário que não tem mapeamento automático) —
+nenhum dos ~20 arquivos que já usavam essas classes precisou mudar.
+
+**Ajuste posterior**: a primeira versão do `--ease-playful` (segundo parâmetro do cubic-bezier em
+1.56) e as escalas do encolher (logo em 90%, crossfade da busca entre 95%/100%) foram descritas como
+"pulando demais" depois de ver em uso. Reduzido pra um aceno bem mais sutil: segundo parâmetro do
+easing pra 1.15, logo pra 95%, crossfade pra 98%/100% — ainda perceptível como não-linear (não é o
+`ease-out` reto do resto do app), mas sem quicar de verdade.
+
+**Segundo ajuste — `mobileCompact` "bugando" ao rolar pra cima no mobile**: dois problemas
+distintos corrigidos juntos, sem confirmação em dispositivo real (o preview desta sessão tem sua
+própria simulação de scroll, que oscila sozinha de um jeito que rolagem real de toque não faz —
+não dava pra validar por lá; ambos os ajustes abaixo têm razão técnica própria, independente disso).
+
+1. A versão anterior comparava a posição atual contra uma referência que só "andava" a cada ~180ms
+   (pensada pra ignorar um solavanco pontual de inércia/rebote elástico no fim de um gesto). Efeito
+   colateral: uma rolagem pra cima lenta e deliberada, que não acumulasse aquele tanto de distância
+   dentro da janela de tempo, não revelava a busca de volta — parecia travado. Trocado por rastrear
+   o extremo (`anchorRef`): enquanto a busca está visível, o Y mais alto já visto desde que recolheu
+   por último; enquanto recolhida, o mais baixo já visto desde que apareceu por último. Só uma
+   distância acumulada (não uma janela de tempo) desde esse extremo dispara a troca — sensível a
+   rolagem lenta, ainda absorve um solavanco pontual porque esse solavanco não passa muito do
+   próprio extremo que acabou de gerar.
+2. `overflow-anchor: none` no bloco que recolhe: ele fica dentro do header `sticky`, e mudar a
+   altura dele desloca o conteúdo abaixo no fluxo do documento. Por padrão, o navegador tenta
+   compensar deslocamentos assim ajustando a posição de rolagem sozinho ("scroll anchoring") — o
+   que gera eventos de scroll que não vieram do usuário, e que podiam empurrar `mobileCompact` pra
+   trocar de novo no meio da própria animação (o recolher "brigando" com o próprio efeito que
+   causou). `overflow-anchor:none` desliga essa compensação só nesse bloco.

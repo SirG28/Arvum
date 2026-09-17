@@ -61,8 +61,8 @@
   --breakpoint-lg: 1024px;
   --breakpoint-xl: 1440px;
 
-  /* --duration-* gera as classes `duration-fast`/`duration-base`/`duration-slow` (Tailwind v4
-     mapeia --duration-* para o utilitário `duration-*`). Nomeadas antes como
+  /* --duration-* aqui só declara as CSS custom properties — não gera `duration-fast` etc. sozinho
+     (correção abaixo, fora do @theme; ver comentário lá). Nomeadas antes como
      --animate-duration-fast/base, que não gerava nenhuma classe (--animate-* é o namespace de
      atalhos de animação, tipo `animate-spin` — não de duração), por isso nunca eram consumidos.
      Easing não precisa de token próprio: --ease-in/--ease-out/--ease-in-out já vêm no tema padrão
@@ -70,6 +70,15 @@
   --duration-fast: 120ms;
   --duration-base: 200ms;
   --duration-slow: 320ms;
+  /* Exceção ao easing padrão acima — curva com leve "overshoot" (passa um pouco do alvo antes de
+     assentar), usada só onde a personalidade da marca importa mais que a discrição (o header
+     encolhendo ao rolar, MOTION.md Etapa 8) — pedido explícito por algo "mais divertido", inspirado
+     no header do Airbnb. Não é o padrão do resto do app (overlays/menus continuam com --ease-out,
+     que assenta sem quicar — mais previsível pra ação repetida o dia todo). O segundo parâmetro
+     (1.56 → 1.15) é quem controla o quanto passa do alvo antes de assentar — reduzido depois do
+     primeiro teste "pular demais" pra um aceno bem mais sutil, ainda perceptível como não-linear
+     mas sem quicar de verdade. */
+  --ease-playful: cubic-bezier(0.34, 1.15, 0.64, 1);
   /* Exceção deliberada à escala acima: não é uma transição de interface (menu, overlay), é um
      aceno de atenção sustentado — "isto acabou de mudar" — que precisa ficar visível tempo
      suficiente para ser notado antes de desaparecer (MOTION.md, Etapa 5). */
@@ -81,12 +90,52 @@
   --animate-fade-slide-in: fade-slide-in var(--duration-base) var(--ease-out);
   --animate-heart-pop: heart-pop var(--duration-slow) var(--ease-out);
   --animate-status-highlight: status-highlight var(--duration-highlight) var(--ease-out);
+  /* Motion de marketing (landing) — ver MOTION.md, Etapa 7: exceção deliberada ao princípio
+     "funcional, não decorativo" para a página inicial, onde o objetivo passa a incluir
+     personalidade de marca, não só causa/efeito. Usado por <Reveal> (src/components/shared). */
+  --animate-fade-up: fade-up var(--duration-slow) var(--ease-out);
+}
+
+/* `@theme` mapeia automaticamente namespaces "abertos" pro utilitário equivalente (--color-*,
+   --spacing-*, --animate-*: qualquer chave nova já vira uma classe nova). `duration` NÃO é um
+   desses — é uma escala numérica fixa no core do Tailwind v4 (`duration-100`, `duration-200`...),
+   e chaves não-numéricas como "fast"/"base"/"slow" nunca entram nela sozinhas: `--duration-fast`
+   virava uma custom property de verdade (por isso não quebrava nada visualmente — toda transição
+   ainda animava), mas a classe `duration-fast` nunca existiu, e o valor realmente aplicado sempre
+   foi o padrão do Tailwind pra `transition-[...]` (150ms) — não os 120/200/320ms documentados no
+   MOTION.md. Descoberto ao verificar por que `--ease-playful` (Etapa 8) media certo via
+   `getComputedStyle` mas `--duration-base` não: `--ease-*` também é namespace aberto, `--duration-*`
+   não. `@utility` é o mecanismo do Tailwind v4 pra esse caso (nome sem mapeamento automático) —
+   substitui os utilitários que faltavam, sem mudar nenhum `duration-fast`/`base`/`slow` já escrito
+   nos ~20 arquivos que já usam essas classes. */
+@utility duration-fast {
+  transition-duration: var(--duration-fast);
+}
+@utility duration-base {
+  transition-duration: var(--duration-base);
+}
+@utility duration-slow {
+  transition-duration: var(--duration-slow);
+}
+@utility duration-highlight {
+  transition-duration: var(--duration-highlight);
 }
 
 @keyframes fade-slide-in {
   from {
     opacity: 0;
     translate: 0 4px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    translate: 0 16px;
   }
   to {
     opacity: 1;

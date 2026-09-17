@@ -30,9 +30,13 @@ function slugify(value: string) {
     .replace(/\s+/g, "-");
 }
 
-function wikimediaFilePath(fileName: string) {
+// `?width=` faz o Special:FilePath redirecionar pro thumbnail já redimensionado do Wikimedia em
+// vez do arquivo original (alguns passam de 4000px de largura — bem mais do que qualquer uso no
+// app precisa, e o motivo mais provável de fotos demorando muito pra carregar; ver comentário em
+// LazyImage.tsx, que aplica a mesma transformação em qualquer URL já salva sem esse parâmetro).
+function wikimediaFilePath(fileName: string, width = 1200) {
   const encoded = encodeURIComponent(fileName.replace(/ /g, "_"));
-  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}`;
+  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}?width=${width}`;
 }
 
 // Fotos reais de máquinas agrícolas (Wikimedia Commons, licenças livres), escolhidas para

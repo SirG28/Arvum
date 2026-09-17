@@ -3,6 +3,7 @@ import type { MachineCategory } from "@prisma/client";
 import type { CatalogMachine } from "@/features/machines/components/CatalogMachineCard";
 import { CatalogMachineCard } from "@/features/machines/components/CatalogMachineCard";
 import { CategoryIcon } from "./CategoryIcon";
+import { HomeMachineCarousel } from "./HomeMachineCarousel";
 
 interface MostSearchedProps {
   topCategories: MachineCategory[];
@@ -19,7 +20,7 @@ export function MostSearched({ topCategories, topMachines, favoriteIds, isAuthen
   if (topCategories.length === 0 && topMachines.length === 0) return null;
 
   return (
-    <section className="mx-auto max-w-5xl px-4 py-10">
+    <section className="mx-auto max-w-5xl px-4 py-20 sm:py-24">
       <h2
         className="text-xl font-semibold text-neutral-900"
         style={{ fontFamily: "var(--font-display)" }}
@@ -45,15 +46,21 @@ export function MostSearched({ topCategories, topMachines, favoriteIds, isAuthen
       )}
 
       {topMachines.length > 0 && (
-        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {topMachines.map((machine) => (
-            <CatalogMachineCard
-              key={machine.id}
-              machine={machine}
-              isFavorited={favoriteIds.has(machine.id)}
-              isAuthenticated={isAuthenticated}
-            />
-          ))}
+        <div className="mt-6">
+          <HomeMachineCarousel
+            title="Máquinas mais alugadas"
+            headingLevel="h3"
+            items={topMachines.map((machine) => ({
+              id: machine.id,
+              node: (
+                <CatalogMachineCard
+                  machine={machine}
+                  isFavorited={favoriteIds.has(machine.id)}
+                  isAuthenticated={isAuthenticated}
+                />
+              ),
+            }))}
+          />
         </div>
       )}
     </section>

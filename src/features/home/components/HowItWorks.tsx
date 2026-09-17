@@ -1,3 +1,5 @@
+import { Card } from "@/components/ui/Card";
+
 const STEPS = [
   {
     title: "Busque a máquina",
@@ -48,7 +50,7 @@ const STEPS = [
 // usam pra reduzir a fricção de quem chega pela primeira vez.
 export function HowItWorks() {
   return (
-    <section className="mx-auto max-w-5xl px-4 py-10">
+    <section className="mx-auto max-w-5xl px-4 py-20 sm:py-24">
       <h2
         className="text-xl font-semibold text-neutral-900"
         style={{ fontFamily: "var(--font-display)" }}
@@ -57,10 +59,7 @@ export function HowItWorks() {
       </h2>
       <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {STEPS.map((step, index) => (
-          <div
-            key={step.title}
-            className="rounded-lg border border-neutral-200 bg-white p-6 shadow-[var(--shadow-elevation-1)]"
-          >
+          <Card key={step.title} tone="primary" hoverable className="p-6">
             <div className="mb-3 flex items-center gap-2">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary-500 text-xs font-semibold text-white">
                 {index + 1}
@@ -82,7 +81,7 @@ export function HowItWorks() {
             </div>
             <h3 className="text-sm font-semibold text-neutral-900">{step.title}</h3>
             <p className="mt-1 text-sm text-neutral-500">{step.description}</p>
-          </div>
+          </Card>
         ))}
       </div>
     </section>
