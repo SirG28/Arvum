@@ -141,6 +141,7 @@ model User {
   bookingStatusChanges BookingStatusHistory[]
   reviewsAuthored      Review[]               @relation("ReviewAuthor")
   reviewsReceived      Review[]               @relation("ReviewTarget")
+  messagesSent         Message[]              @relation("MessageSender")
   favorites            Favorite[]
   subscription         Subscription?
 
@@ -288,6 +289,7 @@ model Booking {
   logisticsQuotes LogisticsQuote[]
   payments        Payment[]
   reviews         Review[]
+  messages        Message[]
 
   @@index([machineId, startDate, endDate])
   @@index([renterId])
@@ -371,6 +373,21 @@ model Review {
   @@unique([bookingId, authorId])
   @@index([machineId])
   @@index([targetUserId])
+}
+
+// Comunicação por aluguel (Context.md §8.15) — versão estruturada em vez de chat completo:
+// mensagens de texto simples, sempre associadas a um Booking, nunca editadas/apagadas (histórico
+// preservado, mesmo padrão de BookingStatusHistory).
+model Message {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  senderId  String
+  sender    User     @relation("MessageSender", fields: [senderId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([bookingId, createdAt])
 }
 
 model Favorite {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Booking, Machine, MachineImage } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { LazyImage } from "@/components/ui/LazyImage";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_BADGE_TONE } from "../lib/status-labels";
 
 type BookingWithMachine = Booking & { machine: Machine & { images: MachineImage[] } };
@@ -21,12 +22,7 @@ export function BookingListCard({ booking }: { booking: BookingWithMachine }) {
     <Card className="flex flex-col gap-3 sm:flex-row sm:items-center">
       <div className="aspect-video w-full shrink-0 overflow-hidden rounded-md bg-neutral-100 sm:w-40">
         {image ? (
-          // eslint-disable-next-line @next/next/no-img-element -- URL arbitrária informada pelo proprietário, sem provedor de imagem configurado
-          <img
-            src={image.url}
-            alt={image.altText ?? booking.machine.title}
-            className="h-full w-full object-cover"
-          />
+          <LazyImage src={image.url} alt={image.altText ?? booking.machine.title} className="h-full w-full" />
         ) : (
           <div className="flex h-full items-center justify-center text-xs text-neutral-400">Sem imagem</div>
         )}

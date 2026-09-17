@@ -15,12 +15,12 @@ Integrantes:
 
 A especificação completa do produto está em [`Context.md`](./Context.md).
 
-## Status atual — Fase 5 (Confiança) em andamento — avaliações concluídas
+## Status atual — Fase 5 (Confiança) concluída — avaliações, mensagens, preferência de notificação e moderação
 
 Roadmap completo em [`ARCHITECTURE.md`](./ARCHITECTURE.md#roadmap). Implementado:
 
 - Scaffold Next.js (App Router) + TypeScript + Tailwind CSS v4.
-- Banco de dados: schema Prisma completo (12 entidades do domínio) + seed de demonstração.
+- Banco de dados: schema Prisma completo (14 entidades do domínio) + seed de demonstração.
 - Autenticação: cadastro, login, logout, sessão JWT, proteção de rotas.
 - Design system: componentes de UI reutilizáveis (Button, Input, Textarea, Select, Checkbox, Card,
   Alert, Badge, FormField, Spinner, EmptyState).
@@ -74,10 +74,26 @@ Roadmap completo em [`ARCHITECTURE.md`](./ARCHITECTURE.md#roadmap). Implementado
   para o proprietário — e comentário opcional). A página de cada máquina mostra a nota média e as
   avaliações recebidas do locatário (nunca a avaliação que o proprietário fez do locatário); o
   catálogo mostra a nota média em cada resultado.
+- Mensagens: em cada aluguel (`/alugueis/[id]` e `/alugueis/recebidos/[id]`), locatário e
+  proprietário trocam mensagens de texto simples — versão estruturada da comunicação (`Context.md`
+  §8.15), não um chat completo (sem tempo real, digitação ou confirmação de leitura; mensagens
+  novas aparecem ao recarregar a página, como o resto do acompanhamento do aluguel).
+- Preferência de notificação: em `/configuracoes/notificacoes`, o usuário liga/desliga o aviso por
+  e-mail. Por enquanto é só a preferência sendo salva — nenhum e-mail é de fato disparado ainda
+  (falta a estrutura de eventos/disparo do `Context.md` §8.16).
+- Moderação de avaliações: qualquer usuário autenticado pode denunciar uma avaliação alheia (nunca
+  a própria); administradores revisam a fila em `/admin/moderacao` e decidem entre ocultar
+  (`ReviewStatus.HIDDEN`, some da nota média e da página da máquina) ou manter (volta a
+  `PUBLISHED`).
+- Arvum Suporte de Operação: add-on opcional no aluguel (antecipado da Fase 7).
+- Plano Premium para parceiros: assinatura mensal com destaque no catálogo (`sortByPremiumFirst`),
+  selo de parceiro verificado e relatório de desempenho do proprietário — antecipado da Fase 7.
+- Comissão da Arvum: 12% sobre locação + logística + suporte de operação contratados (nunca sobre a
+  caução), reduzida para 8% quando o proprietário tem Plano Premium ativo — cobrada como "Taxa de
+  serviço", visível na composição de preço desde a prévia antes de confirmar o aluguel.
 
-Ainda não implementado (fases seguintes): taxa de serviço (comissão), notificações, mensagens,
-painel administrativo, monetização avançada (assinatura Premium, anúncios patrocinados) — ver
-roadmap e as decisões de escopo em [`BUSINESS_RULES.md`](./BUSINESS_RULES.md).
+Ainda não implementado (fases seguintes): disparo real de notificações (e-mail/in-app) e anúncios
+patrocinados — ver roadmap e as decisões de escopo em [`BUSINESS_RULES.md`](./BUSINESS_RULES.md).
 
 ## Stack
 
@@ -163,6 +179,11 @@ Senha para todas as contas de seed: `Demo@123`
 | `npm run prisma:seed`    | Popula o banco com dados de demonstração  |
 | `npm run db:studio`      | Abre o Prisma Studio                      |
 | `npm run db:reset`       | Reseta o banco (migrations + seed)        |
+
+`npm run test:e2e` precisa do navegador do Playwright instalado uma vez (`npx playwright install
+chromium`) e do banco com o seed aplicado — os cenários usam as contas de demonstração acima, nunca
+cadastro (ver [`ARCHITECTURE.md`](./ARCHITECTURE.md), Fase 6). Sobe o próprio `npm run dev` se
+nenhum servidor já estiver rodando em `localhost:3000`.
 
 ## Variáveis de ambiente
 

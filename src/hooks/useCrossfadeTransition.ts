@@ -22,7 +22,16 @@ export function useCrossfadeTransition<T>(value: T) {
   const frameRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (value === displayed) return;
+    if (value === displayed) {
+      // Voltou pro valor já exibido antes da troca completar (ex.: rolou pra baixo e voltou rápido
+      // demais perto do limiar de encolher) — a limpeza do efeito anterior já cancelou o
+      // timeout/frame pendentes; só falta restaurar `visible`, senão o conteúdo fica preso em
+      // opacity:0 pra sempre (mesma classe de bug já corrigida em useMountTransition.ts: um efeito
+      // que só reage à mudança de valor nunca reexecuta se o valor voltar ao que já era antes de
+      // terminar).
+      setVisible(true);
+      return;
+    }
 
     setVisible(false);
     timeoutRef.current = setTimeout(() => {

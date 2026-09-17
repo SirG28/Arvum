@@ -5,7 +5,9 @@ import { activeBookingStatusFilter } from "@/features/machines/services/machine.
 import { calculateDistanceKm } from "@/lib/geo/distance";
 import { calculateLogisticsCost, type LogisticsCostResult } from "@/features/logistics/lib/pricing";
 import { calculateOperationSupportCost } from "@/features/support/lib/pricing";
-import { calculateRentalDays, calculateBookingTotals } from "../lib/pricing";
+import { isPremiumActive } from "@/features/subscriptions/lib/subscription-status";
+import { calculateCommissionInCents } from "@/features/subscriptions/lib/commission";
+import { calculateRentalDays, calculateRentalValueInCents, calculateBookingTotals } from "../lib/pricing";
 import {
   isBookingCancellableByRenter,
   isBookingCancellableByOwner,
@@ -46,6 +48,9 @@ export async function getBookingForRenter(renterId: string, bookingId: string) {
       // participante e por aluguel) — usada para decidir entre mostrar o formulário ou o resultado
       // já enviado.
       reviews: { where: { authorId: renterId } },
+      // Mensagens dos dois lados (Context.md §8.15), mais antiga primeiro — mesma ordenação de
+      // statusHistory.
+      messages: { orderBy: { createdAt: "asc" }, include: { sender: { select: { id: true, name: true } } } },
     },
   });
   if (!booking || booking.renterId !== renterId) return null;
@@ -93,7 +98,13 @@ export async function buildBookingQuote(
 ): Promise<BookingQuote | BookingQuoteError> {
   const machine = await prisma.machine.findUnique({
     where: { id: machineId },
-    include: { property: true },
+    include: {
+      property: true,
+      // Só currentPeriodEnd (mesmo padrão de listActiveMachines/getPublicMachineBySlug,
+      // machine.service.ts) — isPremiumActive decide "ativo" a partir dela, nunca do status
+      // guardado, que pode ficar ACTIVE no banco mesmo após o período expirar.
+      owner: { select: { subscription: { select: { currentPeriodEnd: true } } } },
+    },
   });
   if (!machine || machine.status !== "ACTIVE" || machine.deletedAt) return "MACHINE_NOT_FOUND";
   if (machine.ownerId === renterId) return "CANNOT_BOOK_OWN_MACHINE";
@@ -148,12 +159,23 @@ export async function buildBookingQuote(
 
   const operationSupportValueInCents = calculateOperationSupportCost(input.operationSupportIncluded);
 
+  // Comissão da Arvum (Context.md §8.21/§9.7): incide sobre locação + logística + suporte de
+  // operação — nunca sobre a caução —, com taxa reduzida quando o proprietário tem Plano Premium
+  // ativo (getEffectiveCommissionRate, já centralizada e testada, só faltava ser chamada).
+  const rentalValueInCents = calculateRentalValueInCents(rentalDays, machine.dailyPriceInCents);
+  const hasOwnerPremium = isPremiumActive(machine.owner.subscription);
+  const serviceFeeInCents = calculateCommissionInCents(
+    rentalValueInCents + logisticsCost.totalInCents + operationSupportValueInCents,
+    hasOwnerPremium,
+  );
+
   const totals = calculateBookingTotals({
     rentalDays,
     dailyPriceInCents: machine.dailyPriceInCents,
     depositInCents: machine.depositInCents,
     logisticsValueInCents: logisticsCost.totalInCents,
     operationSupportValueInCents,
+    serviceFeeInCents,
   });
 
   return {
@@ -256,6 +278,9 @@ export async function getBookingForOwner(ownerId: string, bookingId: string) {
       // por participante e por aluguel) — usada para decidir entre mostrar o formulário ou o
       // resultado já enviado.
       reviews: { where: { authorId: ownerId } },
+      // Mensagens dos dois lados (Context.md §8.15), mais antiga primeiro — mesma ordenação de
+      // statusHistory.
+      messages: { orderBy: { createdAt: "asc" }, include: { sender: { select: { id: true, name: true } } } },
     },
   });
   if (!booking || booking.machine.ownerId !== ownerId) return null;

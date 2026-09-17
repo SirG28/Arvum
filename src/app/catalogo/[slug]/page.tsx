@@ -191,7 +191,7 @@ export default async function MachineDetailPage({ params, searchParams }: Machin
           {!isOwner && (
             <WhatsAppSupportLink
               message={`Olá! Tenho uma dúvida sobre alugar "${machine.title}" na Arvum.`}
-              label="Dúvidas antes de alugar? Fale com a Arvum"
+              label="Dúvidas? Fale com a Arvum"
               className="mt-4"
             />
           )}

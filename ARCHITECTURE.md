@@ -111,15 +111,20 @@ para regras de negócio.
    (transporte, entrega/retirada, uso, devolução) e cancelamento — pelo locatário ou pelo
    proprietário, a qualquer momento antes do transporte organizado, com política de estorno
    centralizada.
-5. 🚧 **Confiança** — avaliações concluídas; notificações, mensagens e moderação seguem.
-6. **Administração e qualidade** — painel admin, indicadores, testes, acessibilidade, segurança, documentação, deploy.
-7. 🚧 **Monetização avançada** (`Context.md` §8.21/§9.7) — comissão sobre operações (8%–12%, já
-   habilitada via `serviceFeeInCents` na Fase 4, cálculo ainda não implementado); ✅ Arvum Suporte
-   de Operação (add-on opcional no aluguel, `src/features/support/`, antecipado desta fase); ✅ Plano
-   Premium para parceiros (assinatura mensal, destaque, selo verificado, relatórios de desempenho,
-   `src/features/subscriptions/`, model `Subscription`, também antecipado — redução de comissão
-   pronta em `getEffectiveCommissionRate` mas ainda não conectada ao cálculo da comissão); falta
-   anúncios patrocinados (posições de destaque, sempre identificados) — exige a nova entidade
+5. ✅ **Confiança** — avaliações, mensagens por aluguel e preferência de notificação por e-mail
+   concluídas (disparo real de notificação ainda não existe, só a preferência é salva).
+6. 🚧 **Administração e qualidade** — moderação de avaliações concluída (`/admin/moderacao`);
+   restante (indicadores, testes e2e, acessibilidade, segurança, documentação, deploy) segue.
+7. 🚧 **Monetização avançada** (`Context.md` §8.21/§9.7) — ✅ comissão sobre operações: 12% sobre
+   locação + logística + suporte de operação contratados (nunca sobre a caução), reduzida para 8%
+   quando o proprietário tem Plano Premium ativo (`calculateCommissionInCents`,
+   `src/features/subscriptions/lib/commission.ts`, chamada por `buildBookingQuote`,
+   `src/features/bookings/services/booking.service.ts`); vira `Booking.serviceFeeInCents`, exibida
+   como "Taxa de serviço" na composição de preço desde a prévia. ✅ Arvum Suporte de Operação
+   (add-on opcional no aluguel, `src/features/support/`, antecipado desta fase). ✅ Plano Premium
+   para parceiros (assinatura mensal, destaque, selo verificado, relatórios de desempenho,
+   `src/features/subscriptions/`, model `Subscription`, também antecipado). Falta só anúncios
+   patrocinados (posições de destaque, sempre identificados) — exige a nova entidade
    `SponsoredListing` (`Context.md` §17), inexistente no schema atual.
 
 Adaptadores simulados (mapas/geolocalização, pagamento, transportadoras) serão introduzidos nas
@@ -224,6 +229,47 @@ O schema (`Review`) já existia desde a Etapa 1 (vazio). Etapas funcionais incre
    equipamento — ver tabela de decisões acima). Componente `Rating` (`src/components/ui/Rating.tsx`)
    entra no design system (`Context.md` §12.2), com estrela cheia/vazia por glifo diferente, não só
    cor (`Context.md` §13).
+2. ✅ **Preferência de notificação (parcial)** — `/configuracoes/notificacoes`
+   (`NotificationPreferencesForm`) liga/desliga `User.notifyByEmail`
+   (`updateNotificationPreferences`, `src/features/users/services/user.service.ts`). Só a
+   preferência é persistida: a estrutura de eventos/disparo do `Context.md` §8.16 (solicitação
+   recebida, pagamento aprovado/recusado, transporte agendado, devolução próxima, nova avaliação
+   etc., por e-mail e dentro da plataforma) ainda não existe — nenhum e-mail é enviado hoje.
+3. ✅ **Mensagens** (`Context.md` §8.15) — versão estruturada em vez de chat completo: modelo
+   `Message` (texto simples, sempre associado a um `Booking`, nunca editado/apagado — histórico
+   preservado, mesmo padrão de `BookingStatusHistory`). `sendMessage`
+   (`src/features/messages/services/message.service.ts`) só aceita quem participa do aluguel
+   (locatário ou proprietário da máquina, descoberto a partir do próprio `Booking`, nunca recebido
+   do cliente); quem não participa recebe o mesmo `BOOKING_NOT_FOUND` de um id inexistente, nunca
+   `403`. `MessagesCard` (`src/features/messages/components/`) é compartilhado por
+   `/alugueis/[id]` e `/alugueis/recebidos/[id]`: lista em ordem cronológica mais o campo de envio,
+   sem tempo real, digitação ou confirmação de leitura — mensagens novas aparecem ao recarregar a
+   página, mesmo modelo de atualização do resto do acompanhamento do aluguel.
 
-Notificações e mensagens (Fase 5) e o painel de moderação (Fase 6, que passa a usar
-`ReviewStatus.REPORTED`) seguem como próximas etapas.
+Disparo real de notificações segue como próxima etapa da Fase 5. O painel de moderação passou para
+a Fase 6 (ver detalhamento abaixo).
+
+## Fase 6 (Administração e qualidade) — detalhamento
+
+O schema (`ReviewStatus.REPORTED`/`HIDDEN`) já existia desde a Fase 5. Etapas entregues:
+
+1. ✅ **Moderação de avaliações** — qualquer usuário autenticado denuncia uma avaliação alheia
+   (nunca a própria) pelo botão discreto `ReportReviewButton`, que chama `reportReview`
+   (`src/features/reviews/services/review.service.ts`) e move a avaliação para `REPORTED` com
+   motivo opcional. `/admin/moderacao` (`notFound` para quem não é `ADMIN`, mesmo padrão de não
+   revelar a existência da rota usado em `getBookingForRenter`/`Owner`) lista a fila
+   (`listReportedReviews`) e decide via `ModerateReviewActions`/`moderateReview`: ocultar
+   (`HIDDEN`, some da nota média e da página pública da máquina) ou manter (volta a `PUBLISHED`,
+   descartando a denúncia).
+
+✅ **Testes end-to-end** — `e2e/auth.spec.ts` (rota protegida redireciona a quem não está logado
+para `/login?callbackUrl=...` e volta ao destino após entrar — `middleware.ts`) e
+`e2e/booking-flow.spec.ts` (fluxo principal completo: login, prévia de preço com a comissão real
+da Arvum, solicitar aluguel, pagamento simulado, cancelamento). Usam contas do seed, nunca
+cadastro — `signupAction` tem rate limit de 5/hora por IP (proteção contra criação de contas em
+massa), o que tornaria testes repetidos frágeis. `playwright.config.ts` roda com `workers: 1` e
+timeout de 60s: servidor de dev compila rota sob demanda, o que passa do timeout padrão de ação
+(30s) se duas rotas compilarem ao mesmo tempo.
+
+Ainda pendentes desta fase: indicadores/painel com métricas agregadas, auditoria de
+acessibilidade, revisão de segurança e o restante da documentação de deploy.

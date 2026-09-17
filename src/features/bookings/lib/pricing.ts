@@ -6,6 +6,13 @@ export function calculateRentalDays(startDate: Date, endDate: Date): number {
   return Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / DAY_IN_MS));
 }
 
+// Extraído para ser reaproveitado por buildBookingQuote (booking.service.ts), que precisa do valor
+// da locação isolado para calcular a base da comissão (Context.md §8.21) antes de montar o total
+// completo aqui embaixo — nunca duas fórmulas diferentes para a mesma conta.
+export function calculateRentalValueInCents(rentalDays: number, dailyPriceInCents: number): number {
+  return rentalDays * dailyPriceInCents;
+}
+
 interface BookingTotalsInput {
   rentalDays: number;
   dailyPriceInCents: number;
@@ -39,7 +46,7 @@ export function calculateBookingTotals({
   operationSupportValueInCents = 0,
   discountInCents = 0,
 }: BookingTotalsInput): BookingTotals {
-  const rentalValueInCents = rentalDays * dailyPriceInCents;
+  const rentalValueInCents = calculateRentalValueInCents(rentalDays, dailyPriceInCents);
   const deposit = depositInCents ?? 0;
   const totalValueInCents =
     rentalValueInCents +

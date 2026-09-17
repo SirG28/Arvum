@@ -120,8 +120,8 @@ cadastrado."]`), nunca uma mensagem genérica.
 - **Valor da locação já é calculado nesta etapa** (dias corridos × diária do anúncio + caução do
   anúncio, quando houver — `src/features/bookings/lib/pricing.ts`), seguindo a composição do
   `Context.md` §8.12 (`total = locação + logística + taxa + caução − descontos`). A taxa de
-  serviço (comissão da Arvum, `Context.md` §8.21/§9.7) entra como zero até a Fase 7 — nunca
-  apresentada como estimativa final ao locatário.
+  serviço já é a comissão real da Arvum (`Context.md` §8.21/§9.7 — ver seção própria abaixo), não
+  mais um valor zerado provisório.
 - Criação do aluguel e do primeiro registro de histórico ocorre em uma única transação
   (`prisma.$transaction`), evitando um `Booking` sem histórico se a segunda escrita falhar.
 - **Prévia de valores antes de solicitar**: o mesmo cálculo de disponibilidade/logística/total
@@ -255,7 +255,7 @@ cadastrado."]`), nunca uma mensagem genérica.
 - **Nota média sempre recalculada a partir do conjunto atual de avaliações publicadas**
   (`calculateAverageRating`, `src/features/reviews/lib/rating.ts`) — nunca um contador incremental
   guardado à parte, evitando divergência se uma avaliação for ocultada pela moderação (Fase 6,
-  `ReviewStatus.HIDDEN`/`REPORTED`, ainda sem painel para acioná-la).
+  `ReviewStatus.HIDDEN`/`REPORTED` — ver seção própria abaixo).
 - **A nota pública de uma máquina conta só as avaliações de quem alugou** (`targetUserId` igual ao
   `ownerId` da máquina) — a avaliação que o proprietário faz do locatário é sobre a pessoa, não
   sobre o equipamento, e não aparece na página da máquina nem entra na sua nota média. Como o
@@ -264,6 +264,49 @@ cadastrado."]`), nunca uma mensagem genérica.
   papel a mais no `Review`.
 - Comentário é opcional (até 1000 caracteres); avaliações não podem ser anônimas para a
   plataforma — o autor é sempre o usuário autenticado, nunca um campo de texto livre.
+
+### Preferência de notificação (Fase 5, parcial)
+
+- **Só a preferência é salva, nada é disparado ainda**: `/configuracoes/notificacoes`
+  (`NotificationPreferencesForm`) liga/desliga `User.notifyByEmail`
+  (`updateNotificationPreferences`, `src/features/users/services/user.service.ts`). A estrutura de
+  eventos do `Context.md` §8.16 (solicitação recebida, pagamento aprovado/recusado, transporte
+  agendado, devolução próxima, nova avaliação etc., por e-mail e dentro da plataforma) não existe
+  — o campo hoje não tem efeito nenhum sobre o que o usuário recebe.
+
+### Mensagens (Fase 5)
+
+- **Versão estruturada, não um chat completo** (`Context.md` §8.15): modelo `Message` — só texto,
+  sempre associado a um `Booking`, nunca editado ou apagado (histórico preservado, mesmo padrão de
+  `BookingStatusHistory`). Sem indicador de digitação, confirmação de leitura ou tempo real —
+  mensagens novas aparecem ao recarregar a página (`MessagesCard`,
+  `src/features/messages/components/`), mesmo modelo do resto do acompanhamento do aluguel.
+- **Só participantes do aluguel trocam mensagens sobre ele** (`sendMessage`,
+  `src/features/messages/services/message.service.ts`) — o papel (locatário ou proprietário da
+  máquina) é descoberto a partir do próprio `Booking`, nunca recebido do cliente, mesmo padrão de
+  `createReview`/`cancelBooking`. Quem não participou recebe o mesmo `BOOKING_NOT_FOUND` de um id
+  inexistente, nunca um `403` — não revela a existência do aluguel a quem é estranho a ele.
+- **Sem restrição por status do aluguel**: mensagens podem ser trocadas em qualquer estágio
+  (`Context.md` §8.15 não define uma janela específica), diferente de avaliação (só após
+  `COMPLETED`) ou cancelamento (só até o transporte ser organizado).
+
+### Moderação de avaliações (Fase 6)
+
+- **Qualquer usuário autenticado pode denunciar uma avaliação alheia, nunca a própria**
+  (`reportReview`, `src/features/reviews/services/review.service.ts` — mesma garantia do outro
+  lado de `createReview`, que já impede autoavaliação). Uma avaliação já denunciada ou já
+  moderada não é denunciada de novo (`ALREADY_MODERATED`), evitando fila com entradas duplicadas
+  da mesma avaliação. Motivo é opcional; a avaliação continua visível normalmente enquanto está em
+  `REPORTED`, à espera de revisão.
+- **Fila de moderação restrita a administradores**: `/admin/moderacao` responde `notFound` (não
+  `redirect`/`403`) para quem não é `ADMIN` — mesmo padrão de não revelar a existência da rota
+  usado em `getBookingForRenter`/`getBookingForOwner`. Lista só avaliações `REPORTED`
+  (`listReportedReviews`), nunca a base inteira de avaliações publicadas — isso seria o catálogo
+  de avaliações, não uma fila de trabalho.
+- **Só duas saídas da fila, nunca uma avaliação presa em `REPORTED` indefinidamente**
+  (`moderateReview`): ocultar (`HIDDEN` — some da nota média e da página pública da máquina) ou
+  manter (volta a `PUBLISHED`, descartando a denúncia como improcedente e limpando
+  `reportReason`).
 
 ### Plano Premium para parceiros (`Context.md` §8.21/§9.7/§17, antecipado da Fase 7)
 
@@ -288,12 +331,18 @@ cadastrado."]`), nunca uma mensagem genérica.
   estável testado) — reordena colocando parceiros Premium primeiro sem descartar a ordenação por
   distância/data já aplicada. Selo "Parceiro verificado" no card do catálogo
   (`CatalogMachineCard.tsx`) e na página de detalhe, sempre condicionado a `isPremiumActive`.
-- **Redução de comissão pronta, mas não conectada**: `getEffectiveCommissionRate`
-  (`src/features/subscriptions/lib/commission.ts`) retorna a taxa reduzida para parceiros Premium —
-  função centralizada e testada, seguindo a regra do `Context.md` §9.7 ("a regra de redução deve
-  ficar centralizada em serviço próprio, nunca espalhada pelo fluxo de pagamento"), mas ainda não é
-  chamada por nenhum serviço: a comissão em si (`Booking.serviceFeeInCents`) ainda não é calculada
-  em lugar nenhum do projeto (Fase 7 pendente).
+- **Comissão sobre operações (Fase 7, `Context.md` §8.21/§9.7)**: 12% (`BASE_COMMISSION_RATE`)
+  sobre locação + logística + suporte de operação contratados, nunca sobre a caução (não é receita
+  da operação, é devolvida ao final) — reduzida para 8% (`PREMIUM_COMMISSION_RATE`) quando o
+  proprietário da máquina tem Plano Premium ativo. `getEffectiveCommissionRate`
+  (`src/features/subscriptions/lib/commission.ts`) mantém a regra de redução centralizada
+  (`Context.md` §9.7: "nunca espalhada pelo fluxo de pagamento"); `calculateCommissionInCents`
+  aplica a taxa e arredonda para o centavo, chamada por `buildBookingQuote`
+  (`src/features/bookings/services/booking.service.ts`) — mesma função reaproveitada pela prévia
+  de preço e pela criação real do aluguel, nunca dois lugares calculando a comissão de formas
+  diferentes. Vira `Booking.serviceFeeInCents`, exibida como "Taxa de serviço" na composição
+  transparente de preço (`Context.md` §8.12) desde a prévia, antes de confirmar o aluguel — nunca
+  uma cobrança surpresa apresentada só no fim.
 - **Relatório de desempenho usa só dados que já existem** (`getOwnerPerformanceReport`,
   `src/features/subscriptions/services/report.service.ts`): aluguéis por status, receita total
   (soma de `totalValueInCents` dos aluguéis com pagamento confirmado em diante — constante própria
@@ -319,17 +368,15 @@ correspondentes forem construídos:
 - **Retrato de preços preservado**: alterações futuras no anúncio não podem mudar retroativamente
   o valor de um aluguel já confirmado (vale desde já, pois os valores são gravados no `Booking` no
   momento da criação — falta apenas garantir que nenhuma tela recalcule usando o anúncio atual).
-- **Moderação de avaliações** (Fase 6): denúncia de comentário e ocultação pela moderação
-  (`ReviewStatus.REPORTED`/`HIDDEN` já existem no schema, sem painel para acioná-los ainda).
-- **Monetização** (Fase 7 — `Context.md` §8.21/§9.7): modelo híbrido com três entradas — comissão de
-  8%–12% sobre cada operação (retida automaticamente na divisão do pagamento, sem cobrança separada
-  ao locatário), assinatura mensal do Plano Premium para parceiros e anúncios patrocinados (sempre
-  identificados, nunca misturados a resultados orgânicos). O Arvum Suporte de Operação (ver seção
-  "Aluguéis") e o Plano Premium (ver seção "Parceiros" acima, incluindo `Subscription` no schema)
-  já estão implementados — o que falta da Fase 7 é só a comissão em si (a comissão reaproveitaria o
-  campo já existente `Booking.serviceFeeInCents`; a redução para parceiros Premium já está pronta e
-  testada em `getEffectiveCommissionRate`, só falta ser chamada) e os anúncios patrocinados (exigem
-  a entidade `SponsoredListing`, `Context.md` §17, ainda inexistente no schema).
+- **Disparo real de notificações** (Fase 5 — `Context.md` §8.16): a preferência já é salva (ver
+  seção própria acima), mas a estrutura de eventos (solicitação recebida, pagamento
+  aprovado/recusado, transporte agendado, devolução próxima, nova avaliação etc.), tanto por
+  e-mail quanto dentro da plataforma, ainda não existe.
+- **Anúncios patrocinados** (Fase 7 — `Context.md` §8.21/§17): última entrada pendente do modelo
+  híbrido de monetização — comissão, Arvum Suporte de Operação e Plano Premium já estão
+  implementados (ver seções acima). Exige a nova entidade `SponsoredListing`, inexistente no schema
+  atual, e identificação visual de "patrocinado" sempre visível, nunca misturado a resultados
+  orgânicos.
 
 Valores monetários são sempre armazenados em centavos inteiros (`Int`), nunca `Float`, conforme
 refletido no `prisma/schema.prisma` e nos formulários de máquinas (conversão de reais para centavos

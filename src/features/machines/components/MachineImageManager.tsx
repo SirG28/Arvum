@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { MachineImage } from "@prisma/client";
 import { resizeImageToDataUrl } from "../lib/image-file";
 import { useAddMachineImage, useRemoveMachineImage } from "../hooks/useMachineImages";
+import { LazyImage } from "@/components/ui/LazyImage";
 import { Button } from "@/components/ui/Button";
 import { PlusIcon } from "@/components/ui/PlusIcon";
 import { IconButton } from "@/components/ui/IconButton";
@@ -76,11 +77,10 @@ export function MachineImageManager({ machineId, images }: MachineImageManagerPr
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {images.map((image) => (
             <div key={image.id} className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element -- imagem enviada pelo proprietário, sem provedor de storage/otimização configurado */}
-              <img
+              <LazyImage
                 src={image.url}
                 alt={image.altText ?? ""}
-                className="aspect-square w-full rounded-md border border-neutral-200 object-cover"
+                className="aspect-square w-full rounded-md border border-neutral-200"
               />
               <IconButton
                 icon={<TrashIcon />}

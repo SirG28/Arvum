@@ -4,6 +4,7 @@ import { getBookingForOwner } from "@/features/bookings/services/booking.service
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { BackLink } from "@/components/ui/BackLink";
+import { LazyImage } from "@/components/ui/LazyImage";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_BADGE_TONE } from "@/features/bookings/lib/status-labels";
 import { LOGISTICS_MODE_LABELS } from "@/features/bookings/lib/logistics-labels";
 import { isBookingCancellableByOwner, resolveCancellationRefund } from "@/features/bookings/lib/cancellation";
@@ -14,6 +15,7 @@ import { CancelBookingButton } from "@/features/bookings/components/CancelBookin
 import { FulfillmentActionButton } from "@/features/bookings/components/FulfillmentActionButton";
 import { ReviewForm } from "@/features/reviews/components/ReviewForm";
 import { Rating } from "@/components/ui/Rating";
+import { MessagesCard } from "@/features/messages/components/MessagesCard";
 
 export const metadata = { title: "Detalhe do aluguel" };
 
@@ -50,12 +52,7 @@ export default async function ReceivedRentalDetailPage({ params }: ReceivedRenta
       <Card className="flex flex-col gap-4 sm:flex-row">
         <div className="aspect-video w-full shrink-0 overflow-hidden rounded-md bg-neutral-100 sm:w-48">
           {image ? (
-            // eslint-disable-next-line @next/next/no-img-element -- URL arbitrária informada pelo proprietário, sem provedor de imagem configurado
-            <img
-              src={image.url}
-              alt={image.altText ?? booking.machine.title}
-              className="h-full w-full object-cover"
-            />
+            <LazyImage src={image.url} alt={image.altText ?? booking.machine.title} className="h-full w-full" />
           ) : (
             <div className="flex h-full items-center justify-center text-xs text-neutral-400">
               Sem imagem
@@ -108,7 +105,7 @@ export default async function ReceivedRentalDetailPage({ params }: ReceivedRenta
           discountInCents={booking.discountInCents}
           totalValueInCents={booking.totalValueInCents}
           distanceKm={booking.distanceKm}
-          footnote="A taxa de serviço ainda é calculada como zero — chega nas próximas etapas da plataforma (comissão da Arvum)."
+          footnote="A taxa de serviço é a comissão da Arvum sobre esta operação."
         />
       </Card>
 
@@ -116,6 +113,8 @@ export default async function ReceivedRentalDetailPage({ params }: ReceivedRenta
         <h2 className="text-sm font-semibold text-neutral-900">Andamento</h2>
         <BookingStatusTimeline bookingId={booking.id} statusHistory={booking.statusHistory} />
       </Card>
+
+      <MessagesCard bookingId={booking.id} currentUserId={user.id} messages={booking.messages} />
 
       {(() => {
         const nextAction = getNextFulfillmentAction(booking.status, booking.logisticsMode);

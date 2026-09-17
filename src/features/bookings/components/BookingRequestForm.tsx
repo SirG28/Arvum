@@ -181,7 +181,7 @@ export function BookingRequestForm({ machineId, properties }: BookingRequestForm
             discountInCents={quote.data.totals.discountInCents}
             totalValueInCents={quote.data.totals.totalValueInCents}
             distanceKm={quote.data.distanceKm}
-            footnote="A taxa de serviço ainda é calculada como zero — chega nas próximas etapas da plataforma. Estes valores podem ser recalculados na confirmação."
+            footnote="A taxa de serviço é a comissão da Arvum sobre esta operação."
           />
         </div>
       )}
