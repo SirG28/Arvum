@@ -17,6 +17,9 @@ interface DateRangePickerProps {
   // Menor data selecionável (yyyy-mm-dd) — por padrão, hoje: alugar/filtrar por datas passadas
   // não faz sentido em nenhum dos dois usos deste componente.
   minDate?: string;
+  // Períodos já ocupados (bloqueio do proprietário ou aluguel ativo) — aparecem riscados no
+  // calendário e não podem ser escolhidos, nem como ponta nem no meio de um intervalo.
+  unavailableRanges?: DateRange[];
   error?: string;
   className?: string;
   // Esconde o <Label> visível — mesmo motivo/uso documentado em CityAutocomplete.tsx (busca do
@@ -56,6 +59,31 @@ function startOfToday(): Date {
   return today;
 }
 
+// Intervalo com fim exclusivo: o dia de devolução já conta como livre de novo, mesmo padrão do
+// overlap-check em booking.service.ts (startDate < endDate existente E endDate > startDate novo).
+function isDateInRange(date: Date, range: DateRange): boolean {
+  const start = fromISO(range.startDate);
+  const end = fromISO(range.endDate);
+  if (!start || !end) return false;
+  return date >= start && date < end;
+}
+
+function isDateUnavailable(date: Date, ranges: DateRange[]): boolean {
+  return ranges.some((range) => isDateInRange(date, range));
+}
+
+// Além da própria data de início/fim (já barradas individualmente), o miolo do intervalo também não
+// pode atravessar um período ocupado — senão o usuário fecha uma seleção que a API vai rejeitar.
+function rangeHasUnavailableDay(start: Date, end: Date, ranges: DateRange[]): boolean {
+  const cursor = new Date(start);
+  cursor.setDate(cursor.getDate() + 1);
+  while (cursor < end) {
+    if (isDateUnavailable(cursor, ranges)) return true;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return false;
+}
+
 // Calendário de intervalo em um único campo: primeiro clique define a data inicial, o segundo
 // define a final (fecha sozinho); clicar antes da data inicial recomeça a seleção. Usado tanto no
 // filtro do catálogo (§ período de disponibilidade) quanto no formulário de aluguel do produto.
@@ -64,6 +92,7 @@ export function DateRangePicker({
   value,
   onChange,
   minDate,
+  unavailableRanges = [],
   error,
   className,
   hideLabel = false,
@@ -106,7 +135,7 @@ export function DateRangePicker({
   }, [viewMonth]);
 
   function handleDayClick(date: Date) {
-    if (date < minDateObj) return;
+    if (date < minDateObj || isDateUnavailable(date, unavailableRanges)) return;
 
     if (!startDateObj || endDateObj) {
       onChange({ startDate: toISO(date), endDate: "" });
@@ -117,6 +146,13 @@ export function DateRangePicker({
       return;
     }
     if (isSameDay(date, startDateObj)) return;
+
+    if (rangeHasUnavailableDay(startDateObj, date, unavailableRanges)) {
+      // O intervalo passaria por um dia já ocupado — em vez de completar uma seleção que a API
+      // rejeitaria, trata como se o usuário estivesse recomeçando a partir desta nova data.
+      onChange({ startDate: toISO(date), endDate: "" });
+      return;
+    }
 
     onChange({ startDate: toISO(startDateObj), endDate: toISO(date) });
     setOpen(false);
@@ -197,26 +233,34 @@ export function DateRangePicker({
               if (!date) return <span key={index} />;
 
               const disabled = date < minDateObj;
+              const unavailable = !disabled && isDateUnavailable(date, unavailableRanges);
+              const isBlocked = disabled || unavailable;
               const isStart = startDateObj !== null && isSameDay(date, startDateObj);
               const isEnd = endDateObj !== null && isSameDay(date, endDateObj);
               const isInRange =
-                startDateObj !== null && previewEnd !== null && date > startDateObj && date < previewEnd;
+                !unavailable &&
+                startDateObj !== null &&
+                previewEnd !== null &&
+                date > startDateObj &&
+                date < previewEnd;
               const isToday = isSameDay(date, startOfToday());
 
               return (
                 <button
                   key={index}
                   type="button"
-                  disabled={disabled}
+                  disabled={isBlocked}
+                  aria-label={unavailable ? `${date.getDate()}, indisponível` : undefined}
                   onMouseEnter={() => setHoverDate(date)}
                   onClick={() => handleDayClick(date)}
                   className={cn(
                     "mx-auto flex h-8 w-8 items-center justify-center rounded-full transition-colors",
                     disabled && "cursor-not-allowed text-neutral-300",
-                    !disabled && !isStart && !isEnd && "text-neutral-700 hover:bg-neutral-100",
+                    unavailable && "text-danger-500/70 line-through decoration-danger-500/70 cursor-not-allowed",
+                    !isBlocked && !isStart && !isEnd && "text-neutral-700 hover:bg-neutral-100",
                     isInRange && "rounded-none bg-primary-50 text-primary-700",
                     (isStart || isEnd) && "bg-primary-600 text-white hover:bg-primary-600",
-                    !disabled && !isStart && !isEnd && isToday && "font-semibold text-primary-700",
+                    !isBlocked && !isStart && !isEnd && isToday && "font-semibold text-primary-700",
                   )}
                 >
                   {date.getDate()}
@@ -224,6 +268,13 @@ export function DateRangePicker({
               );
             })}
           </div>
+
+          {unavailableRanges.length > 0 && (
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-neutral-400">
+              <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-danger-500/70" />
+              Datas indisponíveis
+            </p>
+          )}
 
           {startDateObj && (
             <button

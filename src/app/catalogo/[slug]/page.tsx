@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
+import { toDateOnlyISO } from "@/lib/date";
 import { getPublicMachineBySlug } from "@/features/machines/services/machine.service";
 import { isPremiumActive } from "@/features/subscriptions/lib/subscription-status";
 import { listFavoriteMachineIds } from "@/features/favorites/services/favorite.service";
@@ -58,6 +59,17 @@ export default async function MachineDetailPage({ params, searchParams }: Machin
     machine.id,
     machine.owner.id,
   );
+
+  // Une bloqueios manuais do proprietário com aluguéis já ativos: as duas são razões pelas quais uma
+  // data deixa de estar disponível, e nem o texto nem o calendário do formulário precisam distinguir
+  // qual delas se aplica — só que a data está ocupada.
+  const unavailablePeriods = [...machine.availability, ...machine.activeBookings].sort(
+    (a, b) => a.startDate.getTime() - b.startDate.getTime(),
+  );
+  const unavailableRanges = unavailablePeriods.map((period) => ({
+    startDate: toDateOnlyISO(period.startDate),
+    endDate: toDateOnlyISO(period.endDate),
+  }));
 
   const backHref =
     origemCidade && origemUf
@@ -140,14 +152,14 @@ export default async function MachineDetailPage({ params, searchParams }: Machin
               )}
             </dl>
 
-            {machine.availability.length > 0 && (
+            {unavailablePeriods.length > 0 && (
               <div className="mt-6">
                 <h2 className="text-sm font-semibold text-neutral-900">Períodos indisponíveis</h2>
                 <ul className="mt-2 flex flex-col gap-1 text-sm text-neutral-500">
-                  {machine.availability.map((block) => (
-                    <li key={block.id}>
-                      {new Date(block.startDate).toLocaleDateString("pt-BR")} —{" "}
-                      {new Date(block.endDate).toLocaleDateString("pt-BR")}
+                  {unavailablePeriods.map((period, index) => (
+                    <li key={index}>
+                      {period.startDate.toLocaleDateString("pt-BR")} —{" "}
+                      {period.endDate.toLocaleDateString("pt-BR")}
                     </li>
                   ))}
                 </ul>
@@ -184,7 +196,11 @@ export default async function MachineDetailPage({ params, searchParams }: Machin
                 Você não pode alugar um anúncio próprio.
               </Alert>
             ) : (
-              <BookingRequestForm machineId={machine.id} properties={renterProperties} />
+              <BookingRequestForm
+                machineId={machine.id}
+                properties={renterProperties}
+                unavailableRanges={unavailableRanges}
+              />
             )}
           </div>
 

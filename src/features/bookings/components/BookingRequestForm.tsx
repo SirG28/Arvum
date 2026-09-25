@@ -18,16 +18,30 @@ import { Textarea } from "@/components/ui/Textarea";
 import { FormField } from "@/components/ui/FormField";
 import { Alert } from "@/components/ui/Alert";
 import { Spinner } from "@/components/ui/Spinner";
-import { DateRangePicker } from "@/components/ui/DateRangePicker";
+import { DateRangePicker, type DateRange } from "@/components/ui/DateRangePicker";
 
 const QUOTE_DEBOUNCE_MS = 500;
+
+// Menor data selecionável no calendário: amanhã, nunca hoje — não há como organizar retirada/entrega
+// no mesmo dia do pedido (ver refine de startDate em booking.schema.ts, que aplica a mesma regra).
+function tomorrowISO(): string {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const year = tomorrow.getFullYear();
+  const month = String(tomorrow.getMonth() + 1).padStart(2, "0");
+  const day = String(tomorrow.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 interface BookingRequestFormProps {
   machineId: string;
   properties: Pick<Property, "id" | "name" | "city" | "state">[];
+  // Datas já ocupadas por bloqueio do proprietário ou por outro aluguel ativo — o calendário abaixo
+  // as marca visualmente e impede a seleção (ver DateRangePicker).
+  unavailableRanges: DateRange[];
 }
 
-export function BookingRequestForm({ machineId, properties }: BookingRequestFormProps) {
+export function BookingRequestForm({ machineId, properties, unavailableRanges }: BookingRequestFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const mutation = useCreateBookingRequest(machineId);
@@ -125,13 +139,19 @@ export function BookingRequestForm({ machineId, properties }: BookingRequestForm
           de tipo estático já existente neste formulário (ver comentário no onSubmit abaixo). */}
       <DateRangePicker
         label="Período da locação"
+        minDate={tomorrowISO()}
+        unavailableRanges={unavailableRanges}
         value={{
           startDate: (startDate as unknown as string) ?? "",
           endDate: (endDate as unknown as string) ?? "",
         }}
         onChange={(range) => {
-          setValue("startDate", range.startDate as unknown as Date, { shouldValidate: true });
-          setValue("endDate", range.endDate as unknown as Date, { shouldValidate: true });
+          // Só valida quando o intervalo estiver completo: com a seleção pela metade (só a data
+          // inicial escolhida) o endDate ainda é "", e revalidar aqui cedo demais mostraria um erro
+          // de data para um campo que o usuário nem teve a chance de preencher ainda.
+          const isRangeComplete = Boolean(range.startDate && range.endDate);
+          setValue("startDate", range.startDate as unknown as Date, { shouldValidate: isRangeComplete });
+          setValue("endDate", range.endDate as unknown as Date, { shouldValidate: isRangeComplete });
         }}
         error={errors.startDate?.message ?? errors.endDate?.message}
       />

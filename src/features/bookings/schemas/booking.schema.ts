@@ -1,17 +1,18 @@
 import { z } from "zod";
 import { LogisticsMode } from "@prisma/client";
 
-function startOfToday() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return today;
+function startOfTomorrow() {
+  const tomorrow = new Date();
+  tomorrow.setHours(0, 0, 0, 0);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow;
 }
 
 export const bookingRequestSchema = z
   .object({
     destinationPropertyId: z.string().trim().min(1, "Selecione a propriedade de destino."),
-    startDate: z.coerce.date(),
-    endDate: z.coerce.date(),
+    startDate: z.coerce.date({ errorMap: () => ({ message: "Selecione a data de início." }) }),
+    endDate: z.coerce.date({ errorMap: () => ({ message: "Selecione a data final." }) }),
     logisticsMode: z.nativeEnum(LogisticsMode, {
       required_error: "Selecione como a máquina será retirada ou entregue.",
       invalid_type_error: "Selecione como a máquina será retirada ou entregue.",
@@ -23,8 +24,8 @@ export const bookingRequestSchema = z
     message: "A data final deve ser posterior à inicial.",
     path: ["endDate"],
   })
-  .refine((data) => data.startDate >= startOfToday(), {
-    message: "Não é possível alugar datas passadas.",
+  .refine((data) => data.startDate >= startOfTomorrow(), {
+    message: "Não é possível alugar para hoje. Escolha uma data a partir de amanhã.",
     path: ["startDate"],
   });
 

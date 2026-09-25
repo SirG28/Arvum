@@ -491,6 +491,16 @@ export async function getPublicMachineBySlug(
   });
   if (!machine || machine.status !== "ACTIVE" || machine.deletedAt) return null;
 
+  // `availability` só guarda bloqueios manuais do proprietário (MANUAL_BLOCK) — aluguéis em
+  // andamento nunca viram uma linha ali, então sem essa consulta a página mostraria a máquina como
+  // livre em datas já ocupadas por outro locatário. Mesmo filtro de status "ativo" usado no
+  // overlap-check de booking.service.ts, para as duas telas concordarem sobre o que está ocupado.
+  const activeBookings = await prisma.booking.findMany({
+    where: { machineId: machine.id, ...activeBookingStatusFilter() },
+    select: { startDate: true, endDate: true },
+    orderBy: { startDate: "asc" },
+  });
+
   const originPoint = origin ? mockGeocodingProvider.geocode(origin) : null;
-  return withDistanceFromOrigin([machine], originPoint)[0];
+  return withDistanceFromOrigin([{ ...machine, activeBookings }], originPoint)[0];
 }

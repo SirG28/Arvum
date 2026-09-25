@@ -61,6 +61,15 @@ describe("bookingRequestSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejeita início no dia de hoje", () => {
+    const result = bookingRequestSchema.safeParse({
+      ...basePayload,
+      startDate: daysFromNow(0),
+      endDate: daysFromNow(2),
+    });
+    expect(result.success).toBe(false);
+  });
+
   it("rejeita modalidade logística inválida", () => {
     const result = bookingRequestSchema.safeParse({
       ...basePayload,
