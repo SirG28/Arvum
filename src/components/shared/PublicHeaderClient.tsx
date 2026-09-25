@@ -21,8 +21,8 @@ export function PublicHeaderClient({ categories }: { categories: HeaderSearchFie
   const { displayed: shrunkDisplayed, visible } = useCrossfadeTransition(shrunk);
 
   const fadeClasses = cn(
-    "sm:transition-[opacity,transform,scale] sm:duration-base sm:ease-playful",
-    visible ? "sm:translate-y-0 sm:scale-100 sm:opacity-100" : "sm:-translate-y-1 sm:scale-[0.98] sm:opacity-0",
+    "lg:transition-[opacity,transform,scale] lg:duration-base lg:ease-playful",
+    visible ? "lg:translate-y-0 lg:scale-100 lg:opacity-100" : "lg:-translate-y-1 lg:scale-[0.98] lg:opacity-0",
   );
 
   return (
@@ -36,7 +36,7 @@ export function PublicHeaderClient({ categories }: { categories: HeaderSearchFie
           <span
             className={cn(
               "block origin-left transition-[transform] duration-base ease-playful",
-              shrunk && "sm:scale-95",
+              shrunk && "lg:scale-95",
             )}
           >
             <Logo size={36} />
@@ -46,17 +46,17 @@ export function PublicHeaderClient({ categories }: { categories: HeaderSearchFie
         {!shrunkDisplayed && (
           <nav
             aria-label="Navegação principal"
-            className={cn("col-start-2 row-start-1 hidden items-center gap-1 sm:flex", fadeClasses)}
+            className={cn("col-start-2 row-start-1 hidden items-center gap-1 lg:flex", fadeClasses)}
           >
             <CatalogNavLink />
             <HeaderHelpLink />
           </nav>
         )}
 
-        <div className="col-start-3 row-start-1 flex shrink-0 items-center gap-2 sm:gap-3">
+        <div className="col-start-3 row-start-1 flex shrink-0 items-center gap-2 lg:gap-3">
           {/* "Criar conta" só some do mobile (cabe em telas maiores ao lado de "Entrar") — o
               hambúrguer ao lado leva pra ela, e o próprio /login também linka pra /cadastro. */}
-          <Link href="/cadastro" className="hidden sm:block">
+          <Link href="/cadastro" className="hidden lg:block">
             <Button variant="secondary">Criar conta</Button>
           </Link>
           <Link href="/login">
@@ -67,13 +67,15 @@ export function PublicHeaderClient({ categories }: { categories: HeaderSearchFie
 
         {/* max-height+opacity (não `hidden`) pra animar o recolher no mobile. `overflow-anchor: none`
             global (globals.css, no `body`) evita que o navegador "brigue" com essa animação — ver
-            comentário lá e em AppHeaderClient.tsx. */}
+            comentário lá e em AppHeaderClient.tsx. `overflow-hidden` só entra junto com o recolher
+            (`mobileCompact`): com a busca aberta, overflow fica visible, senão os dropdowns dos
+            campos ficam cortados pelo `max-h-[220px]` deste contêiner. */}
         <div
           className={cn(
-            "col-span-3 row-start-2 min-w-0 overflow-hidden transition-[max-height,opacity] duration-base ease-out",
-            mobileCompact ? "max-h-0 opacity-0" : "max-h-[220px] opacity-100",
-            "sm:col-span-1 sm:col-start-2 sm:max-h-none sm:overflow-visible sm:opacity-100",
-            shrunkDisplayed && "sm:row-start-1",
+            "col-span-3 row-start-2 min-w-0 transition-[max-height,opacity] duration-base ease-out",
+            mobileCompact ? "max-h-0 overflow-hidden opacity-0" : "max-h-[220px] overflow-visible opacity-100",
+            "lg:col-span-1 lg:col-start-2 lg:max-h-none lg:overflow-visible lg:opacity-100",
+            shrunkDisplayed && "lg:row-start-1",
             fadeClasses,
           )}
         >

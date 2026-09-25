@@ -23,24 +23,24 @@ interface HeaderSearchFieldsProps {
 // (HeaderSearchInline.tsx) — nunca dois conjuntos de campos com código diferente.
 export function HeaderSearchFields({ categories, className }: HeaderSearchFieldsProps) {
   return (
-    <div className={cn("grid grid-cols-2 gap-3 sm:flex sm:items-end sm:gap-2", className)}>
-      <MachineCategoryPicker categories={categories} name="categoria" className="col-span-2 sm:col-span-1 sm:w-48" />
+    <div className={cn("grid grid-cols-2 gap-3 lg:flex lg:items-end lg:gap-2", className)}>
+      <MachineCategoryPicker categories={categories} name="categoria" className="col-span-2 lg:col-span-1 lg:w-48" />
       <CityAutocomplete
         cityFieldName="origemCidade"
         stateFieldName="origemUf"
         label="Onde"
         placeholder="Onde você vai usar?"
         hideLabel
-        className="sm:w-52"
+        className="lg:w-52"
       />
       <DateRangeFilterField
         startFieldName="dataInicio"
         endFieldName="dataFim"
         label="Quando"
         hideLabel
-        className="sm:w-52"
+        className="lg:w-52"
       />
-      <Button type="submit" className="col-span-2 sm:col-span-1 sm:w-auto">
+      <Button type="submit" className="col-span-2 lg:col-span-1 lg:w-auto">
         Buscar
       </Button>
     </div>

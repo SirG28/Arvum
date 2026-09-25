@@ -41,12 +41,12 @@ export function AppHeaderClient({ categories }: { categories: HeaderSearchFields
   const { shrunk, mobileCompact } = useHeaderScrollState();
   const { displayed: shrunkDisplayed, visible } = useCrossfadeTransition(shrunk);
 
-  // sm: só — no mobile a busca nunca troca de linha (ver comentário acima), então não há nada
+  // lg: só — no mobile a busca nunca troca de linha (ver comentário acima), então não há nada
   // pra esmaecer ali (ela some/aparece por `mobileCompact`, um mecanismo à parte); animar mesmo
   // assim seria um "pisca" gratuito a cada troca de `shrunk`.
   const fadeClasses = cn(
-    "sm:transition-[opacity,transform,scale] sm:duration-base sm:ease-playful",
-    visible ? "sm:translate-y-0 sm:scale-100 sm:opacity-100" : "sm:-translate-y-1 sm:scale-[0.98] sm:opacity-0",
+    "lg:transition-[opacity,transform,scale] lg:duration-base lg:ease-playful",
+    visible ? "lg:translate-y-0 lg:scale-100 lg:opacity-100" : "lg:-translate-y-1 lg:scale-[0.98] lg:opacity-0",
   );
 
   return (
@@ -60,7 +60,7 @@ export function AppHeaderClient({ categories }: { categories: HeaderSearchFields
           <span
             className={cn(
               "block origin-left transition-[transform] duration-base ease-playful",
-              shrunk && "sm:scale-95",
+              shrunk && "lg:scale-95",
             )}
           >
             <Logo size={36} />
@@ -70,7 +70,7 @@ export function AppHeaderClient({ categories }: { categories: HeaderSearchFields
         {!shrunkDisplayed && (
           <nav
             aria-label="Navegação principal"
-            className={cn("col-start-2 row-start-1 hidden items-center gap-1 sm:flex", fadeClasses)}
+            className={cn("col-start-2 row-start-1 hidden items-center gap-1 lg:flex", fadeClasses)}
           >
             <CatalogNavLink />
             <HeaderHelpLink />
@@ -87,16 +87,20 @@ export function AppHeaderClient({ categories }: { categories: HeaderSearchFields
         {/* No mobile a busca sempre fica na própria linha (largura das colunas 1/3 não sobra
             espaço pros campos ao lado da logo/ações); no desktop ela troca de linha com `shrunk`.
             `max-height`+opacity (não `hidden`) pra animar o recolher no mobile — `hidden` corta
-            sem transição nenhuma. As classes `sm:` cancelam esse comportamento em telas maiores,
+            sem transição nenhuma. As classes `lg:` cancelam esse comportamento em telas maiores,
             onde `mobileCompact` não deve valer nada (só `shrunk` manda ali).
+            `overflow-hidden` só entra junto com o recolher (`mobileCompact`) — com a busca aberta,
+            overflow fica visible, senão os dropdowns dos campos (categoria, cidade, calendário de
+            período) ficam cortados pelo `max-h-[220px]` deste contêiner em vez de flutuar por cima
+            do conteúdo abaixo.
             `overflow-anchor: none` global (globals.css, no `body`) evita que o "scroll anchoring"
             do navegador brigue com esse recolher — ver comentário lá. */}
         <div
           className={cn(
-            "col-span-3 row-start-2 min-w-0 overflow-hidden transition-[max-height,opacity] duration-base ease-out",
-            mobileCompact ? "max-h-0 opacity-0" : "max-h-[220px] opacity-100",
-            "sm:col-span-1 sm:col-start-2 sm:max-h-none sm:overflow-visible sm:opacity-100",
-            shrunkDisplayed && "sm:row-start-1",
+            "col-span-3 row-start-2 min-w-0 transition-[max-height,opacity] duration-base ease-out",
+            mobileCompact ? "max-h-0 overflow-hidden opacity-0" : "max-h-[220px] overflow-visible opacity-100",
+            "lg:col-span-1 lg:col-start-2 lg:max-h-none lg:overflow-visible lg:opacity-100",
+            shrunkDisplayed && "lg:row-start-1",
             fadeClasses,
           )}
         >

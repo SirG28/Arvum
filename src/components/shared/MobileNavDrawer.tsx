@@ -41,7 +41,7 @@ function DrawerLink({ href, label, icon, active }: { href: string; label: string
   );
 }
 
-// Menu hambúrguer só para mobile (sm:hidden) — em telas maiores "Catálogo"/"Dúvidas" vivem na
+// Menu hambúrguer só para mobile (lg:hidden) — em telas maiores "Catálogo"/"Dúvidas" vivem na
 // primeira linha do header (CatalogNavLink.tsx/WhatsAppSupportLink.tsx) e a busca Tipo de máquina ·
 // Onde · Quando fica na segunda linha (HeaderSearchDocked/HeaderSearchCompactPill); no mobile, esses dois
 // itens de navegação entram aqui em vez de disputar espaço com a logo/ações na primeira linha. O
@@ -88,7 +88,7 @@ export function MobileNavDrawer() {
     // Sem `relative` aqui de propósito: o painel abaixo se posiciona a partir do <header
     // className="relative"> (AppHeader.tsx), não deste wrapper — assim `inset-x-4` alcança a
     // largura inteira do cabeçalho, não só a largura do botão.
-    <div ref={containerRef} className="sm:hidden">
+    <div ref={containerRef} className="lg:hidden">
       <button
         ref={triggerRef}
         type="button"

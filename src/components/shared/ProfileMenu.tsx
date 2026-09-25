@@ -32,8 +32,8 @@ function ProfileMenuIcon() {
   );
 }
 
-// Dropdown de perfil (desktop, sm+). No mobile o header esconde este componente e
-// os mesmos PROFILE_ITEMS aparecem dentro do MobileNavDrawer.
+// Dropdown de perfil (desktop, lg+). Abaixo disso (mobile e tablet) o header esconde este
+// componente e os mesmos PROFILE_ITEMS aparecem dentro do MobileNavDrawer.
 export function ProfileMenu() {
   const { data: session } = useSession();
   const pathname = usePathname();
@@ -74,7 +74,7 @@ export function ProfileMenu() {
     session.user.role === "ADMIN" ? [...PROFILE_ITEMS, ADMIN_MODERATION_ITEM] : PROFILE_ITEMS;
 
   return (
-    <div ref={containerRef} className="relative hidden sm:block">
+    <div ref={containerRef} className="relative hidden lg:block">
       <button
         ref={triggerRef}
         type="button"

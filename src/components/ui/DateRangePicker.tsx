@@ -200,7 +200,12 @@ export function DateRangePicker({
         <div
           role="dialog"
           aria-label="Selecionar período"
-          className="absolute z-30 mt-1 w-72 rounded-md border border-neutral-200 bg-white p-3 shadow-md"
+          // `right-0` por padrão (não `left-0`): em telas estreitas o campo costuma estar perto da
+          // borda direita (ex.: grid de 2 colunas do header) e ancorar pela esquerda empurraria o
+          // calendário pra fora da viewport; `max-w-[calc(100vw-2rem)]` encolhe a largura fixa
+          // (18rem) no que sobrar em telas bem pequenas, tipo 320px. A partir de sm: sobra espaço de
+          // sobra, então volta ao mais comum: ancorado pela esquerda do campo.
+          className="absolute right-0 z-30 mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-md border border-neutral-200 bg-white p-3 shadow-md sm:right-auto sm:left-0"
         >
           <div className="flex items-center justify-between">
             <button
