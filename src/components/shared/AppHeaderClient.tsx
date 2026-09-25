@@ -89,15 +89,11 @@ export function AppHeaderClient({ categories }: { categories: HeaderSearchFields
             `max-height`+opacity (não `hidden`) pra animar o recolher no mobile — `hidden` corta
             sem transição nenhuma. As classes `sm:` cancelam esse comportamento em telas maiores,
             onde `mobileCompact` não deve valer nada (só `shrunk` manda ali).
-            `overflow-anchor:none`: esse bloco fica dentro do header `sticky`, e a mudança de altura
-            dele (recolhendo/expandindo) desloca o conteúdo abaixo no fluxo do documento — sem isso,
-            o "scroll anchoring" do navegador tenta compensar esse deslocamento ajustando a posição
-            de rolagem sozinho, o que gera eventos de scroll que não vieram do usuário e podiam
-            disparar outra troca de direção no meio da animação (o próprio recolher "brigando"
-            consigo mesmo ao rolar pra cima). */}
+            `overflow-anchor: none` global (globals.css, no `body`) evita que o "scroll anchoring"
+            do navegador brigue com esse recolher — ver comentário lá. */}
         <div
           className={cn(
-            "col-span-3 row-start-2 min-w-0 overflow-hidden transition-[max-height,opacity] duration-base ease-out [overflow-anchor:none]",
+            "col-span-3 row-start-2 min-w-0 overflow-hidden transition-[max-height,opacity] duration-base ease-out",
             mobileCompact ? "max-h-0 opacity-0" : "max-h-[220px] opacity-100",
             "sm:col-span-1 sm:col-start-2 sm:max-h-none sm:overflow-visible sm:opacity-100",
             shrunkDisplayed && "sm:row-start-1",

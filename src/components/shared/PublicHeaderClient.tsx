@@ -65,12 +65,12 @@ export function PublicHeaderClient({ categories }: { categories: HeaderSearchFie
           <MobileNavDrawer />
         </div>
 
-        {/* max-height+opacity (não `hidden`) pra animar o recolher no mobile, com
-            `overflow-anchor:none` pra evitar o navegador "brigar" com a própria animação — ver
-            comentário em AppHeaderClient.tsx. */}
+        {/* max-height+opacity (não `hidden`) pra animar o recolher no mobile. `overflow-anchor: none`
+            global (globals.css, no `body`) evita que o navegador "brigue" com essa animação — ver
+            comentário lá e em AppHeaderClient.tsx. */}
         <div
           className={cn(
-            "col-span-3 row-start-2 min-w-0 overflow-hidden transition-[max-height,opacity] duration-base ease-out [overflow-anchor:none]",
+            "col-span-3 row-start-2 min-w-0 overflow-hidden transition-[max-height,opacity] duration-base ease-out",
             mobileCompact ? "max-h-0 opacity-0" : "max-h-[220px] opacity-100",
             "sm:col-span-1 sm:col-start-2 sm:max-h-none sm:overflow-visible sm:opacity-100",
             shrunkDisplayed && "sm:row-start-1",

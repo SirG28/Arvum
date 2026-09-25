@@ -182,6 +182,15 @@ body {
   font-family: var(--font-sans);
   color: var(--color-neutral-900);
   background-color: var(--color-neutral-50);
+  /* O header sticky (AppHeaderClient/PublicHeaderClient) muda de altura ao rolar no mobile
+     (`mobileCompact`, ver useHeaderScrollState.ts). Por padrão o navegador tenta compensar esse
+     tipo de deslocamento de layout ajustando sozinho a posição de rolagem ("scroll anchoring"),
+     escolhendo como âncora o conteúdo visível abaixo do header — não adianta desligar isso só no
+     bloco que encolhe (`overflow-anchor:none` ali só tira ELE de ser escolhido como âncora, não
+     impede o navegador de ancorar em outro elemento da página). O ajuste sozinho gera eventos de
+     scroll que não vieram do usuário, e que reabriam/fechavam a busca no meio da própria animação
+     (o header "brigando" com o próprio efeito que causou). Desligado globalmente aqui. */
+  overflow-anchor: none;
 }
 
 /* Context.md §13 — respeitar a preferência de redução de movimento do sistema operacional. */
